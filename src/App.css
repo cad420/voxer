@@ -3,8 +3,11 @@
 }
 
 .App-header {
-  background-color: #222;
+  position: fixed;
   height: 60px;
+  width: 100%;
+  top: 0;
+  background-color: #222;
   line-height: 60px;
   color: white;
   user-select: none;
@@ -18,6 +21,7 @@
 
 .container {
   position: relative;
+  margin-top: 60px;
   height: calc(100vh - 60px);
   overflow: hidden;
 }
@@ -43,9 +47,10 @@
 .workspace {
   position: relative;
   height: 100%;
-  margin-left: 250px;
-  margin-right: 300px;
+  margin: 0 300px 0 250px;
   user-select: none;
+  background-size: 50px 50px;
+  background-image: linear-gradient(0deg, transparent 24%, rgba(25, 25, 25, 0.05) 25%, rgba(25, 25, 25, 0.05) 26%, transparent 27%, transparent 74%, rgba(25, 25, 25, 0.05) 75%, rgba(25, 25, 25, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(25, 25, 25, 0.05) 25%, rgba(25, 25, 25, 0.05) 26%, transparent 27%, transparent 74%, rgba(25, 25, 25, 0.05) 75%, rgba(25, 25, 25, 0.05) 76%, transparent 77%, transparent)
 }
 
 .box {
@@ -54,6 +59,10 @@
   background-color: white;
   padding: 1rem;
   cursor: move;
+}
+
+.box.current {
+  border: 2px solid lightgreen;
 }
 
 .module {

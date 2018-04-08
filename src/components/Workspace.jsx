@@ -27,8 +27,14 @@ class Workspace extends Component {
       boxes: {
         a: { top: 20, left: 280, title: 'Dataset' },
         b: { top: 180, left: 220, title: 'Volume' }
-      }
+      },
+      current: ''
     }
+  }
+
+  setCurrent = (id) => {
+    const { current } = this.state
+    this.setState({ current: id })
   }
 
   moveBox(id, left, top) {
@@ -43,24 +49,28 @@ class Workspace extends Component {
 
   createBox(title, left, top) {
     const { boxes } = this.state
+    const id = Math.random().toString()
     this.setState({
+      current: id,
       boxes: {
         ...boxes,
-        [Math.random().toString()]: { left, top, title }
+        [id]: { left, top, title }
       }
     })
   }
 
   render() {
     const { connectDropTarget } = this.props
-    const { boxes } = this.state
+    const { boxes, current } = this.state
 
     return connectDropTarget(
-      <div className="workspace">
+      <div className="workspace" onClick={() => this.setCurrent('')}>
         {Object.keys(boxes).map(key => {
           const { left, top, title } = boxes[key]
           return (
             <Box
+              current={current}
+              setCurrent={this.setCurrent}
               key={key}
               id={key}
               left={left}

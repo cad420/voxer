@@ -2,9 +2,9 @@ import React, { Component } from 'react'
 import { DragSource } from 'react-dnd'
 
 const boxSource = {
-  beginDrag(props) {
+  beginDrag(props, monitor, component) {
     const { id, left, top } = props
-    console.log(id)
+    props.setCurrent(id)
     return { id, left, top }
   }
 }
@@ -14,15 +14,24 @@ class Box extends Component {
     const {
       left,
       top,
+      id,
+      current,
+      setCurrent,
       connectDragSource,
       isDragging,
       children
     } = this.props
-    if (isDragging) {
-      return null
-    }
+    if (isDragging) return null
     return connectDragSource(
-      <div className="box" style={{ left, top }}>{children}</div>,
+      <div
+        className={'box' + (current === id ? ' current' : '')}
+        style={{ left, top }}
+        onClick={e => {
+          e.stopPropagation()
+          setCurrent(current === id ? '' : id)
+        }}>
+        {children}
+      </div>
     )
   }
 }
