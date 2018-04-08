@@ -1,0 +1,67 @@
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #222;
+  height: 60px;
+  line-height: 60px;
+  color: white;
+  user-select: none;
+  z-index: 999;
+}
+
+.App-title {
+  font-size: 1.5em;
+  margin: 0;
+}
+
+.container {
+  position: relative;
+  height: calc(100vh - 60px);
+  overflow: hidden;
+}
+
+.module-list {
+  position: absolute;
+  width: 250px;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-right: 1px solid #000;  
+}
+
+.config-panel {
+  position: absolute;
+  width: 300px;
+  top: 0;
+  right: 0;
+  height: 100%;
+  border-left: 1px solid #000;
+}
+
+.workspace {
+  position: relative;
+  height: 100%;
+  margin-left: 250px;
+  margin-right: 300px;
+  user-select: none;
+}
+
+.box {
+  position: absolute;
+  border: 1px dashed gray;
+  background-color: white;
+  padding: 1rem;
+  cursor: move;
+}
+
+.module {
+  height: 40px;
+  line-height: 40px;
+  border-bottom: 1px solid #aaa;
+}
+
+.module:hover {
+  background-color: #eee;
+}
