@@ -1,25 +1,19 @@
 import React, { Component } from 'react'
-import { DragSource } from 'react-dnd'
 
-const boxSource = {
-  beginDrag(props) {
-    const { children } = props
-    return { children }
-  }
-}
-
-class Module extends Component {
+export default class Module extends Component {
   render() {
-    const {
-      connectDragSource,
-      children
-    } = this.props
-    return connectDragSource(
-      <div className="module">{children}</div>,
+    const { name, ports, panel } = this.props
+    return (
+      <div
+        draggable={true}
+        onDragStart={e => {
+          e.dataTransfer.setData('module-info', JSON.stringify({
+            ports, name, panel
+          }))
+        }}
+        className="module-option">
+        {name}
+      </div>
     )
   }
 }
-
-export default DragSource('module', boxSource, (connect, monitor) => ({
-  connectDragSource: connect.dragSource()
-}))(Module)
