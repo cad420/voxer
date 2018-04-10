@@ -10,22 +10,44 @@ export default class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      current: '',
-      config: {}
+      current: null,
+      params: {},
+      values: {}
     }
     this.app = new Manager(this.handleSelectionChange);
   }
 
   handleSelectionChange = (data) => {
-    console.log(data)
+    const { entity } = data
+    if (data.isSelected) {
+      this.setState({
+        current: entity,
+        params: entity.extras.params,
+        values: entity.extras.values || {}
+      })
+    } else {
+      this.setState({
+        current: null,
+        params: [],
+        values: null
+      })
+    }
+  }
+
+  handleValueChange = (label, value) => {
+    const { current, values } = this.state
+    console.log(label, value, typeof value)
     this.setState({
-      current: data.isSelected ? data.entity.id : '',
-      config: data.entity.extras.params,
+      values: {
+        ...values,
+        [label]: value
+      }
     })
+    current.extras.values[label] = value
   }
 
   render() {
-    const { current, config } = this.state
+    const { current, params, values } = this.state
     return (
       <div className="App">
         <header className="App-header">
@@ -34,7 +56,12 @@ export default class App extends Component {
         <div className="App-container">
           <ModuleList />
           <Workspace app={this.app} />
-          <Config current={current} config={config} />
+          <Config
+            current={current}
+            params={params}
+            values={values}
+            onChange={this.handleValueChange}
+          />
         </div>
       </div>
     );

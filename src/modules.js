@@ -32,8 +32,8 @@ export default {
   Volume: {
     common: {
       params: [
-        { label: 'preIntegration', type: 'switch' },
-        { label: 'adaptiveSampling', type: 'switch' },
+        { label: 'preIntegration', type: 'Switch' },
+        { label: 'adaptiveSampling', type: 'Switch' },
         { label: 'adaptiveScalar', type: 'input[number]' },
         { label: 'adaptiveMaxSamplingRate', type: 'input[number]' },
         { label: 'samplingRate', type: 'input[number]' },
@@ -235,11 +235,11 @@ export default {
       {
         name: 'SciVis',
         params: [
-          { name: 'shadowsEnabled', type: 'switch' },
+          { name: 'shadowsEnabled', type: 'Switch' },
           { name: 'aoSamples', type: 'int' },
           { name: 'aoDistance', type: 'float' },
-          { name: 'aoTransparencyEnabled', type: 'switch' },
-          { name: 'oneSidedLighting', type: 'switch' },
+          { name: 'aoTransparencyEnabled', type: 'Switch' },
+          { name: 'oneSidedLighting', type: 'Switch' },
           { name: 'bgColor', type: 'vec3f' },
           // { name: 'maxDepthTexture', type: '_texture' },
         ]
