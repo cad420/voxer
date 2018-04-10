@@ -17,10 +17,13 @@ export default class Workspace extends Component {
           ).length;
 
           const node = new DefaultNodeModel(data.name + ' ' + (nodesCount + 1), '#333');
-          node.extras.panel = data.panel
+          node.extras.params = data.params
           node.extras.values = {}
-          data.ports.forEach(port => {
-            node.addPort(new AdvancedPortModel(port.isInput, port.name, port.label));
+          data.ports.inputs.forEach(port => {
+            node.addPort(new AdvancedPortModel(true, port.name, port.label));
+          })
+          data.ports.outputs.forEach(port => {
+            node.addPort(new AdvancedPortModel(false, port.name, port.label));
           })
           const points = app.getDiagramEngine().getRelativeMousePoint(e);
           node.x = points.x;

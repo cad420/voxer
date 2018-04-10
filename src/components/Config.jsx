@@ -5,10 +5,10 @@ export default class Config extends Component {
     const { current, config } = this.props
     return (
       <section className="config">
-        <h3>Config</h3>
+        <h3 className="panel-title">Config</h3>
         {
           current &&
-          
+          JSON.stringify(config)
         }
       </section>
     )

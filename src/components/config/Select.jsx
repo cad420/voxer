@@ -2,10 +2,11 @@ import React, { Component } from 'react'
 
 export default class extends Component {
   render() {
+    const { select } = this.props
     return (
       <div>
-        <label htmlFor="title">Source</label>
-        <select id="title" name="title" defaultValue="">
+        <label htmlFor={label}>Source</label>
+        <select id={label} name={label} defaultValue="">
           <option value="">Please choose</option>
           <option value="tooth">tooth</option>
           <option value="bucky">bucky</option>

@@ -20,7 +20,7 @@ export default class App extends Component {
     console.log(data)
     this.setState({
       current: data.isSelected ? data.entity.id : '',
-      config: data.extra.panel,
+      config: data.entity.extras.params,
     })
   }
 

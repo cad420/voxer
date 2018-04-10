@@ -23,6 +23,10 @@
   overflow: hidden;
 }
 
+.panel-title {
+  text-align: center;
+}
+
 .module-list {
   position: absolute;
   text-align: center;
@@ -79,4 +83,16 @@
 
 .srd-diagram  {
   height: 100%;
+}
+
+.App .srd-port:hover, .App .srd-port.selected {
+  background: #999;
+}
+
+.App .srd-node--selected>* {
+  border-color: #00c0ff !important;
+}
+
+.App .srd-default-link--path-selected {
+  stroke: #00c0ff !important;
 }

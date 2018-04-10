@@ -3,22 +3,26 @@ import Module from './Module'
 import modules from '../modules'
 
 export default (props) => {
-  const moduleTypes = Object.keys(modules)
+  const moduleCategories = Object.keys(modules)
   return (
     <section className="module-list">
-      {moduleTypes.map(type => {
-        const common = modules[type].common
+      <h3 className="panel-title">Module List</h3>
+      {moduleCategories.map(cate => {
+        const common = modules[cate].common
         return (
-          <div key={type}>
-            <p className="module-type">{type}</p>
+          <div key={cate}>
+            <p className="module-type">{cate}</p>
             {
-              modules[type].type.map(({ name, ports = [], panel = [] }) => {
+              modules[cate].type.map(({ name, ports = {}, params = [] }) => {
+                const _ports = Object.create(null)
+                _ports.inputs = ((common.ports || {} ).inputs || []).concat(ports.inputs || [])
+                _ports.outputs = ((common.ports || {} ).outputs || []).concat(ports.outputs || [])
                 return (
                   <Module
                     key={name}
                     name={name}
-                    ports={(common.ports || []).concat(ports)}
-                    panel={(common.panel || []).concat(panel)}
+                    ports={_ports}
+                    params={(common.params || []).concat(params)}
                   />
                 )
               })
