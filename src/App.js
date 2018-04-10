@@ -36,7 +36,6 @@ export default class App extends Component {
 
   handleValueChange = (label, value) => {
     const { current, values } = this.state
-    console.log(label, value, typeof value)
     this.setState({
       values: {
         ...values,
