@@ -1,16 +1,23 @@
 import React, { Component } from 'react'
 
 export default class extends Component {
+  handleChange = e => {
+    const { onChange, label } = this.props
+    onChange && onChange(label, e.target.value)
+  }
+
   render() {
-    const { select } = this.props
+    const { label, options = [], value = '' } = this.props
     return (
       <div>
         <label htmlFor={label}>Source</label>
-        <select id={label} name={label} defaultValue="">
+        <select id={label} name={label} value={value} onChange={this.handleChange}>
           <option value="">Please choose</option>
-          <option value="tooth">tooth</option>
-          <option value="bucky">bucky</option>
-          <option value="Other">Other</option>
+          {
+            options.map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))
+          }
         </select>
       </div>
     )

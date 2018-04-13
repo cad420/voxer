@@ -2,7 +2,7 @@ export default {
   Dataset: {
     common: {
       params: [
-        { label: 'Source', type: 'select',  }
+        { label: 'Source', type: 'Select', options: ['tooth', 'bucky', 'heptane', 'magnetic'] }
       ],
       ports: {
         outputs: [
@@ -11,7 +11,7 @@ export default {
       }
     },
     type: [
-      { name: 'default' }
+      { name: 'Default Dataset' }
     ]
   },
   TransferFunction: {
@@ -26,20 +26,23 @@ export default {
       }
     },
     type: [
-      { name: 'default' }
+      { name: 'Default Transfer Function' }
     ]
   },
   Volume: {
     common: {
       params: [
-        { label: 'preIntegration', type: 'Switch' },
-        { label: 'adaptiveSampling', type: 'Switch' },
-        { label: 'adaptiveScalar', type: 'input[number]' },
-        { label: 'adaptiveMaxSamplingRate', type: 'input[number]' },
-        { label: 'samplingRate', type: 'input[number]' },
-        { label: 'specular', type: 'vec3f' },
-        { label: 'volumeClippingBoxLower', type: 'vec3f' },
-        { label: 'volumeClippingBoxUpper', type: 'vec3f' }
+        { label: 'voxelRange', type: 'Vec2f' },
+        { label: 'gradientShadingEnabled', type: 'Switch', default: false },
+        { label: 'preIntegration', type: 'Switch', default: false },
+        { label: 'singleShade', type: 'Switch', default: true },
+        { label: 'adaptiveSampling', type: 'Switch', default: true },
+        { label: 'adaptiveScalar', type: 'Float', default: 15 },
+        { label: 'adaptiveMaxSamplingRate', type: 'Float', default: 2 },
+        { label: 'samplingRate', type: 'Float', default: 0.125 },
+        { label: 'specular', type: 'Vec3f', default: [0.3, 0.3, 0.3] },
+        { label: 'volumeClippingBoxLower', type: 'Vec3f' },
+        { label: 'volumeClippingBoxUpper', type: 'Vec3f' }
       ],
       ports: {
         inputs: [
@@ -53,19 +56,19 @@ export default {
     },
     type: [
       {
-        name: 'Structured',
+        name: 'Structured Volume',
         params: [
-          { label: 'dimensions', type: 'vec3i' },
-          { label: 'voxelType', type: 'select' },
-          { label: 'gridOrigin', type: 'vec3f' },
-          { label: 'gridSpacing', type: 'vec3f' },
+          { label: 'dimensions', type: 'Vec3i' },
+          { label: 'voxelType', type: 'Select', values: ['unchar', 'short', 'ushort', ''] },
+          { label: 'gridOrigin', type: 'Vec3f' },
+          { label: 'gridSpacing', type: 'Vec3f' },
         ],
       },
       {
-        name: 'Adaptive Mesh Refinement',
+        name: 'AMR Volume',
         params: [
-          { label: 'gridOrigin', type: 'vec3f' },
-          { label: 'gridSpacing', type: 'vec3f' },
+          { label: 'gridOrigin', type: 'Vec3f' },
+          { label: 'gridSpacing', type: 'Vec3f' },
           { label: 'amrMethod', type: 'select' },
           { label: 'voxelType', type: 'select' },
           { label: 'brickInfo', type: '_data' },
@@ -73,7 +76,7 @@ export default {
         ],
       },
       {
-        name: 'Unstructured',
+        name: 'Unstructured Volume',
         params: [
           { label: 'vertices', type: 'vec3if[]' },
           { label: 'field', type: 'intices' },
@@ -92,8 +95,8 @@ export default {
       {
         name: 'Triangle Mesh',
         params: [
-          { label: 'vertex', type: 'vec3f(a)[]' },
-          { label: 'vertex.normal', type: 'vec3f(a)[]' },
+          { label: 'vertex', type: 'Vec3f(a)[]' },
+          { label: 'vertex.normal', type: 'Vec3f(a)[]' },
           { label: 'vertex.color', type: 'vec4f(a)[]' },
           { label: 'vertex.texcoord', type: 'vec2f[]' },
           { label: 'index', type: 'vec3i(a)[]' },
@@ -102,7 +105,7 @@ export default {
       {
         name: 'Spheres',
         params: [
-          { label: 'radius', type: 'float' },
+          { label: 'radius', type: 'Float' },
           { label: 'spheres', type: '_data' },
           { label: 'bytes_per_sphere', type: 'int' },
           { label: 'offset_center', type: 'int' },
@@ -137,53 +140,58 @@ export default {
         ]
       }
     },
-    type: [{ name: 'default' }]
+    type: [{ name: 'Default Model' }]
   },
   Lights: {
     common: {
       ports: {
         outputs: [{ name: 'light', label: 'out' }]
-      }
+      },
+      params: [
+        { label: 'color', type: 'Color', default: [255, 255, 255] },
+        { label: 'intensity', type: 'float', default: 1 },
+        { label: 'isVisible', type: 'Switch', default: true },
+      ]
     },
     type: [
       {
         name: 'Directional Light',
         params: [
-          { label: 'direction', type: 'vec3f(a)' },
-          { label: 'angularDiameter', type: 'float' }
+          { label: 'direction', type: 'Vec3f(a)' },
+          { label: 'angularDiameter', type: 'Float' }
         ]
       },
       {
         name: 'Point Light',
         params: [
-          { label: 'poition', type: 'vec3f(a)' },
-          { label: 'radius', type: 'float' },
+          { label: 'poition', type: 'Vec3f(a)' },
+          { label: 'radius', type: 'Float' },
         ]
       },
       {
         name: 'Spot Light',
         params: [
-          { label: 'poition', type: 'vec3f(a)' },
-          { label: 'direction', type: 'vec3f(a)' },
-          { label: 'openingAngle', type: 'float' },
-          { label: 'penumbraAngle', type: 'float' },
-          { label: 'radius', type: 'float' }
+          { label: 'poition', type: 'Vec3f' },
+          { label: 'direction', type: 'Vec3f' },
+          { label: 'openingAngle', type: 'Float' },
+          { label: 'penumbraAngle', type: 'Float' },
+          { label: 'radius', type: 'Float' }
         ]
       },
       { name: 'Quad Light' },
       { name: 'HDRI Light' },
-      { name: 'Ambient  Light' },
+      { name: 'Ambient Light' },
     ]
   },
   Camera: {
     common: {
       params: [
-        { label: 'pos', type: 'vec3f(a)' },
-        { label: 'dir', type: 'vec3f(a)' },
-        { label: 'up', type: 'vec3f(a)' },
-        { label: 'nearClip', type: 'float' },
-        { label: 'imageStart', type: 'vec2f' },
-        { label: 'imageEnd', type: 'vec2f' },
+        { label: 'pos', type: 'Vec3f' },
+        { label: 'dir', type: 'Vec3f' },
+        { label: 'up', type: 'Vec3f' },
+        { label: 'nearClip', type: 'Float' },
+        { label: 'imageStart', type: 'Vec2f' },
+        { label: 'imageEnd', type: 'Vec2f' },
       ],
       ports: {
         outputs: [{ name: 'camera', label: 'out' }]
@@ -193,20 +201,20 @@ export default {
       {
         name: 'Perspective Camera',
         params: [
-          { label: 'fovy', type: 'float' },
-          { label: 'aspect', type: 'float' },
-          { label: 'apertureRadius', type: 'float' },
-          { label: 'foucsDistance', type: 'float' },
-          { label: 'architectural', type: 'float' },
-          { label: 'stereoMode', type: 'float' },
-          { label: 'interpupillartDistance', type: 'float' },
+          { label: 'fovy', type: 'Float' },
+          { label: 'aspect', type: 'Float' },
+          { label: 'apertureRadius', type: 'Float' },
+          { label: 'foucsDistance', type: 'Float' },
+          { label: 'architectural', type: 'Float' },
+          { label: 'stereoMode', type: 'Float' },
+          { label: 'interpupillartDistance', type: 'Float' },
         ]
       },
       {
         name: 'Orthographic Camera',
         params: [
-          { label: 'height', type: 'float' },
-          { label: 'aspect', type: 'float' }
+          { label: 'height', type: 'Float' },
+          { label: 'aspect', type: 'Float' }
         ]
       }
     ]
@@ -224,23 +232,23 @@ export default {
         ]
       },
       params: [
-        { name: 'epsilon', type: 'float' },
-        { name: 'spp', type: 'int' },
-        { name: 'maxDepth', type: 'int' },
-        { name: 'minContribution', type: 'float' },
-        { name: 'varianceThreshold', type: 'float' },
+        { name: 'epsilon', type: 'Float' },
+        { name: 'spp', type: 'Int' },
+        { name: 'maxDepth', type: 'Int' },
+        { name: 'minContribution', type: 'Float' },
+        { name: 'varianceThreshold', type: 'Float' },
       ]
     },
     type: [
       {
-        name: 'SciVis',
+        name: 'SciVis Renderer',
         params: [
           { name: 'shadowsEnabled', type: 'Switch' },
-          { name: 'aoSamples', type: 'int' },
-          { name: 'aoDistance', type: 'float' },
+          { name: 'aoSamples', type: 'Int' },
+          { name: 'aoDistance', type: 'Float' },
           { name: 'aoTransparencyEnabled', type: 'Switch' },
           { name: 'oneSidedLighting', type: 'Switch' },
-          { name: 'bgColor', type: 'vec3f' },
+          { name: 'bgColor', type: 'Vec3f' },
           // { name: 'maxDepthTexture', type: '_texture' },
         ]
       }

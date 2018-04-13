@@ -23,6 +23,11 @@ export default class Workspace extends Component {
     const node = new DefaultNodeModel(data.name + ' ' + (nodesCount + 1), '#333');
     node.extras.params = data.params
     node.extras.values = {}
+    data.params.forEach(param => {
+      if (param.default) {
+        node.extras.values[param.label] = param.default
+      }
+    })
     data.ports.inputs.forEach(port => {
       node.addPort(new AdvancedPortModel(true, port.name, port.label));
     })
