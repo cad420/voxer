@@ -88,7 +88,7 @@ export default {
   Geometry: {
     common: {
       ports: {
-        inputs: [{ name: 'geometry', label: 'out' }]
+        inputs: [{ name: 'geometry', label: 'in' }]
       }
     },
     type: [

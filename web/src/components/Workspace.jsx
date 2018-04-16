@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
-import { DiagramWidget, DefaultNodeModel } from 'storm-react-diagrams'
-import { AdvancedPortModel } from '../manager'
+import { DiagramWidget } from 'storm-react-diagrams'
+import VovisNodeModel from '../components/diagram/node/Model'
+import VovisPortModel from '../components/diagram/port/Model'
 
 export default class Workspace extends Component {
   componentDidMount() {
@@ -20,7 +21,7 @@ export default class Workspace extends Component {
         .getNodes()
     ).length;
 
-    const node = new DefaultNodeModel(data.name + ' ' + (nodesCount + 1), '#333');
+    const node = new VovisNodeModel(data.name + ' ' + (nodesCount + 1), '#333');
     node.extras.params = data.params
     node.extras.values = {}
     data.params.forEach(param => {
@@ -29,10 +30,10 @@ export default class Workspace extends Component {
       }
     })
     data.ports.inputs.forEach(port => {
-      node.addPort(new AdvancedPortModel(true, port.name, port.label));
+      node.addPort(new VovisPortModel(true, port.name, port.label));
     })
     data.ports.outputs.forEach(port => {
-      node.addPort(new AdvancedPortModel(false, port.name, port.label));
+      node.addPort(new VovisPortModel(false, port.name, port.label));
     })
     const points = app.getDiagramEngine().getRelativeMousePoint(e);
     node.x = points.x;

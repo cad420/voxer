@@ -1,77 +1,38 @@
-import * as SRD from "storm-react-diagrams";
-import React from 'react';
-import {
-	DefaultLinkModel,
-	DefaultPortModel,
-	DefaultLinkFactory
-} from 'storm-react-diagrams';
-
-class AdvancedLinkModel extends DefaultLinkModel {
-	constructor() {
-		super("advanced");
-		this.setColor('#ddd');
-	}
-}
-
-export class AdvancedPortModel extends DefaultPortModel {
-	createLinkModel() {
-		return new AdvancedLinkModel();
-	}
-}
-
-class AdvancedLinkFactory extends DefaultLinkFactory {
-	constructor() {
-		super();
-		this.type = "advanced";
-	}
-
-	getNewInstance(initialConfig) {
-		return new AdvancedLinkModel();
-	}
-
-	generateLinkSegment(model, widget, selected, path) {
-		return (
-			<g>
-				<path
-					className={selected ? widget.bem("--path-selected") : ""}
-					strokeWidth={model.width}
-					stroke={model.color}
-					d={path} />
-			</g>
-		);
-	}
-}
+import { DiagramEngine, DiagramModel } from 'storm-react-diagrams';
+import VovisNodeModel from './components/diagram/node/Model'
+import VovisNodeFactory from './components/diagram/node/Factory'
+import VovisPortFactory from './components/diagram/port/Factory'
+import VovisLinkFactory from './components/diagram/link/Factory'
 
 export default class Manager {
 	constructor(onSelectionChanged) {
-		this.diagramEngine = new SRD.DiagramEngine();
+		this.diagramEngine = new DiagramEngine();
 		this.diagramEngine.installDefaultFactories();
 		this.onSelectionChanged = onSelectionChanged;
 		this.newModel();
 	}
 
 	newModel() {
-		this.activeModel = new SRD.DiagramModel();
+		this.activeModel = new DiagramModel();
 		this.diagramEngine.setDiagramModel(this.activeModel);
-		this.diagramEngine.registerLinkFactory(new AdvancedLinkFactory());
+		this.diagramEngine.registerNodeFactory(new VovisNodeFactory());
+		this.diagramEngine.registerLinkFactory(new VovisLinkFactory());
+		this.diagramEngine.registerPortFactory(new VovisPortFactory());
 
-		//3-A) create a default node
-		let node1 = new SRD.DefaultNodeModel("Dataset 1", "#333");
-		let port = node1.addPort(new AdvancedPortModel(false, 'Out1', "Out"));
+		let node1 = new VovisNodeModel('Dataset 1', '#333');
+		let port = node1.addInPort('Out1', 'Out');
 		node1.setPosition(300, 100);
 
-		//3-B) create another default node
-		let node2 = new SRD.DefaultNodeModel("Transfer Function 2", "#333");
-		node2.addPort(new AdvancedPortModel(false, "Out1", "Out"));
+		let node2 = new VovisNodeModel('Transfer Function 2', '#333');
+		node2.addOutPort('Out1', 'Out');
 		node2.setPosition(200, 150);
 
-		let node3 = new SRD.DefaultNodeModel("Volume 3", "#333");
-		let port3 = node3.addPort(new AdvancedPortModel(true, "In", "Int"));
-		node3.addPort(new AdvancedPortModel(true, "In2", "In"));
-		node3.addPort(new AdvancedPortModel(false, "Out", "Out"));
+		let node3 = new VovisNodeModel('Volume 3', '#333');
+		let port3 = node3.addInPort('In', 'In');
+		node3.addInPort('In2', 'In');
+		node3.addOutPort('Out', 'Out');
 		node3.setPosition(400, 300);
 
-		// link the ports
 		let link1 = port.link(port3);
 
 		this.activeModel.addAll(node1, node2, node3, link1);
