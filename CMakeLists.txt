@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(parender)
+project(VovisRenderer)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_BUILD_TYPE "DEBUG" CACHE STRING "Options: Debug Release RelWithDebInfo MinSizeRel." FORCE)
@@ -47,6 +47,24 @@ find_library(
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${TBB_LIB_PATH}
 )
 
+find_library(
+  Z_LIB
+  NAMES z
+  HINTS "${CMAKE_PREFIX_PATH}/lib" ${Z_LIB}
+)
+
+find_library(
+  SSL_LIB
+  NAMES ssl
+  HINTS "${CMAKE_PREFIX_PATH}/lib" ${SSL_LIB}
+)
+
+find_library(
+  CRYPTO_LIB
+  NAMES crypto
+  HINTS "${CMAKE_PREFIX_PATH}/lib" ${CRYPTO_LIB}
+)
+
 if (NOT OSPRAY_LIB)
   unset(OSPRAY_LIB CACHE)
   message(FATAL_ERROR "ospray not found, please set OSPRAY_LIB_PATH.")
@@ -75,6 +93,7 @@ else()
   unset(TBB_LIB_PATH CACHE)
 endif()
 
-add_executable(parender ParallelRenderer.cpp gensv/RawReader.cpp gensv/GenerateSciVis.cpp)
-target_include_directories(parender PUBLIC ${OSPRAY_INCLUDE_PATH} ${MPI_INCLUDE_PATH})
-target_link_libraries(parender ${OSPRAY_LIB} ${OSPRAY_LIB_COMMON} ${OSPRAY_LIB_MPI} ${EMBREE_LIB} ${TBB_LIB} ${MPI_LIB})
+file(GLOB_RECURSE uWS_FILES ${PROJECT_SOURCE_DIR}/third_party/uWebSockets/*.cpp)
+add_executable(VovisRenderer ParallelRenderer/ParallelRenderer.cpp ${uWS_FILES})
+target_include_directories(VovisRenderer PUBLIC ${OSPRAY_INCLUDE_PATH} ${MPI_INCLUDE_PATH} ${PROJECT_SOURCE_DIR})
+target_link_libraries(VovisRenderer ${SSL_LIB} ${OSPRAY_LIB} ${OSPRAY_LIB_COMMON} ${OSPRAY_LIB_MPI} ${EMBREE_LIB} ${TBB_LIB} ${MPI_LIB} ${Z_LIB} ${CRYPTO_LIB})
