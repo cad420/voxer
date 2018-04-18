@@ -101,3 +101,22 @@
 .App .srd-default-link--path-selected {
   stroke: #00c0ff !important;
 }
+
+.App .srd-default-node__in, .App .srd-default-node__out {
+  flex-direction: row;
+  justify-content: center;
+}
+
+.App .srd-default-port {
+  display: block;
+  margin: 0 10px;
+}
+
+.App .srd-default-node__title {
+  background: #000;
+  padding: 10px;
+}
+
+.App .srd-port {
+  cursor: pointer;
+}

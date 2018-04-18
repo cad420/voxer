@@ -13,8 +13,10 @@ export default class Workspace extends Component {
   }
 
   handleDrop = e => {
-    const { app } = this.props    
-    const data = JSON.parse(e.dataTransfer.getData('module-info'));
+    const { app } = this.props
+    const dropped = e.dataTransfer.getData('module-info')
+    if (!dropped) return
+    const data = JSON.parse(dropped);
     const nodesCount = Object.keys(
       app.getDiagramEngine()
         .getDiagramModel()
