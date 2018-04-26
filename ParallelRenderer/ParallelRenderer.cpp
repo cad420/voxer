@@ -35,7 +35,18 @@ int main(int argc, const char **argv) {
   if (init_error != OSP_NO_ERROR)
     return init_error;
 
-  server.onMessage([&d](uWS::WebSocket<uWS::SERVER> *ws, char *message,
+  ospcommon::vec3i dimensions { 302, 302, 302 };
+  ospcommon::vec2f valueRange { 0, 255 };
+  auto volume = gensv::loadVolume("/mnt/d/csafe-heptane-302-volume/csafe-heptane-302-volume.raw", dimensions, "uchar", valueRange);
+  const auto upper = ospcommon::vec3f(dimensions);
+  const auto halfLength = dimensions / 2;
+  auto worldBounds = ospcommon::box3f(ospcommon::vec3f(-halfLength), ospcommon::vec3f(halfLength));
+  volume.bounds.lower -= ospcommon::vec3f(halfLength);
+  volume.bounds.upper -= ospcommon::vec3f(halfLength);
+  volume.volume.set("gridOrigin", volume.ghostGridOrigin - ospcommon::vec3f(halfLength));
+  volume.volume.commit();
+
+  server.onMessage([&d, &volume, &worldBounds](uWS::WebSocket<uWS::SERVER> *ws, char *message,
                         size_t length, uWS::OpCode opCode) {
 #ifdef DEBUG
     auto start = chrono::steady_clock::now();
@@ -53,34 +64,10 @@ int main(int argc, const char **argv) {
     }
 
     // render
-    auto &datasetData = d["dataset"];
-    auto datasetName = datasetData.FindMember("name")->value.GetString();
-    auto &datasetDimData = datasetData.FindMember("dimension")->value;
-    auto datasetDType = datasetData.FindMember("dtype")->value.GetString();
-    auto &datasetValueRangeData = datasetData.FindMember("valueRange")->value;
-    ospcommon::vec3i dimensions {
-      datasetDimData.FindMember("x")->value.GetInt(),
-      datasetDimData.FindMember("y")->value.GetInt(),
-      datasetDimData.FindMember("z")->value.GetInt()
-    };
-    ospcommon::vec2f valueRange {
-      datasetValueRangeData.FindMember("begin")->value.GetFloat(),
-      datasetValueRangeData.FindMember("end")->value.GetFloat(),
-    };
-    auto volume = gensv::loadVolume(datasetName, dimensions, datasetDType, valueRange);
-
-    // Translate the volume to center it
-    const auto upper = ospcommon::vec3f(dimensions);
-    const auto halfLength = dimensions / 2;
-    auto worldBounds = ospcommon::box3f(ospcommon::vec3f(-halfLength), ospcommon::vec3f(halfLength));
-    volume.bounds.lower -= ospcommon::vec3f(halfLength);
-    volume.bounds.upper -= ospcommon::vec3f(halfLength);
-    volume.volume.set("gridOrigin", volume.ghostGridOrigin - ospcommon::vec3f(halfLength));
-    volume.volume.commit();
+    auto datasetData = d["dataset"].GetString();
     ospray::cpp::Model world;
     world.addVolume(volume.volume);
-
-    vector<ospcommon::box3f> regions{volume.bounds};
+    vector<ospcommon::box3f> regions{volume.bounds};    
     ospray::cpp::Data regionData(regions.size() * 2, OSP_FLOAT3, regions.data());
     world.set("regions", regionData);
     world.commit();
@@ -89,7 +76,7 @@ int main(int argc, const char **argv) {
     auto cameraType = cameraData.FindMember("type")->value.GetString();
     auto &cameraPosData = cameraData.FindMember("position")->value;
     auto &cameraUpData = cameraData.FindMember("up")->value;
-    auto camGaze = ospcommon::center(worldBounds);    
+    auto camGaze = ospcommon::center(worldBounds);
     ospcommon::vec2i imgSize{1024, 768};
     ospcommon::vec3f camPos{
       cameraPosData.FindMember("x")->value.GetFloat(),
@@ -129,11 +116,9 @@ int main(int argc, const char **argv) {
         imgSize, OSP_FB_SRGBA, OSP_FB_COLOR | /*OSP_FB_DEPTH |*/ OSP_FB_ACCUM);
     framebuffer.clear(OSP_FB_COLOR | OSP_FB_ACCUM);
 
-    uint32_t *fb = (uint32_t *)framebuffer.map(OSP_FB_COLOR);
     // for (int frames = 0; frames < 10; frames++)
     renderer.renderFrame(framebuffer, OSP_FB_COLOR | OSP_FB_ACCUM);
 
-    fb = (uint32_t *)framebuffer.map(OSP_FB_COLOR);
 
 #ifdef DEBUG
     auto step1 = chrono::steady_clock::now();
@@ -142,12 +127,16 @@ int main(int argc, const char **argv) {
          << " ms " << endl;
 #endif
 
+    uint32_t *fb = (uint32_t *)framebuffer.map(OSP_FB_COLOR);
     vector<char> buf;
     buf.reserve(imgSize.x * imgSize.y * 4);
     tje_encode_with_func(encode, &buf, 1, imgSize.x, imgSize.y, 4,
                          (const unsigned char *)fb);
-    framebuffer.unmap(fb);
+
     ws->send(buf.data(), buf.size(), uWS::BINARY);
+
+    framebuffer.unmap(fb);
+    d.Clear();
 
 #ifdef DEBUG
     auto step2 = chrono::steady_clock::now();
@@ -155,7 +144,7 @@ int main(int argc, const char **argv) {
          << chrono::duration_cast<chrono::milliseconds>(step2 - step1).count()
          << " ms " << endl;
 #endif
-  });
+  }); // end of lambda
 
   server.onHttpRequest([&](uWS::HttpResponse *res, uWS::HttpRequest req,
                            char *data, size_t length, size_t remainingBytes) {
