@@ -13,12 +13,13 @@ export default class Config extends Component {
             const Entry = DataEntries[param.type]
             if (!Entry) return JSON.stringify(param)
             return (
+              <div className="config-item" key={param.label}>
               <Entry
-                key={param.label}
                 {...param}
-                value={values[param.label]}
+                value={values[param.label] || param.default}
                 onChange={onChange}
               />
+              </div>
             )
           })
         }

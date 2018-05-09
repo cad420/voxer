@@ -1,46 +1,38 @@
-import { DiagramEngine, DiagramModel } from 'storm-react-diagrams';
-import VovisNodeModel from './components/diagram/node/Model'
+import { DiagramEngine } from 'storm-react-diagrams';
+import VovisDiagramModel from './components/diagram/Model'
 import VovisNodeFactory from './components/diagram/node/Factory'
 import VovisPortFactory from './components/diagram/port/Factory'
 import VovisLinkFactory from './components/diagram/link/Factory'
+import DisplayNodeFactory from './components/diagram/displayNode/Factory'
 
 export default class Manager {
 	constructor(onSelectionChanged) {
 		this.diagramEngine = new DiagramEngine();
+		this.displays = [];
 		this.diagramEngine.installDefaultFactories();
 		this.onSelectionChanged = onSelectionChanged;
 		this.newModel();
 	}
 
 	newModel() {
-		this.activeModel = new DiagramModel();
+		this.activeModel = new VovisDiagramModel();
 		this.diagramEngine.setDiagramModel(this.activeModel);
+		this.diagramEngine.registerNodeFactory(new DisplayNodeFactory());
 		this.diagramEngine.registerNodeFactory(new VovisNodeFactory());
 		this.diagramEngine.registerLinkFactory(new VovisLinkFactory());
 		this.diagramEngine.registerPortFactory(new VovisPortFactory());
 
-		let node1 = new VovisNodeModel('Dataset 1', '#333');
-		let port = node1.addInPort('Out1', 'Out');
-		node1.setPosition(300, 100);
+		this.activeModel.deSerializeDiagram(JSON.parse('{"id":"3672e322-de5f-41e9-a080-6098ba98d1cf","offsetX":-26.22484127379904,"offsetY":-240.65575287385752,"zoom":81.45833371281623,"gridSize":0,"links":[{"id":"6c9a9865-c36b-4250-8124-8ff6c89c768a","type":"advanced","selected":false,"source":"49d44d1c-8199-4d38-9754-449d1c6b31c7","sourcePort":"537c5a75-f091-4b93-b270-4c7415279835","target":"374facb7-ac7d-4c6e-b7e8-2fbccfe15d31","targetPort":"39a5fc88-8f01-4635-af57-02bc93dfa85f","points":[{"id":"cf16f398-b0ee-4e1f-8dea-deeb7b864a17","selected":false,"x":584.5781135441968,"y":377.499993018875},{"id":"73953770-9694-4941-8adc-acb4ccc7ade9","selected":false,"x":638.7812324177553,"y":451.07813888278815}],"extras":{},"labels":[],"width":3,"color":"#ddd","curvyness":50},{"id":"d68b5494-4e2f-446d-acfd-fd5c6fe4aaef","type":"advanced","selected":false,"source":"374facb7-ac7d-4c6e-b7e8-2fbccfe15d31","sourcePort":"5f664a62-0f3b-4498-b041-08038f1397b6","target":"671362e1-87cb-4149-be51-b72e801e018a","targetPort":"3648516f-b2c6-46f8-b93e-207d44bf7dfe","points":[{"id":"179f21d4-db6a-4e25-ba7d-ff19a4bec520","selected":false,"x":619.0312138444101,"y":544.0781144800987},{"id":"c4c3dd5d-2539-4bd2-a5b5-02fe19e7129f","selected":false,"x":716.8906381945219,"y":628.9062387683166}],"extras":{},"labels":[],"width":3,"color":"#ddd","curvyness":50},{"id":"85bf2bd8-9c8a-4ce1-924b-5a46c82eebc4","type":"advanced","selected":false,"source":"671362e1-87cb-4149-be51-b72e801e018a","sourcePort":"ea938cdd-6e05-4554-93d8-f31210309f3f","target":"3292f766-5dd3-46b7-b34f-9defc0321802","targetPort":"b2f5e9d5-fb77-4be1-af25-cb1093b7c089","points":[{"id":"8c9953ed-b5eb-49a0-9ae6-8515a3ca120d","selected":false,"x":697.1406196211767,"y":721.9062759481837},{"id":"0d151cb4-33b0-4b3d-91c0-4b7759accf28","selected":false,"x":809.9062249699394,"y":768.8594035941996}],"extras":{},"labels":[],"width":3,"color":"#ddd","curvyness":50},{"id":"ff066dae-e44f-45d1-9ae9-f9dfdc772d07","type":"advanced","selected":false,"source":"3292f766-5dd3-46b7-b34f-9defc0321802","sourcePort":"705d765e-a5c5-4c50-9bd7-1b150c67589e","target":"24039e01-5711-44d2-95d4-8e9b3d4748b3","targetPort":"ec4f108b-de64-474b-89d3-2098a8cedc8c","points":[{"id":"9ef93e14-677d-4765-bd52-7d35f9eaf7ee","selected":false,"x":879.9062549413197,"y":768.8594035941996},{"id":"110d6fec-578c-4069-9316-06d735f7958f","selected":false,"x":1052.4062628180534,"y":676.4843677816226}],"extras":{},"labels":[],"width":3,"color":"#ddd","curvyness":50},{"id":"40e67e04-56d5-442c-99d4-6024c7bf1f9b","type":"advanced","selected":false,"source":"3292f766-5dd3-46b7-b34f-9defc0321802","sourcePort":"de9fed27-c224-4a68-bc7f-a16ee77e1daf","target":"1ecd8a03-d998-4330-8377-3ad76c3ff494","targetPort":"b580955e-a1de-42ae-92dc-d4fe3d3f646b","points":[{"id":"01ba2c04-0fdf-4eaf-a7f4-266bcc55d54c","selected":false,"x":842.6562596664078,"y":861.8593484002319},{"id":"a59753cf-1fb7-41e2-9aa9-c2c65a06e72e","selected":false,"x":804.0781133925457,"y":954.5156009576832}],"extras":{},"labels":[],"width":3,"color":"#ddd","curvyness":50}],"nodes":[{"id":"49d44d1c-8199-4d38-9754-449d1c6b31c7","type":"vovis","selected":false,"x":520,"y":306,"extras":{"name":"Default Dataset","params":[{"label":"source","type":"Select","options":["tooth","bucky","heptane","magnetic"]}],"values":{"source":"heptane"}},"ports":[{"id":"537c5a75-f091-4b93-b270-4c7415279835","type":"vovis","selected":false,"name":"dataset","parentNode":"49d44d1c-8199-4d38-9754-449d1c6b31c7","links":["6c9a9865-c36b-4250-8124-8ff6c89c768a"],"in":false,"label":"out"}],"name":"Default Dataset 1","color":"#333"},{"id":"374facb7-ac7d-4c6e-b7e8-2fbccfe15d31","type":"vovis","selected":false,"x":544.8654708813459,"y":441.5874440361275,"extras":{"name":"Structured Volume","params":[{"label":"voxelRange","type":"Vec2f"},{"label":"gradientShadingEnabled","type":"Switch","default":false},{"label":"preIntegration","type":"Switch","default":false},{"label":"singleShade","type":"Switch","default":true},{"label":"adaptiveSampling","type":"Switch","default":true},{"label":"adaptiveScalar","type":"Float","default":15},{"label":"adaptiveMaxSamplingRate","type":"Float","default":2},{"label":"samplingRate","type":"Float","default":0.125},{"label":"specular","type":"Vec3f","default":[0.3,0.3,0.3]},{"label":"volumeClippingBoxLower","type":"Vec3f"},{"label":"volumeClippingBoxUpper","type":"Vec3f"},{"label":"dimensions","type":"Vec3i"},{"label":"voxelType","type":"Select","values":["unchar","short","ushort",""]},{"label":"gridOrigin","type":"Vec3f"},{"label":"gridSpacing","type":"Vec3f"}],"values":{"type":"structured","singleShade":true,"adaptiveSampling":true,"adaptiveScalar":15,"adaptiveMaxSamplingRate":2,"samplingRate":0.125,"specular":[0.3,0.3,0.3],"dataset":{"source":"heptane"}}},"ports":[{"id":"32b83a05-855d-4f70-a3d2-4a2bc4710cda","type":"vovis","selected":false,"name":"transferfunction","parentNode":"374facb7-ac7d-4c6e-b7e8-2fbccfe15d31","links":[],"in":true,"label":"in"},{"id":"39a5fc88-8f01-4635-af57-02bc93dfa85f","type":"vovis","selected":false,"name":"dataset","parentNode":"374facb7-ac7d-4c6e-b7e8-2fbccfe15d31","links":["6c9a9865-c36b-4250-8124-8ff6c89c768a"],"in":true,"label":"in"},{"id":"5f664a62-0f3b-4498-b041-08038f1397b6","type":"vovis","selected":false,"name":"volume","parentNode":"374facb7-ac7d-4c6e-b7e8-2fbccfe15d31","links":["d68b5494-4e2f-446d-acfd-fd5c6fe4aaef"],"in":false,"label":"out"}],"name":"Structured Volume 2","color":"#333"},{"id":"671362e1-87cb-4149-be51-b72e801e018a","type":"vovis","selected":false,"x":635.9192825288076,"y":619.408071877922,"extras":{"name":"Default Model","params":[],"values":{"volume":{"type":"structured","singleShade":true,"adaptiveSampling":true,"adaptiveScalar":15,"adaptiveMaxSamplingRate":2,"samplingRate":0.125,"specular":[0.3,0.3,0.3],"dataset":{"source":"heptane"}}}},"ports":[{"id":"807be54a-2a98-49c3-90c0-b09b1187498a","type":"vovis","selected":false,"name":"geometry","parentNode":"671362e1-87cb-4149-be51-b72e801e018a","links":[],"in":true,"label":"in"},{"id":"3648516f-b2c6-46f8-b93e-207d44bf7dfe","type":"vovis","selected":false,"name":"volume","parentNode":"671362e1-87cb-4149-be51-b72e801e018a","links":["d68b5494-4e2f-446d-acfd-fd5c6fe4aaef"],"in":true,"label":"in"},{"id":"ea938cdd-6e05-4554-93d8-f31210309f3f","type":"vovis","selected":false,"name":"model","parentNode":"671362e1-87cb-4149-be51-b72e801e018a","links":["85bf2bd8-9c8a-4ce1-924b-5a46c82eebc4"],"in":false,"label":"out"}],"name":"Default Model 3","color":"#333"},{"id":"24039e01-5711-44d2-95d4-8e9b3d4748b3","type":"vovis","selected":false,"x":975.8520177514757,"y":604.9951340418943,"extras":{"name":"Perspective Camera","params":[{"label":"pos","type":"Vec3f"},{"label":"dir","type":"Vec3f"},{"label":"up","type":"Vec3f"},{"label":"nearClip","type":"Float"},{"label":"imageStart","type":"Vec2f"},{"label":"imageEnd","type":"Vec2f"},{"label":"fovy","type":"Float"},{"label":"aspect","type":"Float"},{"label":"apertureRadius","type":"Float"},{"label":"foucsDistance","type":"Float"},{"label":"architectural","type":"Float"},{"label":"stereoMode","type":"Float"},{"label":"interpupillartDistance","type":"Float"}],"values":{"type":"perspective","pos":[10,50,200],"up":[0,1,0]}},"ports":[{"id":"ec4f108b-de64-474b-89d3-2098a8cedc8c","type":"vovis","selected":false,"name":"camera","parentNode":"24039e01-5711-44d2-95d4-8e9b3d4748b3","links":["ff066dae-e44f-45d1-9ae9-f9dfdc772d07"],"in":false,"label":"out"}],"name":"Perspective Camera 4","color":"#333"},{"id":"3292f766-5dd3-46b7-b34f-9defc0321802","type":"vovis","selected":false,"x":778.0941706010625,"y":759.3673310521659,"extras":{"name":"SciVis Renderer","params":[{"label":"epsilon","type":"Float"},{"label":"spp","type":"Int"},{"label":"maxDepth","type":"Int"},{"label":"minContribution","type":"Float"},{"label":"varianceThreshold","type":"Float"},{"label":"shadowsEnabled","type":"Switch"},{"label":"aoSamples","type":"Int"},{"label":"aoDistance","type":"Float"},{"label":"aoTransparencyEnabled","type":"Switch"},{"label":"oneSidedLighting","type":"Switch"},{"label":"bgColor","type":"Vec3f"}],"values":{"type":"scivis","model":{"volume":{"type":"structured","singleShade":true,"adaptiveSampling":true,"adaptiveScalar":15,"adaptiveMaxSamplingRate":2,"samplingRate":0.125,"specular":[0.3,0.3,0.3],"dataset":{"source":"heptane"}}},"camera":{"type":"perspective","pos":[10,50,200],"up":[0,1,0]}}},"ports":[{"id":"b2f5e9d5-fb77-4be1-af25-cb1093b7c089","type":"vovis","selected":false,"name":"model","parentNode":"3292f766-5dd3-46b7-b34f-9defc0321802","links":["85bf2bd8-9c8a-4ce1-924b-5a46c82eebc4"],"in":true,"label":"in"},{"id":"0b6f7d3a-31be-4b33-b85c-da0324b2e6c1","type":"vovis","selected":false,"name":"lights","parentNode":"3292f766-5dd3-46b7-b34f-9defc0321802","links":[],"in":true,"label":"in"},{"id":"705d765e-a5c5-4c50-9bd7-1b150c67589e","type":"vovis","selected":false,"name":"camera","parentNode":"3292f766-5dd3-46b7-b34f-9defc0321802","links":["ff066dae-e44f-45d1-9ae9-f9dfdc772d07"],"in":true,"label":"in"},{"id":"de9fed27-c224-4a68-bc7f-a16ee77e1daf","type":"vovis","selected":false,"name":"image","parentNode":"3292f766-5dd3-46b7-b34f-9defc0321802","links":["40e67e04-56d5-442c-99d4-6024c7bf1f9b"],"in":false,"label":"out"}],"name":"SciVis Renderer 5","color":"#333"},{"id":"1ecd8a03-d998-4330-8377-3ad76c3ff494","type":"display","selected":false,"x":552.0852024291617,"y":945.0175549076558,"extras":{"name":"Image Display","params":[{"label":"size","type":"Vec2i"}],"values":{"image":{"type":"scivis","model":{"volume":{"type":"structured","singleShade":true,"adaptiveSampling":true,"adaptiveScalar":15,"adaptiveMaxSamplingRate":2,"samplingRate":0.125,"specular":[0.3,0.3,0.3],"dataset":{"source":"heptane"}}},"camera":{"type":"perspective","pos":[10,50,200],"up":[0,1,0]}}}},"ports":[{"id":"b580955e-a1de-42ae-92dc-d4fe3d3f646b","type":"vovis","selected":false,"name":"image","parentNode":"1ecd8a03-d998-4330-8377-3ad76c3ff494","links":["40e67e04-56d5-442c-99d4-6024c7bf1f9b"],"in":true,"label":"in"}],"name":"Image Display 6","color":"#333"}]}'), this.diagramEngine)
 
-		let node2 = new VovisNodeModel('Transfer Function 2', '#333');
-		node2.addOutPort('Out1', 'Out');
-		node2.setPosition(200, 150);
-
-		let node3 = new VovisNodeModel('Volume 3', '#333');
-		let port3 = node3.addInPort('In', 'In');
-		node3.addInPort('In2', 'In');
-		node3.addOutPort('Out', 'Out');
-		node3.setPosition(400, 300);
-
-		let link1 = port.link(port3);
-
-		this.activeModel.addAll(node1, node2, node3, link1);
-		[node1, node2, node3].forEach(item => {
-			item.addListener({
+		const nodes = this.activeModel.getNodes()
+		Object.keys(nodes).forEach(id => {
+			if (nodes[id].type === 'display') {
+				this.displays.push(nodes[id])
+			}
+			nodes[id].addListener({
 				selectionChanged: this.onSelectionChanged
-			});
-		});
+			})
+		})
 	}
 
 	getActiveDiagram() {

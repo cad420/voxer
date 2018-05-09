@@ -8,10 +8,11 @@ function checkFloat(value) {
   return true
 }
 
-export default ({ label, value, onChange }) => (
+export default ({ label, value, onChange, max, min }) => (
   <Number
     label={label}
     value={value}
+    max={max} min={min}    
     validator={checkFloat}
     onChange={onChange}
   />

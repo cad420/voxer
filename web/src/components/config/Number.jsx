@@ -11,7 +11,7 @@ export default class extends Component {
   }
 
   render() {
-    const { label, value } = this.props
+    const { label, value, max = 500, min = -500 } = this.props
     return (
       <div>
         <label>
@@ -19,10 +19,14 @@ export default class extends Component {
           &nbsp;&nbsp;
           <input
             name={label}
-            type="number"
+            type="range"
             value={value || 0}
+            max={max}
+            min={min}
             onChange={this.handleChange}
           />
+          &nbsp;&nbsp;
+          {value}
         </label>
       </div>
     )

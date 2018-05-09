@@ -88,12 +88,15 @@ size_t sizeForDtype(const std::string &dtype) {
   return 0;
 }
 
-LoadedVolume loadVolume(const FileName &file, const vec3i &dimensions,
-                        const std::string &dtype, const vec2f &valueRange) {
+LoadedVolume loadVolume(RawReader &reader,
+                        const vec3i &dimensions, const std::string &dtype,
+                        const vec2f &valueRange) {
   auto numRanks = static_cast<float>(mpicommon::numGlobalRanks());
   auto myRank = mpicommon::globalRank();
-  if (numRanks == -1) numRanks = 1;
-  if (myRank == -1) myRank = 0;
+  if (numRanks == -1)
+    numRanks = 1;
+  if (myRank == -1)
+    myRank = 0;
 
   LoadedVolume vol;
   vol.tfcn.set("valueRange", valueRange);
@@ -131,7 +134,6 @@ LoadedVolume loadVolume(const FileName &file, const vec3i &dimensions,
   std::vector<unsigned char> volumeData(
       fullDims.x * fullDims.y * fullDims.z * dtypeSize, 0);
 
-  RawReader reader(file, vec3sz(dimensions), dtypeSize);
   reader.readRegion(brickId * brickDims - vec3sz(ghostOffset), vec3sz(fullDims),
                     volumeData.data());
   vol.volume.setRegion(volumeData.data(), vec3i(0), vec3i(fullDims));
@@ -141,4 +143,4 @@ LoadedVolume loadVolume(const FileName &file, const vec3i &dimensions,
   return vol;
 }
 
-}
+} // namespace gensv

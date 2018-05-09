@@ -14,21 +14,21 @@ export default class extends Component {
   }
 
   render() {
-    const { label, value = [] } = this.props
+    const { label, value = [], max, min } = this.props
     return (
       <div>
-        {label}
-        &nbsp;&nbsp;
-        {
+        <div>{label}</div>
+        <div>{
           ['x', 'y'].map((item, i) => (
             <Float
               key={item}
               label={item}
+              max={max} min={min}              
               value={value[i] || 0 }
               onChange={this.handleChange}
             />
           ))
-        }
+        }</div>
       </div>
     )
   }

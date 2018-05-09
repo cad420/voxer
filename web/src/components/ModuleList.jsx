@@ -13,7 +13,7 @@ export default (props) => {
           <div key={cate}>
             <p className="module-type">{cate}</p>
             {
-              modules[cate].type.map(({ name, ports = {}, params = [] }) => {
+              modules[cate].type.map(({ name, type, ports = {}, params = [], node = '' }) => {
                 const _ports = Object.create(null)
                 _ports.inputs = ((common.ports || {} ).inputs || []).concat(ports.inputs || [])
                 _ports.outputs = ((common.ports || {} ).outputs || []).concat(ports.outputs || [])
@@ -21,7 +21,9 @@ export default (props) => {
                   <Module
                     key={name}
                     name={name}
+                    type={type}
                     ports={_ports}
+                    node={node}
                     params={(common.params || []).concat(params)}
                   />
                 )

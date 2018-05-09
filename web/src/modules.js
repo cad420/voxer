@@ -2,7 +2,7 @@ export default {
   Dataset: {
     common: {
       params: [
-        { label: 'Source', type: 'Select', options: ['tooth', 'bucky', 'heptane', 'magnetic'] }
+        { label: 'source', type: 'Select', options: ['tooth', 'bucky', 'heptane', 'magnetic'] }
       ],
       ports: {
         outputs: [
@@ -26,7 +26,10 @@ export default {
       }
     },
     type: [
-      { name: 'Default Transfer Function' }
+      {
+        name: 'Linear Transfer Function',
+        type: 'linear',
+      }
     ]
   },
   Volume: {
@@ -57,6 +60,7 @@ export default {
     type: [
       {
         name: 'Structured Volume',
+        type: 'structured',
         params: [
           { label: 'dimensions', type: 'Vec3i' },
           { label: 'voxelType', type: 'Select', values: ['unchar', 'short', 'ushort', ''] },
@@ -66,6 +70,7 @@ export default {
       },
       {
         name: 'AMR Volume',
+        type: 'AMR',
         params: [
           { label: 'gridOrigin', type: 'Vec3f' },
           { label: 'gridSpacing', type: 'Vec3f' },
@@ -77,6 +82,7 @@ export default {
       },
       {
         name: 'Unstructured Volume',
+        type: 'unstructured',
         params: [
           { label: 'vertices', type: 'vec3if[]' },
           { label: 'field', type: 'intices' },
@@ -94,6 +100,7 @@ export default {
     type: [
       {
         name: 'Triangle Mesh',
+        type: 'triangle',
         params: [
           { label: 'vertex', type: 'Vec3f(a)[]' },
           { label: 'vertex.normal', type: 'Vec3f(a)[]' },
@@ -104,6 +111,7 @@ export default {
       },
       {
         name: 'Spheres',
+        type: 'sphere',
         params: [
           { label: 'radius', type: 'Float' },
           { label: 'spheres', type: '_data' },
@@ -156,6 +164,7 @@ export default {
     type: [
       {
         name: 'Directional Light',
+        type: 'directional',
         params: [
           { label: 'direction', type: 'Vec3f(a)' },
           { label: 'angularDiameter', type: 'Float' }
@@ -163,6 +172,7 @@ export default {
       },
       {
         name: 'Point Light',
+        type: 'point',
         params: [
           { label: 'poition', type: 'Vec3f(a)' },
           { label: 'radius', type: 'Float' },
@@ -170,6 +180,7 @@ export default {
       },
       {
         name: 'Spot Light',
+        type: 'spot',
         params: [
           { label: 'poition', type: 'Vec3f' },
           { label: 'direction', type: 'Vec3f' },
@@ -188,10 +199,10 @@ export default {
       params: [
         { label: 'pos', type: 'Vec3f' },
         { label: 'dir', type: 'Vec3f' },
-        { label: 'up', type: 'Vec3f' },
-        { label: 'nearClip', type: 'Float' },
-        { label: 'imageStart', type: 'Vec2f' },
-        { label: 'imageEnd', type: 'Vec2f' },
+        { label: 'up', type: 'Vec3f', default: [0, 1, 0], max: 1, min: -1 },
+        { label: 'nearClip', type: 'Float', min: 0.0, max: 500, default: 0.0 },
+        /* { label: 'imageStart', type: 'Vec2f' },
+        { label: 'imageEnd', type: 'Vec2f' }, */
       ],
       ports: {
         outputs: [{ name: 'camera', label: 'out' }]
@@ -200,18 +211,24 @@ export default {
     type: [
       {
         name: 'Perspective Camera',
+        type: 'perspective',
         params: [
+          { label: 'stereoMode', type: 'Select', options: [
+            { label: 'no stereo', value: 0 },
+            { label: 'left eye', value: 1 },
+            { label: 'right eye', value: 2 },
+            { label: 'side-by-side', value: 3 }
+          ]},
           { label: 'fovy', type: 'Float' },
-          { label: 'aspect', type: 'Float' },
           { label: 'apertureRadius', type: 'Float' },
           { label: 'foucsDistance', type: 'Float' },
           { label: 'architectural', type: 'Float' },
-          { label: 'stereoMode', type: 'Float' },
           { label: 'interpupillartDistance', type: 'Float' },
         ]
       },
       {
         name: 'Orthographic Camera',
+        type: 'orthographic',
         params: [
           { label: 'height', type: 'Float' },
           { label: 'aspect', type: 'Float' }
@@ -228,28 +245,55 @@ export default {
           { name: 'camera', label: 'in' }
         ],
         outputs: [
-          { name: 'renderer', label: 'out' }
+          { name: 'image', label: 'out' }
         ]
       },
       params: [
-        { name: 'epsilon', type: 'Float' },
-        { name: 'spp', type: 'Int' },
-        { name: 'maxDepth', type: 'Int' },
-        { name: 'minContribution', type: 'Float' },
-        { name: 'varianceThreshold', type: 'Float' },
+        { label: 'epsilon', type: 'Float' },
+        { label: 'spp', type: 'Int' },
+        { label: 'maxDepth', type: 'Int' },
+        { label: 'minContribution', type: 'Float' },
+        { label: 'varianceThreshold', type: 'Float' },
       ]
     },
     type: [
       {
         name: 'SciVis Renderer',
+        type: 'scivis',
         params: [
-          { name: 'shadowsEnabled', type: 'Switch' },
-          { name: 'aoSamples', type: 'Int' },
-          { name: 'aoDistance', type: 'Float' },
-          { name: 'aoTransparencyEnabled', type: 'Switch' },
-          { name: 'oneSidedLighting', type: 'Switch' },
-          { name: 'bgColor', type: 'Vec3f' },
+          { label: 'shadowsEnabled', type: 'Switch' },
+          { label: 'aoSamples', type: 'Int' },
+          { label: 'aoDistance', type: 'Float' },
+          { label: 'aoTransparencyEnabled', type: 'Switch' },
+          { label: 'oneSidedLighting', type: 'Switch' },
+          { label: 'bgColor', type: 'Vec3f' },
           // { name: 'maxDepthTexture', type: '_texture' },
+        ]
+      }
+    ]
+  },
+  Display: {
+    common: {
+      ports: {
+        inputs: [
+          { name: 'image', label: 'in' },
+        ]
+      },
+      params: [
+        { label: 'size', type: 'Vec2i', max: 1024, min: 0, default: [1024, 1024] }
+      ]
+    },
+    type: [
+      {
+        name: 'Image Display',
+        node: 'display',
+        params: []
+      },
+      {
+        name: 'Animation Display',
+        node: 'display',
+        params: [
+          { label: 'frame', type: 'Int' }
         ]
       }
     ]

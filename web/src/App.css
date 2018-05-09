@@ -120,3 +120,16 @@
 .App .srd-port {
   cursor: pointer;
 }
+
+.App .generate {
+  margin: 20px 0;
+}
+
+.App .generate button {
+  background-color: maroon;
+  font-size: 14px;
+}
+
+.App .config-item {
+  margin: 10px 0;
+}

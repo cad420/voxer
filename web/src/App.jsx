@@ -20,6 +20,7 @@ export default class App extends Component {
   handleSelectionChange = (data) => {
     const { entity } = data
     if (data.isSelected) {
+      console.log(entity)
       this.setState({
         current: entity,
         params: entity.extras.params,
@@ -43,6 +44,21 @@ export default class App extends Component {
       }
     })
     current.extras.values[label] = value
+    
+    this.app.displays.forEach(display => {
+      const data = display.extras.values
+      if (data.image && data.image.camera) {
+        const dataset = data.image.model ? (
+          data.image.model.volume ?
+          (
+            data.image.model.volume.dataset ?
+            data.image.model.volume.dataset.source :
+            undefined
+          ) : undefined
+        ) : undefined;
+        display.el.renderImage(dataset, null, null, null, null, data.image.camera, null, data.size)
+      }
+    })
   }
 
   render() {

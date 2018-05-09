@@ -4,6 +4,7 @@
 #include "ospray/ospray_cpp/Geometry.h"
 #include "ospray/ospray_cpp/TransferFunction.h"
 #include "ospray/ospray_cpp/Volume.h"
+#include "third_party/RawReader/RawReader.h"
 
 namespace gensv {
 
@@ -19,6 +20,7 @@ struct LoadedVolume {
   ospray::cpp::TransferFunction tfcn;
   box3f bounds;
   vec3f ghostGridOrigin;
+  box3f worldBounds;
 
   LoadedVolume();
 };
@@ -29,7 +31,7 @@ struct LoadedVolume {
  * Returns the ghostGridOrigin of the volume which may be outside the bounding
  * box, due to the ghost voxels.
  */
-LoadedVolume loadVolume(const FileName &file, const vec3i &dimensions,
+LoadedVolume loadVolume(RawReader &reader, const vec3i &dimensions,
                         const std::string &dtype, const vec2f &valueRange);
 
-}
+} // namespace gensv

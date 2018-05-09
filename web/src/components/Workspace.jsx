@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
-import { DiagramWidget } from 'storm-react-diagrams'
+import VovisDiagramWidget from '../components/diagram/Widget'
+import DisplayNodeModel from '../components/diagram/displayNode/Model'
 import VovisNodeModel from '../components/diagram/node/Model'
 import VovisPortModel from '../components/diagram/port/Model'
 
@@ -23,9 +24,16 @@ export default class Workspace extends Component {
         .getNodes()
     ).length;
 
-    const node = new VovisNodeModel(data.name + ' ' + (nodesCount + 1), '#333');
+    let node = null
+    if (data.node && data.node === 'display') {
+      node = new DisplayNodeModel(data.name + ' ' + (nodesCount + 1), '#333');
+      app.displays.push(node)
+    } else {
+      node = new VovisNodeModel(data.name + ' ' + (nodesCount + 1), '#333');
+    }
+    node.extras.name = data.name
     node.extras.params = data.params
-    node.extras.values = {}
+    node.extras.values = { type: data.type }
     data.params.forEach(param => {
       if (param.default) {
         node.extras.values[param.label] = param.default
@@ -56,7 +64,7 @@ export default class Workspace extends Component {
         onDrop={this.handleDrop}
         onDragOver={this.handleDragOver}
       >
-        <DiagramWidget
+        <VovisDiagramWidget
           ref={diagram => this.diagram = diagram}
           maxNumberPointsPerLink={0}
           diagramEngine={app.getDiagramEngine()}
