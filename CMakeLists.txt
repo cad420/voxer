@@ -7,7 +7,6 @@ IF(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "DEBUG" CACHE STRING "Options: Debug Release RelWithDebInfo." FORCE)
 ENDIF()
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CONFIGURATION_TYPES})
-
 set(OSPRAY_LIB_PATH "/usr/local/lib" CACHE PATH "Path of ospray library.")
 set(OSPRAY_INCLUDE_PATH "/usr/local/include/ospray/" CACHE PATH "Path of ospray header files.")
 set(EMBREE_LIB_PATH "/home/ukabuer/ospray/embree-2.17.2.x86_64.linux/lib/" CACHE PATH "Path of embree library.")
@@ -22,58 +21,59 @@ find_library(
   NAMES ospray ospray_common ospray_mpi_common
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${OSPRAY_LIB}
 )
-
 find_library(
   OSPRAY_LIB_COMMON
   NAMES ospray_common
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${OSPRAY_LIB}
 )
-
 find_library(
   OSPRAY_LIB_MPI
   NAMES ospray_mpi_common
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${OSPRAY_LIB}
 )
-
 find_library(
   MPI_LIB
   NAMES mpi
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${MPI_LIB_PATH}
 )
-
 find_library(
   EMBREE_LIB
   NAMES embree
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${EMBREE_LIB_PATH}
 )
-
 find_library(
   TBB_LIB
   NAMES tbb
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${TBB_LIB_PATH}
 )
-
 find_library(
   Z_LIB
   NAMES z
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${Z_LIB}
 )
-
 find_library(
   SSL_LIB
   NAMES ssl
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${SSL_LIB}
 )
-
 find_library(
   CRYPTO_LIB
   NAMES crypto
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${CRYPTO_LIB}
 )
-
 find_library(
-  POCO_LIB
+  POCO_FOUNDATION_LIB
   NAMES PocoFoundation
+  HINTS "${CMAKE_PREFIX_PATH}/lib" ${POCO_LIB}
+)
+find_library(
+  POCO_NET_LIB
+  NAMES PocoNet
+  HINTS "${CMAKE_PREFIX_PATH}/lib" ${POCO_LIB}
+)
+find_library(
+  POCO_UTIL_LIB
+  NAMES PocoUtil
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${POCO_LIB}
 )
 
@@ -112,8 +112,29 @@ else()
   unset(POCO_LIB_PATH CACHE)
 endif()
 
-file(GLOB_RECURSE rawReader_FILES ${PROJECT_SOURCE_DIR}/third_party/RawReader/*.cpp)
-file(GLOB_RECURSE uWS_FILES ${PROJECT_SOURCE_DIR}/third_party/uWebSockets/*.cpp)
-add_executable(VovisRenderer ParallelRenderer/ParallelRenderer.cpp ParallelRenderer/GenerateSciVis.cpp ${rawReader_FILES} ${uWS_FILES})
-target_include_directories(VovisRenderer PUBLIC ${OSPRAY_INCLUDE_PATH} ${MPI_INCLUDE_PATH} ${POCO_INCLUDE_PATH} ${PROJECT_SOURCE_DIR})
-target_link_libraries(VovisRenderer ${SSL_LIB} ${OSPRAY_LIB} ${OSPRAY_LIB_COMMON} ${OSPRAY_LIB_MPI} ${EMBREE_LIB} ${TBB_LIB} ${MPI_LIB} ${Z_LIB} ${CRYPTO_LIB} ${POCO_LIB})
+file(GLOB_RECURSE VOVIS_FILES ${PROJECT_SOURCE_DIR}/ParallelRenderer/*.cpp)
+file(GLOB_RECURSE RAWREADER_FILES ${PROJECT_SOURCE_DIR}/third_party/RawReader/*.cpp)
+add_executable(VovisRenderer ${VOVIS_FILES} ${RAWREADER_FILES})
+target_include_directories(
+  VovisRenderer
+  PUBLIC
+  ${OSPRAY_INCLUDE_PATH}
+  ${MPI_INCLUDE_PATH}
+  ${POCO_INCLUDE_PATH}
+  ${PROJECT_SOURCE_DIR}
+)
+target_link_libraries(
+  VovisRenderer
+  ${SSL_LIB}
+  ${OSPRAY_LIB}
+  ${OSPRAY_LIB_COMMON}
+  ${OSPRAY_LIB_MPI}
+  ${EMBREE_LIB}
+  ${TBB_LIB}
+  ${MPI_LIB}
+  ${Z_LIB}
+  ${CRYPTO_LIB}
+  ${POCO_FOUNDATION_LIB}
+  ${POCO_NET_LIB}
+  ${POCO_UTIL_LIB}
+)
