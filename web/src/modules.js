@@ -194,48 +194,48 @@ export default {
       { name: 'Ambient Light' },
     ]
   },
-  Camera: {
-    common: {
-      params: [
-        { label: 'pos', type: 'Vec3f' },
-        { label: 'dir', type: 'Vec3f' },
-        { label: 'up', type: 'Vec3f', default: [0, 1, 0], max: 1, min: -1 },
-        { label: 'nearClip', type: 'Float', min: 0.0, max: 500, default: 0.0 },
-        /* { label: 'imageStart', type: 'Vec2f' },
-        { label: 'imageEnd', type: 'Vec2f' }, */
-      ],
-      ports: {
-        outputs: [{ name: 'camera', label: 'out' }]
-      }
-    },
-    type: [
-      {
-        name: 'Perspective Camera',
-        type: 'perspective',
-        params: [
-          { label: 'stereoMode', type: 'Select', options: [
-            { label: 'no stereo', value: 0 },
-            { label: 'left eye', value: 1 },
-            { label: 'right eye', value: 2 },
-            { label: 'side-by-side', value: 3 }
-          ]},
-          { label: 'fovy', type: 'Float' },
-          { label: 'apertureRadius', type: 'Float' },
-          { label: 'foucsDistance', type: 'Float' },
-          { label: 'architectural', type: 'Float' },
-          { label: 'interpupillartDistance', type: 'Float' },
-        ]
-      },
-      {
-        name: 'Orthographic Camera',
-        type: 'orthographic',
-        params: [
-          { label: 'height', type: 'Float' },
-          { label: 'aspect', type: 'Float' }
-        ]
-      }
-    ]
-  },
+  // Camera: {
+  //   common: {
+  //     params: [
+  //       { label: 'pos', type: 'Vec3f' },
+  //       { label: 'dir', type: 'Vec3f' },
+  //       { label: 'up', type: 'Vec3f', default: [0, 1, 0], max: 1, min: -1 },
+  //       { label: 'nearClip', type: 'Float', min: 0.0, max: 500, default: 0.0 },
+  //       /* { label: 'imageStart', type: 'Vec2f' },
+  //       { label: 'imageEnd', type: 'Vec2f' }, */
+  //     ],
+  //     ports: {
+  //       outputs: [{ name: 'camera', label: 'out' }]
+  //     }
+  //   },
+  //   type: [
+  //     {
+  //       name: 'Perspective Camera',
+  //       type: 'perspective',
+  //       params: [
+  //         { label: 'stereoMode', type: 'Select', options: [
+  //           { label: 'no stereo', value: 0 },
+  //           { label: 'left eye', value: 1 },
+  //           { label: 'right eye', value: 2 },
+  //           { label: 'side-by-side', value: 3 }
+  //         ]},
+  //         { label: 'fovy', type: 'Float' },
+  //         { label: 'apertureRadius', type: 'Float' },
+  //         { label: 'foucsDistance', type: 'Float' },
+  //         { label: 'architectural', type: 'Float' },
+  //         { label: 'interpupillartDistance', type: 'Float' },
+  //       ]
+  //     },
+  //     {
+  //       name: 'Orthographic Camera',
+  //       type: 'orthographic',
+  //       params: [
+  //         { label: 'height', type: 'Float' },
+  //         { label: 'aspect', type: 'Float' }
+  //       ]
+  //     }
+  //   ]
+  // },
   Renderer: {
     common: {
       ports: {
@@ -280,7 +280,7 @@ export default {
         ]
       },
       params: [
-        { label: 'size', type: 'Vec2i', max: 1024, min: 0, default: [1024, 1024] }
+        { label: 'size', type: 'Vec2i', max: 1024, min: 0, default: [64, 64] }
       ]
     },
     type: [

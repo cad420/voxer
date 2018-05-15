@@ -16,9 +16,9 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values, gensv::LoadedVo
 
   auto &cameraData = params["camera"];
   auto cameraType = cameraData.FindMember("type")->value.GetString();
-  auto &cameraPosData = cameraData.FindMember("position")->value;
+  auto &cameraPosData = cameraData.FindMember("pos")->value;
   auto &cameraUpData = cameraData.FindMember("up")->value;
-  auto camGaze = ospcommon::center(volume.worldBounds);
+  auto &cameraDirData = cameraData.FindMember("dir")->value;
   auto &imageData = params["image"];
   ospcommon::vec2i imgSize{imageData["width"].GetInt(),
                            imageData["height"].GetInt()};
@@ -28,6 +28,9 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values, gensv::LoadedVo
   ospcommon::vec3f camUp{cameraUpData.FindMember("x")->value.GetFloat(),
                          cameraUpData.FindMember("y")->value.GetFloat(),
                          cameraUpData.FindMember("z")->value.GetFloat()};
+  ospcommon::vec3f camDir{cameraDirData.FindMember("x")->value.GetFloat(),
+                         cameraDirData.FindMember("y")->value.GetFloat(),
+                         cameraDirData.FindMember("z")->value.GetFloat()};
   if (extraParams) {
     auto params = *extraParams;
     if (params.find("width") != params.end()) {
@@ -42,14 +45,23 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values, gensv::LoadedVo
     if (params.find("pos.y") != params.end()) {
       camPos.y = stoi(params["pos.y"]);
     }
-    if (params.find("pos.z") != params.end()) {
-      camPos.z = stoi(params["pos.z"]);
+    if (params.find("dir.z") != params.end()) {
+      camDir.z = stoi(params["dir.z"]);
+    }
+    if (params.find("dir.x") != params.end()) {
+      camDir.x = stoi(params["dir.x"]);
+    }
+    if (params.find("dir.y") != params.end()) {
+      camDir.y = stoi(params["dir.y"]);
+    }
+    if (params.find("dir.z") != params.end()) {
+      camDir.z = stoi(params["dir.z"]);
     }
   }
   ospray::cpp::Camera camera(cameraType);
   camera.set("aspect", (float)imgSize.x / (float)imgSize.y);
   camera.set("pos", camPos);
-  camera.set("dir", camGaze - camPos);
+  camera.set("dir", camDir);
   camera.set("up", camUp);
   camera.commit();
 

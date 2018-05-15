@@ -6,7 +6,8 @@
     "react": "^16.3.1",
     "react-dom": "^16.3.1",
     "react-scripts": "1.1.4",
-    "storm-react-diagrams": "^5.1.1"
+    "storm-react-diagrams": "^5.1.1",
+    "three": "^0.92.0"
   },
   "scripts": {
     "start": "react-scripts start",

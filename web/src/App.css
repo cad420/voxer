@@ -133,3 +133,12 @@
 .App .config-item {
   margin: 10px 0;
 }
+
+.App .rendered-image {
+  width: 100%;
+  cursor: -webkit-grab;
+}
+
+.App .rendered-image.interacting {
+  cursor: -webkit-grabbing;
+}

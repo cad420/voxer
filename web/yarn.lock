@@ -6600,6 +6600,10 @@ text-table@0.2.0, text-table@~0.2.0:
   version "0.2.0"
   resolved "http://registry.npm.taobao.org/text-table/download/text-table-0.2.0.tgz#7f5ee823ae805207c00af2df4a84ec3fcfa570b4"
 
+three@^0.92.0:
+  version "0.92.0"
+  resolved "http://registry.npm.taobao.org/three/download/three-0.92.0.tgz#8d3d1f5af890e62da7f4cb45d20c09fa51057dcd"
+
 throat@^3.0.0:
   version "3.2.0"
   resolved "http://registry.npm.taobao.org/throat/download/throat-3.2.0.tgz#50cb0670edbc40237b9e347d7e1f88e4620af836"

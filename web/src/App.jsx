@@ -35,7 +35,7 @@ export default class App extends Component {
     }
   }
 
-  handleValueChange = (label, value) => {
+  handleConfigChange = (label, value) => {
     const { current, values } = this.state
     this.setState({
       values: {
@@ -44,20 +44,22 @@ export default class App extends Component {
       }
     })
     current.extras.values[label] = value
-    
+    this.update()
+  }
+
+  update = () => {
     this.app.displays.forEach(display => {
       const data = display.extras.values
-      if (data.image && data.image.camera) {
-        const dataset = data.image.model ? (
-          data.image.model.volume ?
-          (
-            data.image.model.volume.dataset ?
-            data.image.model.volume.dataset.source :
-            undefined
-          ) : undefined
-        ) : undefined;
-        display.el.renderImage(dataset, null, null, null, null, data.image.camera, null, data.size)
-      }
+      if (!data.image) return
+      const dataset = data.image.model ? (
+        data.image.model.volume ?
+        (
+          data.image.model.volume.dataset ?
+          data.image.model.volume.dataset.source :
+          undefined
+        ) : undefined
+      ) : undefined;
+      display.el.renderImage(dataset, null, null, null, null, data.camera, null, data.size)
     })
   }
 
@@ -75,7 +77,7 @@ export default class App extends Component {
             current={current}
             params={params}
             values={values}
-            onChange={this.handleValueChange}
+            onChange={this.handleConfigChange}
           />
         </div>
       </div>
