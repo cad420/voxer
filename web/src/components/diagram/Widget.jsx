@@ -80,7 +80,10 @@ export default class VovisDiagramWidget extends DiagramWidget {
 					} else {
             const source = sourcePort.in ? targetPort : sourcePort
             const target = sourcePort.in ? sourcePort : targetPort
-            target.parent.extras.values[source.name] = source.parent.extras.values
+						target.parent.extras.values[source.name] = source.parent.extras.values
+						if (target.parent.type === 'display') {
+							target.parent.el.update()
+						}
           }
 				}
 			});

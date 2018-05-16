@@ -42,7 +42,7 @@ LoadedVolume::LoadedVolume() : volume(nullptr), tfcn("piecewise_linear") {
   const std::vector<vec3f> colors{
       vec3f(0, 0, 0.56), vec3f(0, 0, 1), vec3f(0, 1, 1),  vec3f(0.5, 1, 0.5),
       vec3f(1, 1, 0),    vec3f(1, 0, 0), vec3f(0.5, 0, 0)};
-  const std::vector<float> opacities{0.0001f, 1.0f};
+  const std::vector<float> opacities{0.0001f, 1.0f / 6.0f, 2.0f / 6.0f, 3.0f / 6.0f, 4.0f / 6.0f, 5.0f / 6.0f, 1.0f};
   ospray::cpp::Data colorsData(colors.size(), OSP_FLOAT3, colors.data());
   ospray::cpp::Data opacityData(opacities.size(), OSP_FLOAT, opacities.data());
   colorsData.commit();

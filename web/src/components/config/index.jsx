@@ -6,6 +6,7 @@ import Vec3i from './Vec3i'
 import Vec2f from './Vec2f'
 import Vec3f from './Vec3f'
 import Select from './Select'
+import TransferFunction from './TransferFunction'
 
 export default {
   Switch,
@@ -15,5 +16,6 @@ export default {
   Vec2i,
   Vec3i,
   Vec2f,
-  Vec3f
+  Vec3f,
+  TransferFunction
 }

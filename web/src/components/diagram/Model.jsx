@@ -6,7 +6,9 @@ export default class VovisDiagramModel extends DiagramModel {
       entityRemoved: () => {
         const source = link.sourcePort.in ? link.targetPort : link.sourcePort
         const target = link.sourcePort.in ? link.sourcePort : link.targetPort
-        if (target.parent.extras && target.parent.extras.values) target.parent.extras.values[source.name] = null
+        if (target && target.parent.extras && target.parent.extras.values) {
+          target.parent.extras.values[source.name] = null
+        }
         this.removeLink(link);
       }
     });

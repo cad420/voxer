@@ -14,7 +14,7 @@ export default class App extends Component {
       params: {},
       values: {}
     }
-    this.app = new Manager(this.handleSelectionChange);
+    window.app = this.app = new Manager(this.handleSelectionChange);
   }
 
   handleSelectionChange = (data) => {

@@ -11,13 +11,37 @@ export default {
       }
     },
     type: [
-      { name: 'Default Dataset' }
+      { name: 'Default Dataset' },
+      { name: 'Multivariate Scalar' },
+      { name: 'Time-varying Scalar' },
+    ]
+  },
+  Processing: {
+    common: {
+      params: [
+        
+      ],
+      ports: {
+        outputs: [
+          { name: 'transferfunction', label: 'out' }
+        ]
+      }
+    },
+    type: [
     ]
   },
   TransferFunction: {
     common: {
       params: [
-        { label: 'TF', type: 'transfer' }
+        { label: 'TF', type: 'TransferFunction', rangeMax: 100, rangeMin: 0, default: [
+          { x: 0, y: 0, color: 'rgb(0, 0, 142)' },
+          { x: 1/6, y: 1/6, color: 'rgb(0, 0, 255)' },
+          { x: 2/6, y: 2/6, color: 'rgb(0, 255, 255)' },
+          { x: 3/6, y: 3/6, color: 'rgb(128, 255, 128)' },
+          { x: 4/6, y: 4/6, color: 'rgb(255, 255, 0)' },
+          { x: 5/6, y: 5/6, color: 'rgb(255, 0, 255)' },
+          { x: 1, y: 1, color: 'rgb(128, 0, 0)' }
+        ] }
       ],
       ports: {
         outputs: [
@@ -27,7 +51,7 @@ export default {
     },
     type: [
       {
-        name: 'Linear Transfer Function',
+        name: 'Linear Piecewise',
         type: 'linear',
       }
     ]
@@ -42,7 +66,7 @@ export default {
         { label: 'adaptiveSampling', type: 'Switch', default: true },
         { label: 'adaptiveScalar', type: 'Float', default: 15 },
         { label: 'adaptiveMaxSamplingRate', type: 'Float', default: 2 },
-        { label: 'samplingRate', type: 'Float', default: 0.125 },
+        { label: 'samplingRate', type: 'Float', default: 0.125, min: 0.01, max: 20 },
         { label: 'specular', type: 'Vec3f', default: [0.3, 0.3, 0.3] },
         { label: 'volumeClippingBoxLower', type: 'Vec3f' },
         { label: 'volumeClippingBoxUpper', type: 'Vec3f' }
@@ -150,7 +174,7 @@ export default {
     },
     type: [{ name: 'Default Model' }]
   },
-  Lights: {
+  /* Lights: {
     common: {
       ports: {
         outputs: [{ name: 'light', label: 'out' }]
@@ -193,7 +217,7 @@ export default {
       { name: 'HDRI Light' },
       { name: 'Ambient Light' },
     ]
-  },
+  }, */
   // Camera: {
   //   common: {
   //     params: [
@@ -241,8 +265,8 @@ export default {
       ports: {
         inputs: [
           { name: 'model', label: 'in' },
-          { name: 'lights', label: 'in' },
-          { name: 'camera', label: 'in' }
+          // { name: 'lights', label: 'in' },
+          // { name: 'camera', label: 'in' }
         ],
         outputs: [
           { name: 'image', label: 'out' }

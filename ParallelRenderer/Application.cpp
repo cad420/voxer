@@ -99,6 +99,7 @@ public:
     Application &app = Application::instance();
     try {
       WebSocket ws(request, response);
+      ws.setReceiveTimeout(Poco::Timespan(0, 2, 0, 0, 0));
       app.logger().information("WebSocket connection established.");
       int flags;
       int n;
@@ -178,10 +179,10 @@ public:
   }
 };
 
-class WebSocketServer : public ServerApplication {
+class VoVis : public ServerApplication {
 public:
-  WebSocketServer() : _helpRequested(false) {}
-  ~WebSocketServer() {}
+  VoVis() : _helpRequested(false) {}
+  ~VoVis() {}
 
 protected:
   void initialize(Application &self) {
@@ -250,4 +251,4 @@ private:
   bool _helpRequested;
 };
 
-POCO_SERVER_MAIN(WebSocketServer)
+POCO_SERVER_MAIN(VoVis)

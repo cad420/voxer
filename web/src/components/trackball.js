@@ -87,7 +87,6 @@ function TrackballControls(object, element) {
       var box = this.element.getBoundingClientRect();
       // adjustments come from similar code in the jquery offset() function
       var d = this.element.ownerDocument.documentElement;
-      console.log(box, d, window.pageXOffset)
       this.screen.left = box.left + window.pageXOffset - d.clientLeft;
       this.screen.top = box.top + window.pageYOffset - d.clientTop;
       this.screen.width = box.width;
@@ -240,6 +239,8 @@ function TrackballControls(object, element) {
     return function panCamera() {
 
       mouseChange.copy( _panEnd ).sub( _panStart );
+      // new
+      mouseChange.y = -mouseChange.y
 
       if ( mouseChange.lengthSq() ) {
 

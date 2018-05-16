@@ -16,6 +16,7 @@ void ConfigManager::load(string filepath) {
   if (!configs.IsObject()) {
     throw string("Invalid data file!");
   }
+  filestream.close();
 }
 
 rapidjson::Value &ConfigManager::get(string id) {
@@ -27,10 +28,12 @@ rapidjson::Value &ConfigManager::get(string id) {
 
 string ConfigManager::save(rapidjson::Value &params) {
   auto id = UUID.createRandom().toString();
-  auto rpname = rapidjson::StringRef(id.c_str());
-  configs.GetObject().AddMember(rpname, params, configs.GetAllocator());
+  configs.GetObject().AddMember(
+      rapidjson::Value(id.c_str(), configs.GetAllocator()).Move(), params,
+      configs.GetAllocator());
   ofstream ofs("configures.json");
   rapidjson::OStreamWrapper osw(ofs);
   rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
   configs.Accept(writer);
+  return id;
 }

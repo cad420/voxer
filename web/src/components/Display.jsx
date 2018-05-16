@@ -31,25 +31,51 @@ export default class extends Component {
           data: URL.createObjectURL(blob)
         })
       } else {
-        this.setState({ url: window.location.href + msg.data })
+        this.setState({ url: window.location.hostname + ':3000/' + msg.data })
       }
     };
+    this.ws.onopen = this.update
     const loop = () => {
       window.requestAnimationFrame(loop)
       this.controls && this.controls.update()
     }
     loop()
-    this.image.addEventListener('mousedown', () => {
-      this.setState({ interacting: true })
-    })
-    window.addEventListener('mouseup', () => {
-      this.setState({ interacting: false })
-    })
+    this.image.addEventListener('mousedown', this.setInteracting)
+    this.image.addEventListener('mouseup', this.unsetInteracting)
+    window.addEventListener('mouseup', this.unsetInteracting)
+  }
+
+  setInteracting = () => {
+    this.setState({ interacting: true })
+  }
+
+  unsetInteracting = () => {
+    const { interacting } = this.state
+    if (!interacting) return
+    this.setState({ interacting: false })
   }
 
   componentWillUnmount() {
     this.ws.close()
     clearInterval(this.interval)
+    this.image.removeEventListener('mousedown', this.setInteracting)
+    this.image.removeEventListener('mouseup', this.unsetInteracting)
+    window.removeEventListener('mouseup', this.unsetInteracting)
+  }
+
+  update = () => {
+    const { node } = this.props
+    const data = node.extras.values
+    if (!Object.keys(node.ports.image.links).length) return
+    const dataset = data.image.model ? (
+      data.image.model.volume ?
+        (
+          data.image.model.volume.dataset ?
+            data.image.model.volume.dataset.source :
+            undefined
+        ) : undefined
+    ) : undefined;
+    this.renderImage(dataset, null, null, null, null, data.camera, null, data.size)
   }
 
   componentDidUpdate() {
@@ -72,11 +98,11 @@ export default class extends Component {
         this.camera.getWorldDirection(data.camera.dir)
         const dataset = data.image.model ? (
           data.image.model.volume ?
-          (
-            data.image.model.volume.dataset ?
-            data.image.model.volume.dataset.source :
-            undefined
-          ) : undefined
+            (
+              data.image.model.volume.dataset ?
+                data.image.model.volume.dataset.source :
+                undefined
+            ) : undefined
         ) : undefined;
         this.renderImage(dataset, null, null, null, null, data.camera, null, data.size)
       })
@@ -86,7 +112,7 @@ export default class extends Component {
   renderImage = (dataset, transferFunction, volume, geometries, model, camera, lights, image) => {
     if (!dataset || /* !transferFunction || !volume || !geometries || !model || */ !camera || /* !lights || */ !image) return
     if (!camera.type || !camera.pos || !camera.up) return
-    this.sendRequest('render', dataset, camera, image)  
+    this.sendRequest('render', dataset, camera, image)
   }
 
   sendRequest = (op, dataset, camera, image) => {
@@ -148,7 +174,7 @@ export default class extends Component {
           />
         </div>
         <div className="center generate"><button onClick={this.generate}>Generate Configure</button></div>
-        {url.length > 0 && <div className="center">{url}</div>}
+        {url.length > 0 && <div className="center image-url" onMouseDown={e => e.stopPropagation()}>{url}</div>}
       </div>
     )
   }
