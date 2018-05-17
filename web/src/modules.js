@@ -12,11 +12,11 @@ export default {
     },
     type: [
       { name: 'Default Dataset' },
-      { name: 'Multivariate Scalar' },
+      // { name: 'Multivariate Scalar' },
       { name: 'Time-varying Scalar' },
     ]
   },
-  Processing: {
+  'Volume Processing': {
     common: {
       params: [
         
@@ -146,7 +146,7 @@ export default {
           { label: 'texcoord', type: 'vec2f[]' },
         ]
       },
-      /* {
+      {
         name: 'Cylinders',
       },
       {
@@ -157,7 +157,7 @@ export default {
       },
       {
         name: 'Slices'
-      } */
+      }
     ],
   },
   Model: {

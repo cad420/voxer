@@ -105,7 +105,6 @@ public:
       int n;
       do {
         n = ws.receiveFrame(buffer, sizeof(buffer), flags);
-        app.logger().information(format("Frame of length %d received.", n));
         if ((flags & WebSocket::FRAME_OP_BITMASK) == WebSocket::FRAME_OP_PING) {
           ws.sendFrame(buffer, n, WebSocket::FRAME_OP_PONG);
         }

@@ -40,6 +40,7 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
   volume.tfcn.set("colors", colorsData);
   volume.tfcn.set("opacities", opacityData);
   volume.tfcn.commit();
+  volume.volume.set("voxelRange", valueRange);
   volume.volume.commit();
 
   ospray::cpp::Model world;
