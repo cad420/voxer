@@ -187,21 +187,22 @@ public:
 protected:
   void initialize(Application &self) {
     loadConfiguration();
-    int argc = 1;
-    OSPError init_error = ospInit(&argc, nullptr);
+    int argc = self.argv().size();
+    vector<const char *> argvec;
+    argvec.reserve(argc);
+    for (auto &arg : self.argv()) {
+      if (arg == "--mpi") {
+        argvec.push_back("--osp:mpi");
+      } else {
+        argvec.push_back(const_cast<char *>(arg.c_str()));
+      }
+    }
+    const char **argv = &argvec[0];
+    OSPError init_error = ospInit(&argc, argv);
     if (init_error != OSP_NO_ERROR) {
       logger().error("OSP Error");
       exit(1);
     }
-    try {
-      auto filepath = config().find(string("datafile")).get();
-      datasets.load(string("datasets.json"));
-      configs.load(string("configures.json"));
-    } catch (string &exc) {
-      logger().error(exc);
-      exit(1);
-    }
-    logger().information(to_string(datasets.size()) + " dataset loaded.");
     ServerApplication::initialize(self);
   }
 
@@ -209,7 +210,10 @@ protected:
 
   void defineOptions(OptionSet &options) {
     ServerApplication::defineOptions(options);
-
+    options.addOption(
+        Option("mpi", "", "OSPRay MPI Offload Rendering Mode.")
+            .required(false)
+            .repeatable(false));
     options.addOption(
         Option("help", "h",
                "display help information on command line arguments")
@@ -236,6 +240,15 @@ protected:
     if (_helpRequested) {
       displayHelp();
     } else {
+      try {
+        auto filepath = config().find(string("datafile")).get();
+        datasets.load(string("datasets.json"));
+        configs.load(string("configures.json"));
+      } catch (string &exc) {
+        logger().error(exc);
+        exit(1);
+      }
+      logger().information(to_string(datasets.size()) + " dataset loaded.");
       auto port = (unsigned short)config().getInt("WebSocketServer.port", 3000);
       ServerSocket svs(port);
       HTTPServer server(new RequestHandlerFactory, svs, new HTTPServerParams);

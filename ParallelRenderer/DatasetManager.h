@@ -1,3 +1,4 @@
+#pragma once
 #include "GenerateSciVis.h"
 #include <map>
 #include <string>

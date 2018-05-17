@@ -38,18 +38,7 @@ vec3i computeGrid(int num) {
   return grid;
 }
 
-LoadedVolume::LoadedVolume() : volume(nullptr), tfcn("piecewise_linear") {
-  const std::vector<vec3f> colors{
-      vec3f(0, 0, 0.56), vec3f(0, 0, 1), vec3f(0, 1, 1),  vec3f(0.5, 1, 0.5),
-      vec3f(1, 1, 0),    vec3f(1, 0, 0), vec3f(0.5, 0, 0)};
-  const std::vector<float> opacities{0.0001f, 1.0f / 6.0f, 2.0f / 6.0f, 3.0f / 6.0f, 4.0f / 6.0f, 5.0f / 6.0f, 1.0f};
-  ospray::cpp::Data colorsData(colors.size(), OSP_FLOAT3, colors.data());
-  ospray::cpp::Data opacityData(opacities.size(), OSP_FLOAT, opacities.data());
-  colorsData.commit();
-  opacityData.commit();
-  tfcn.set("colors", colorsData);
-  tfcn.set("opacities", opacityData);
-}
+LoadedVolume::LoadedVolume() : volume(nullptr), tfcn("piecewise_linear") {}
 
 enum GhostFace {
   NEITHER_FACE = 0,
@@ -88,9 +77,8 @@ size_t sizeForDtype(const std::string &dtype) {
   return 0;
 }
 
-LoadedVolume loadVolume(RawReader &reader,
-                        const vec3i &dimensions, const std::string &dtype,
-                        const vec2f &valueRange) {
+LoadedVolume loadVolume(RawReader &reader, const vec3i &dimensions,
+                        const std::string &dtype) {
   auto numRanks = static_cast<float>(mpicommon::numGlobalRanks());
   auto myRank = mpicommon::globalRank();
   if (numRanks == -1)
@@ -99,8 +87,6 @@ LoadedVolume loadVolume(RawReader &reader,
     myRank = 0;
 
   LoadedVolume vol;
-  vol.tfcn.set("valueRange", valueRange);
-  vol.tfcn.commit();
 
   const vec3sz grid = vec3sz(computeGrid(numRanks));
   const vec3sz brickDims = vec3sz(dimensions) / grid;
@@ -137,7 +123,6 @@ LoadedVolume loadVolume(RawReader &reader,
   reader.readRegion(brickId * brickDims - vec3sz(ghostOffset), vec3sz(fullDims),
                     volumeData.data());
   vol.volume.setRegion(volumeData.data(), vec3i(0), vec3i(fullDims));
-  vol.volume.commit();
 
   vol.bounds = box3f(gridOrigin, gridOrigin + vec3f(brickDims));
   return vol;

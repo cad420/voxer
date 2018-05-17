@@ -59,7 +59,10 @@ export default class App extends Component {
           undefined
         ) : undefined
       ) : undefined;
-      display.el.renderImage(dataset, null, null, null, null, data.camera, null, data.size)
+      if (!dataset) return
+      if (!data.image.model.volume.transferfunction) return
+      const tfcn = data.image.model.volume.transferfunction.tfcn
+      display.el.renderImage(dataset, null, null, null, null, data.camera, null, data.size, tfcn)
     })
   }
 

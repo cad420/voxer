@@ -32,6 +32,6 @@ struct LoadedVolume {
  * box, due to the ghost voxels.
  */
 LoadedVolume loadVolume(RawReader &reader, const vec3i &dimensions,
-                        const std::string &dtype, const vec2f &valueRange);
+                        const std::string &dtype);
 
 } // namespace gensv

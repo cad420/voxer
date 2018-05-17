@@ -1,3 +1,4 @@
+#pragma once
 #include "third_party/rapidjson/document.h"
 #include "third_party/rapidjson/istreamwrapper.h"
 #include "third_party/rapidjson/ostreamwrapper.h"

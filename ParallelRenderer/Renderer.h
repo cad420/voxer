@@ -1,4 +1,6 @@
+#pragma once
 #include "ParallelRenderer/GenerateSciVis.h"
+#include "ParallelRenderer/DatasetManager.h"
 #include "third_party/rapidjson/document.h"
 #include <map>
 #include <string>

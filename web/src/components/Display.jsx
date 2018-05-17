@@ -75,7 +75,9 @@ export default class extends Component {
             undefined
         ) : undefined
     ) : undefined;
-    this.renderImage(dataset, null, null, null, null, data.camera, null, data.size)
+    if (!data.image.model.volume.transferfunction) return
+    const tfcn = data.image.model.volume.transferfunction.tfcn
+    this.renderImage(dataset, null, null, null, null, data.camera, null, data.size, tfcn)
   }
 
   componentDidUpdate() {
@@ -104,18 +106,20 @@ export default class extends Component {
                 undefined
             ) : undefined
         ) : undefined;
-        this.renderImage(dataset, null, null, null, null, data.camera, null, data.size)
+        if (!data.image.model.volume.transferfunction) return
+        const tfcn = data.image.model.volume.transferfunction.tfcn
+        this.renderImage(dataset, null, null, null, null, data.camera, null, data.size, tfcn)
       })
     }
   }
 
-  renderImage = (dataset, transferFunction, volume, geometries, model, camera, lights, image) => {
-    if (!dataset || /* !transferFunction || !volume || !geometries || !model || */ !camera || /* !lights || */ !image) return
+  renderImage = (dataset, transferFunction, volume, geometries, model, camera, lights, image, tfcn) => {
+    if (!dataset || /* !transferFunction || !volume || !geometries || !model || */ !camera || /* !lights || */ !image || !tfcn) return
     if (!camera.type || !camera.pos || !camera.up) return
-    this.sendRequest('render', dataset, camera, image)
+    this.sendRequest('render', dataset, camera, image, tfcn)
   }
 
-  sendRequest = (op, dataset, camera, image) => {
+  sendRequest = (op, dataset, camera, image, tfcn) => {
     this.ws.send(JSON.stringify({
       operation: op,
       params: {
@@ -123,6 +127,10 @@ export default class extends Component {
         image: {
           width: image[0] || 1024,
           height: image[1] || 768
+        },
+        tfcn: {
+          colors: tfcn.map(p => p.color),
+          opacities: tfcn.map(p => p.y)
         },
         camera: {
           type: camera.type,
@@ -145,6 +153,7 @@ export default class extends Component {
       }
     }))
   }
+
   generate = () => {
     const data = this.props.node.extras.values;
     const dataset = data.image.model ? (
@@ -159,7 +168,8 @@ export default class extends Component {
     const image = data.size;
     if (!dataset || /* !transferFunction || !volume || !geometries || !model || */ !camera || /* !lights || */ !image) return
     if (!camera.type || !camera.pos || !camera.up) return
-    this.sendRequest('generate', dataset, camera, image)
+    const tfcn = data.image.model.volume.transferfunction.tfcn
+    this.sendRequest('generate', dataset, camera, image, tfcn)
   }
 
   render() {

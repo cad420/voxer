@@ -1,6 +1,6 @@
 import Emitter from '../emitter'
 
-function pointBuilder(x, y, color = '#000') {
+function pointBuilder(x, y, color = '#000000') {
   return { x, y, color };
 }
 
@@ -192,7 +192,7 @@ export default class LinearPieceWiseEditor extends Emitter {
     stroke = 2,
     color = '#000000',
     activePointColor = '#EE3333',
-    fillColor = '#eee',
+    fillColor = '#EEEEEE',
   } = {}) {
     this.radius = radius;
     this.stroke = stroke;

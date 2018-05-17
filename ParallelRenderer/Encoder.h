@@ -1,3 +1,4 @@
+#pragma once
 #include "ospray/ospcommon/vec.h"
 #include <vector>
 #include <string>

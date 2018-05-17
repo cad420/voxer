@@ -33,14 +33,14 @@ export default {
   TransferFunction: {
     common: {
       params: [
-        { label: 'TF', type: 'TransferFunction', rangeMax: 100, rangeMin: 0, default: [
-          { x: 0, y: 0, color: 'rgb(0, 0, 142)' },
-          { x: 1/6, y: 1/6, color: 'rgb(0, 0, 255)' },
-          { x: 2/6, y: 2/6, color: 'rgb(0, 255, 255)' },
-          { x: 3/6, y: 3/6, color: 'rgb(128, 255, 128)' },
-          { x: 4/6, y: 4/6, color: 'rgb(255, 255, 0)' },
-          { x: 5/6, y: 5/6, color: 'rgb(255, 0, 255)' },
-          { x: 1, y: 1, color: 'rgb(128, 0, 0)' }
+        { label: 'tfcn', type: 'TransferFunction', rangeMax: 100, rangeMin: 0, default: [
+          { x: 0, y: 0, color: '#00008e' },
+          { x: 1/6, y: 1/6, color: '#0000ff' },
+          { x: 2/6, y: 2/6, color: '#00ffff' },
+          { x: 3/6, y: 3/6, color: '#80ff80' },
+          { x: 4/6, y: 4/6, color: '#ffff00' },
+          { x: 5/6, y: 5/6, color: '#ff00ff' },
+          { x: 1, y: 1, color: '#800000' }
         ] }
       ],
       ports: {
@@ -218,48 +218,46 @@ export default {
       { name: 'Ambient Light' },
     ]
   }, */
-  // Camera: {
-  //   common: {
-  //     params: [
-  //       { label: 'pos', type: 'Vec3f' },
-  //       { label: 'dir', type: 'Vec3f' },
-  //       { label: 'up', type: 'Vec3f', default: [0, 1, 0], max: 1, min: -1 },
-  //       { label: 'nearClip', type: 'Float', min: 0.0, max: 500, default: 0.0 },
-  //       /* { label: 'imageStart', type: 'Vec2f' },
-  //       { label: 'imageEnd', type: 'Vec2f' }, */
-  //     ],
-  //     ports: {
-  //       outputs: [{ name: 'camera', label: 'out' }]
-  //     }
-  //   },
-  //   type: [
-  //     {
-  //       name: 'Perspective Camera',
-  //       type: 'perspective',
-  //       params: [
-  //         { label: 'stereoMode', type: 'Select', options: [
-  //           { label: 'no stereo', value: 0 },
-  //           { label: 'left eye', value: 1 },
-  //           { label: 'right eye', value: 2 },
-  //           { label: 'side-by-side', value: 3 }
-  //         ]},
-  //         { label: 'fovy', type: 'Float' },
-  //         { label: 'apertureRadius', type: 'Float' },
-  //         { label: 'foucsDistance', type: 'Float' },
-  //         { label: 'architectural', type: 'Float' },
-  //         { label: 'interpupillartDistance', type: 'Float' },
-  //       ]
-  //     },
-  //     {
-  //       name: 'Orthographic Camera',
-  //       type: 'orthographic',
-  //       params: [
-  //         { label: 'height', type: 'Float' },
-  //         { label: 'aspect', type: 'Float' }
-  //       ]
-  //     }
-  //   ]
-  // },
+  /* Camera: {
+    common: {
+      params: [
+        { label: 'pos', type: 'Vec3f' },
+        { label: 'dir', type: 'Vec3f' },
+        { label: 'up', type: 'Vec3f', default: [0, 1, 0], max: 1, min: -1 },
+        { label: 'nearClip', type: 'Float', min: 0.0, max: 500, default: 0.0 },
+      ],
+      ports: {
+        outputs: [{ name: 'camera', label: 'out' }]
+      }
+    },
+    type: [
+      {
+        name: 'Perspective Camera',
+        type: 'perspective',
+        params: [
+          { label: 'stereoMode', type: 'Select', options: [
+            { label: 'no stereo', value: 0 },
+            { label: 'left eye', value: 1 },
+            { label: 'right eye', value: 2 },
+            { label: 'side-by-side', value: 3 }
+          ]},
+          { label: 'fovy', type: 'Float' },
+          { label: 'apertureRadius', type: 'Float' },
+          { label: 'foucsDistance', type: 'Float' },
+          { label: 'architectural', type: 'Float' },
+          { label: 'interpupillartDistance', type: 'Float' },
+        ]
+      },
+      {
+        name: 'Orthographic Camera',
+        type: 'orthographic',
+        params: [
+          { label: 'height', type: 'Float' },
+          { label: 'aspect', type: 'Float' }
+        ]
+      }
+    ]
+  }, */
   Renderer: {
     common: {
       ports: {
