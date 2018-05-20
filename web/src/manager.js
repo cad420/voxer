@@ -4,14 +4,15 @@ import VovisNodeFactory from './components/diagram/node/Factory'
 import VovisPortFactory from './components/diagram/port/Factory'
 import VovisLinkFactory from './components/diagram/link/Factory'
 import DisplayNodeFactory from './components/diagram/displayNode/Factory'
+import Emitter from './components/emitter'
 import save from './save'
 
-export default class Manager {
+export default class Manager extends Emitter {
 	constructor(onSelectionChanged) {
+		super();
 		this.diagramEngine = new DiagramEngine();
 		this.displays = [];
 		this.diagramEngine.installDefaultFactories();
-		this.onSelectionChanged = onSelectionChanged;
 		this.newModel();
 	}
 
@@ -23,7 +24,9 @@ export default class Manager {
 		this.diagramEngine.registerLinkFactory(new VovisLinkFactory());
 		this.diagramEngine.registerPortFactory(new VovisPortFactory());
 
-		this.activeModel.deSerializeDiagram(JSON.parse(save), this.diagramEngine)
+		if (save.length > 0) {
+			this.activeModel.deSerializeDiagram(JSON.parse(save), this.diagramEngine)
+		}
 
 		const nodes = this.activeModel.getNodes()
 		Object.keys(nodes).forEach(id => {
@@ -31,9 +34,13 @@ export default class Manager {
 				this.displays.push(nodes[id])
 			}
 			nodes[id].addListener({
-				selectionChanged: this.onSelectionChanged
+				selectionChanged: this.onSelectionChanged 
 			})
 		})
+	}
+
+	onSelectionChanged = data => {
+		this.emit('selectionChanged', data)
 	}
 
 	getActiveDiagram() {

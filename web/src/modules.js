@@ -1,33 +1,60 @@
 export default {
   Dataset: {
     common: {
-      params: [
-        { label: 'source', type: 'Select', options: ['tooth', 'bucky', 'heptane', 'magnetic'] }
-      ],
+      params: [],
       ports: {
         outputs: [
-          { name: 'dataset', label: 'out' }
+          { name:'dataset', label: 'out' }
         ]
       }
     },
     type: [
-      { name: 'Default Dataset' },
-      // { name: 'Multivariate Scalar' },
-      { name: 'Time-varying Scalar' },
+      {
+        name: 'Default Dataset',
+        type: 'default',
+        params: [
+          { label: 'source', type: 'Select', options: ['tooth', 'bucky', 'heptane', 'magnetic'], default: 'heptane' }
+        ]
+      },
+      {
+        name: 'Time-varying Scalar',
+        type: 'time',
+        params: [
+          { label: 'step', type: 'Int' }
+        ]
+      },
     ]
   },
   'Volume Processing': {
     common: {
-      params: [
-        
-      ],
+      params: [],
       ports: {
+        inputs: [
+          { name: 'volume', label: 'in' }
+        ],
         outputs: [
-          { name: 'transferfunction', label: 'out' }
+          { name: 'volume', label: 'out' }
         ]
       }
     },
     type: [
+      {
+        name: 'Clipping',
+        type: 'clipping',
+        params: [
+          { label: 'lower bounds', type: 'Vec3f', default: [0, 0, 0] },
+          { label: 'upper bounds', type: 'Vec3f', default: [0, 0, 0] }
+        ]
+      },
+      {
+        name: 'Diff',
+        type: 'diff',
+        params: [
+          { label: 'volume 1', type: 'Select' },
+          { label: 'volume 2', type: 'Select' }
+        ]
+      },
+      { name: 'Filter', type: 'filter' },
     ]
   },
   TransferFunction: {
@@ -87,7 +114,7 @@ export default {
         type: 'structured',
         params: [
           { label: 'dimensions', type: 'Vec3i' },
-          { label: 'voxelType', type: 'Select', values: ['unchar', 'short', 'ushort', ''] },
+          { label: 'voxelType', type: 'Select', values: ['unchar', 'short', 'ushort', 'float'] },
           { label: 'gridOrigin', type: 'Vec3f' },
           { label: 'gridSpacing', type: 'Vec3f' },
         ],
@@ -118,7 +145,7 @@ export default {
   Geometry: {
     common: {
       ports: {
-        inputs: [{ name: 'geometry', label: 'in' }]
+        outputs: [{ name: 'geometry', label: 'out' }]
       }
     },
     type: [
@@ -154,9 +181,16 @@ export default {
       },
       {
         name: 'Isosurfaces',
+        type: 'isosurfaces',
+        params: [
+          { label: 'isovalues', type: 'Float', max: 255, min: 0, default: 0.3 },
+        ]
       },
       {
         name: 'Slices'
+      },
+      {
+        name: 'Bounding Box'
       }
     ],
   },
@@ -164,7 +198,7 @@ export default {
     common: {
       ports: {
         inputs: [
-          { name: 'geometry', label: 'in' },
+          { name: 'geometry', label: 'in', repeatable: true },
           { name: 'volume', label: 'in' }
         ],
         outputs: [
@@ -174,7 +208,7 @@ export default {
     },
     type: [{ name: 'Default Model' }]
   },
-  /* Lights: {
+  Lights: {
     common: {
       ports: {
         outputs: [{ name: 'light', label: 'out' }]
@@ -217,7 +251,7 @@ export default {
       { name: 'HDRI Light' },
       { name: 'Ambient Light' },
     ]
-  }, */
+  },
   /* Camera: {
     common: {
       params: [
@@ -262,7 +296,7 @@ export default {
     common: {
       ports: {
         inputs: [
-          { name: 'model', label: 'in' },
+          { name: 'model', label: 'in', repeatable: true },
           // { name: 'lights', label: 'in' },
           // { name: 'camera', label: 'in' }
         ],
@@ -289,6 +323,21 @@ export default {
           { label: 'aoTransparencyEnabled', type: 'Switch' },
           { label: 'oneSidedLighting', type: 'Switch' },
           { label: 'bgColor', type: 'Vec3f' },
+          { label: 'pos', type: 'Vec3f', default: [100, 100, 100] },
+          { label: 'dir', type: 'Vec3f', default: [-1, -1, -1] },
+          { label: 'up', type: 'Vec3f', default: [0, 1, 0], max: 1, min: -1 },
+          { label: 'nearClip', type: 'Float', min: 0.0, max: 500, default: 0.0 },
+          { label: 'stereoMode', type: 'Select', options: [
+            { label: 'no stereo', value: 0 },
+            { label: 'left eye', value: 1 },
+            { label: 'right eye', value: 2 },
+            { label: 'side-by-side', value: 3 }
+          ]},
+          { label: 'fovy', type: 'Float' },
+          { label: 'apertureRadius', type: 'Float' },
+          { label: 'foucsDistance', type: 'Float' },
+          { label: 'architectural', type: 'Float' },
+          { label: 'interpupillartDistance', type: 'Float' },
           // { name: 'maxDepthTexture', type: '_texture' },
         ]
       }
@@ -302,7 +351,8 @@ export default {
         ]
       },
       params: [
-        { label: 'size', type: 'Vec2i', max: 1024, min: 0, default: [64, 64] }
+        { label: 'width', type: 'Int', max: 1024, min: 64, default: 64 },
+        { label: 'height', type: 'Int', max: 1024, min: 64, default: 64 },
       ]
     },
     type: [

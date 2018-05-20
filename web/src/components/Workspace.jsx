@@ -18,32 +18,59 @@ export default class Workspace extends Component {
     const dropped = e.dataTransfer.getData('module-info')
     if (!dropped) return
     const data = JSON.parse(dropped);
-    const nodesCount = Object.keys(
-      app.getDiagramEngine()
-        .getDiagramModel()
-        .getNodes()
-    ).length;
-
     let node = null
     if (data.node && data.node === 'display') {
-      node = new DisplayNodeModel(data.name + ' ' + (nodesCount + 1), '#333');
+      node = new DisplayNodeModel(data.name, '#333');
       app.displays.push(node)
     } else {
-      node = new VovisNodeModel(data.name + ' ' + (nodesCount + 1), '#333');
+      node = new VovisNodeModel(data.name, '#333');
     }
     node.extras.name = data.name
-    node.extras.params = data.params
+    node.extras.category = data.category
     node.extras.values = { type: data.type }
+    node.extras.children = {}
+    node.extras._status = data.ports.inputs.length === 0
+    Object.defineProperty(node.extras, 'status', {
+      get: function () {
+        return this._status
+      },
+      set: function (value) {
+        this._status = value
+        Object.keys(node.ports).forEach(portId => {
+          if (node.ports[portId].in) return
+          const links = node.ports[portId].links
+          Object.keys(links).forEach(linkId => {
+            const target = links[linkId].targetPort.parent.extras
+            const childKeys = Object.keys(target.children)
+            if (value === false) {
+              target.status = false
+            } else {
+              let status = true
+              for (let i = 0; i < childKeys.length; i++) {
+                if (!target.children[childKeys[i]]) {
+                  status = false
+                }
+              }
+              target.status = status
+              if (target.category === 'Display') {
+                links[linkId].targetPort.parent.el.renderImage()
+              }
+            }
+          })
+        })
+      }
+    })
     data.params.forEach(param => {
       if (param.default) {
         node.extras.values[param.label] = param.default
       }
     })
     data.ports.inputs.forEach(port => {
-      node.addPort(new VovisPortModel(true, port.name, port.label));
+      node.addPort(new VovisPortModel(true, port.name, port.label, port.repeatable));
+      node.extras.children[port.name] = false
     })
     data.ports.outputs.forEach(port => {
-      node.addPort(new VovisPortModel(false, port.name, port.label));
+      node.addPort(new VovisPortModel(false, port.name, port.label, port.repeatable));
     })
     const points = app.getDiagramEngine().getRelativeMousePoint(e);
     node.x = points.x;

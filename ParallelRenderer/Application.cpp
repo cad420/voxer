@@ -121,11 +121,15 @@ public:
                 ws.sendFrame(msg, sizeof(msg));
               }
               auto params = d["params"].GetObject();
+              auto &rendererParams = params["image"];
+              auto &modelParams = rendererParams["model"];
+              auto &volumeParams = modelParams["volume"];
+              auto &datasetParams = volumeParams["dataset"];
               auto data = renderer.render(
-                  d["params"], datasets.get(params["dataset"].GetString()));
-              auto imageData = params["image"].GetObject();
-              auto imgSize = ospcommon::vec2ui(imageData["width"].GetInt(),
-                                               imageData["height"].GetInt());
+                  d["params"],
+                  datasets.get(datasetParams["source"].GetString()));
+              auto imgSize = ospcommon::vec2ui(params["width"].GetInt(),
+                                               params["height"].GetInt());
               auto img = encoder.encode(data, imgSize, "JPEG");
               ws.sendFrame(img.data(), img.size(), WebSocket::FRAME_BINARY);
             } catch (string &exc) {
@@ -133,11 +137,12 @@ public:
             }
           } else if (operation == "generate") {
             if (!d.HasMember("params") || !d["params"].IsObject()) {
-              auto msg = "Invalid params";
+              auto msg = "{\"type\": \"error\" , \"value\": \"Invalid params\"";
               ws.sendFrame(msg, sizeof(msg));
             }
             auto id = configs.save(d["params"]);
-            ws.sendFrame(id.c_str(), id.size());
+            auto msg = "{\"type\": \"url\" , \"value\":" + id;
+            ws.sendFrame(msg.c_str(), msg.size());
           }
         }
       } while (n > 0 && (flags & WebSocket::FRAME_OP_BITMASK) !=
@@ -209,10 +214,9 @@ protected:
 
   void defineOptions(OptionSet &options) {
     ServerApplication::defineOptions(options);
-    options.addOption(
-        Option("mpi", "", "OSPRay MPI Offload Rendering Mode.")
-            .required(false)
-            .repeatable(false));
+    options.addOption(Option("mpi", "", "OSPRay MPI Offload Rendering Mode.")
+                          .required(false)
+                          .repeatable(false));
     options.addOption(
         Option("help", "h",
                "display help information on command line arguments")

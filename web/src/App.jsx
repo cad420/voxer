@@ -14,7 +14,8 @@ export default class App extends Component {
       params: {},
       values: {}
     }
-    window.app = this.app = new Manager(this.handleSelectionChange);
+    window.app = this.app = new Manager();
+    this.app.on('selectionChanged', this.handleSelectionChange)
   }
 
   handleSelectionChange = (data) => {
@@ -23,7 +24,6 @@ export default class App extends Component {
       console.log(entity)
       this.setState({
         current: entity,
-        params: entity.extras.params,
         values: entity.extras.values || {}
       })
     } else {
@@ -48,26 +48,17 @@ export default class App extends Component {
   }
 
   update = () => {
-    this.app.displays.forEach(display => {
-      const data = display.extras.values
-      if (!data.image) return
-      const dataset = data.image.model ? (
-        data.image.model.volume ?
-        (
-          data.image.model.volume.dataset ?
-          data.image.model.volume.dataset.source :
-          undefined
-        ) : undefined
-      ) : undefined;
-      if (!dataset) return
-      if (!data.image.model.volume.transferfunction) return
-      const tfcn = data.image.model.volume.transferfunction.tfcn
-      display.el.renderImage(dataset, null, null, null, null, data.camera, null, data.size, tfcn)
+    this.app.displays.forEach((display, i) => {
+      if (!display.el) {
+        this.app.displays.splice(i, 1)
+      } else {
+        display.el.renderImage()
+      }
     })
   }
 
   render() {
-    const { current, params, values } = this.state
+    const { current, values } = this.state
     return (
       <div className="App">
         <header className="App-header">
@@ -78,7 +69,6 @@ export default class App extends Component {
           <Workspace app={this.app} />
           <Config
             current={current}
-            params={params}
             values={values}
             onChange={this.handleConfigChange}
           />

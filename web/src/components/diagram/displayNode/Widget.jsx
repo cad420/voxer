@@ -29,7 +29,9 @@ export default class Widget extends BaseWidget {
 					<div className={this.bem("__name")}>{node.name}</div>
 					<br/>
 				</div>
-        <div style={{ width: '500px', minHeight: '1px' }}><Display ref={node.setElement} node={node} /></div>
+        <div style={{ width: '500px', minHeight: '1px' }}>
+					<Display ref={node.setElement} model={node} />
+				</div>
 			</div>
 		);
 	}

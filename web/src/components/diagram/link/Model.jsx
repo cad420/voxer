@@ -9,7 +9,7 @@ export default class AdvancedLinkModel extends DefaultLinkModel {
 
 	deSerialize(ob, engine) {
 		super.deSerialize(ob, engine);
-		this.extras = ob.extras;		
+		this.extras = ob.extras;
 		this.points = _.map(ob.points || [], point => {
 			var p = new PointModel(this, { x: point.x, y: point.y });
 			p.deSerialize(point, engine);
@@ -41,10 +41,16 @@ export default class AdvancedLinkModel extends DefaultLinkModel {
 
 		if (ob.target && ob.source) {
 			if (ob.sourcePort.in === undefined) {}
-			const source = this.sourcePort.in ? this.targetPort : this.sourcePort
-			const target = this.sourcePort.in ? this.sourcePort : this.targetPort
+			if (this.sourcePort.in) {
+				const temp = this.sourcePort
+				this.sourcePort = this.targetPort
+				this.targetPort = temp
+			}
+			const source = this.sourcePort
+			const target = this.targetPort
 			if (target.parent && source.parent) {
 				target.parent.extras.values[source.name] = source.parent.extras.values
+				target.parent.extras.children[source.name] = true
 			}
 		}
 	}

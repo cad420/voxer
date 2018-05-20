@@ -11,165 +11,114 @@ export default class extends Component {
       interacting: false
     }
     this.ws = null
-    this.camera = {}
+    this.server =  window.location.hostname + ':3000/'
   }
 
   componentDidMount() {
-    this.props.node.extras.values.camera = {
-      type: 'perspective',
-      pos: new Vector3(10, 50, 200),
-      up: new Vector3(0, 1, 0),
-      dir: new Vector3(-10, -50, -200)
-    }
-    this.ws = new WebSocket('ws://' + window.location.hostname + ':3000/')
-    this.ws.binaryType = 'arraybuffer';
+    this.ws = new WebSocket('ws://' + this.server)
+    this.ws.binaryType = 'arraybuffer'
     this.ws.onmessage = msg => {
-      const bytes = new Uint8Array(msg.data);
+      const bytes = new Uint8Array(msg.data)
       if (typeof msg.data === 'object') {
-        const blob = new Blob([bytes.buffer], { type: 'image/jpeg' });
-        this.setState({
-          data: URL.createObjectURL(blob)
-        })
+        const blob = new Blob([bytes.buffer], { type: 'image/jpeg' })
+        this.setState({ data: URL.createObjectURL(blob) })
       } else {
-        this.setState({ url: window.location.hostname + ':3000/' + msg.data })
+        const data = JSON.parse(msg.data)
+        if (data.type === 'config') {
+          this.setState({ url: this.server + data.value })
+        } else if (data.type === 'error') {
+          window.alert(data.value)
+        }
       }
-    };
-    this.ws.onopen = this.update
-    const loop = () => {
-      window.requestAnimationFrame(loop)
-      this.controls && this.controls.update()
     }
-    loop()
+    this.loopId = window.requestAnimationFrame(this.loop)
+    this.ws.onopen = this.renderImage
     this.image.addEventListener('mousedown', this.setInteracting)
     this.image.addEventListener('mouseup', this.unsetInteracting)
     window.addEventListener('mouseup', this.unsetInteracting)
   }
 
-  setInteracting = () => {
-    this.setState({ interacting: true })
-  }
-
-  unsetInteracting = () => {
-    const { interacting } = this.state
-    if (!interacting) return
-    this.setState({ interacting: false })
+  componentDidUpdate() {
+    const imageSize = this.image.getBoundingClientRect().height
+    const { data } = this.state
+    if (!data || this.controls || imageSize.height === 0 ) return
+    const camera = new PerspectiveCamera(60, 1, 0.01, 10000)
+    const links = this.props.model.ports.image.links
+    const linkKeys = Object.keys(links)
+    const renderer = links[linkKeys[0]].sourcePort.parent
+    camera.position.x = renderer.extras.values.pos[0]
+    camera.position.y = renderer.extras.values.pos[1]
+    camera.position.z = renderer.extras.values.pos[2]
+    this.controls = new Trackball(camera, this.image)
+    this.controls.rotateSpeed = 3.0;
+    this.controls.zoomSpeed = 1.2;
+    this.controls.panSpeed = 2.8;
+    this.controls.staticMoving = true;
+    this.controls.dynamicDampingFactor = 0.3;
+    this.controls.addEventListener('change', this.updateCamera)
   }
 
   componentWillUnmount() {
     this.ws.close()
-    clearInterval(this.interval)
+    this.controls && this.controls.removeEventListener('change', this.renderImage)
     this.image.removeEventListener('mousedown', this.setInteracting)
     this.image.removeEventListener('mouseup', this.unsetInteracting)
     window.removeEventListener('mouseup', this.unsetInteracting)
+    window.cancelAnimationFrame(this.loopId)
   }
 
-  update = () => {
-    const { node } = this.props
-    const data = node.extras.values
-    if (!Object.keys(node.ports.image.links).length) return
-    const dataset = data.image.model ? (
-      data.image.model.volume ?
-        (
-          data.image.model.volume.dataset ?
-            data.image.model.volume.dataset.source :
-            undefined
-        ) : undefined
-    ) : undefined;
-    if (!data.image.model.volume.transferfunction) return
-    const tfcn = data.image.model.volume.transferfunction.tfcn
-    this.renderImage(dataset, null, null, null, null, data.camera, null, data.size, tfcn)
+  setInteracting = () => {
+    if (this.state.interacting) return
+    this.setState({ interacting: true })
   }
 
-  componentDidUpdate() {
-    const data = this.props.node.extras.values
-    if (data.camera && !this.controls && this.image.getBoundingClientRect().height) {
-      this.camera = new PerspectiveCamera(60, 1, 0.01, 10000)
-      this.camera.position.x = 10
-      this.camera.position.y = 50
-      this.camera.position.z = 200
-      window.controls = this.controls = new Trackball(this.camera, this.image)
-      this.controls.rotateSpeed = 3.0;
-      this.controls.zoomSpeed = 1.2;
-      this.controls.panSpeed = 2.8;
-      this.controls.staticMoving = true;
-      this.controls.dynamicDampingFactor = 0.3;
-      this.controls.addEventListener('change', () => {
-        const data = this.props.node.extras.values
-        data.camera.pos = this.camera.position
-        data.camera.up = this.camera.up
-        this.camera.getWorldDirection(data.camera.dir)
-        const dataset = data.image.model ? (
-          data.image.model.volume ?
-            (
-              data.image.model.volume.dataset ?
-                data.image.model.volume.dataset.source :
-                undefined
-            ) : undefined
-        ) : undefined;
-        if (!data.image.model.volume.transferfunction) return
-        const tfcn = data.image.model.volume.transferfunction.tfcn
-        this.renderImage(dataset, null, null, null, null, data.camera, null, data.size, tfcn)
-      })
-    }
+  unsetInteracting = () => {
+    if (!this.state.interacting) return
+    this.setState({ interacting: false })
   }
 
-  renderImage = (dataset, transferFunction, volume, geometries, model, camera, lights, image, tfcn) => {
-    if (!dataset || /* !transferFunction || !volume || !geometries || !model || */ !camera || /* !lights || */ !image || !tfcn) return
-    if (!camera.type || !camera.pos || !camera.up) return
-    this.sendRequest('render', dataset, camera, image, tfcn)
+  loop = () => {
+    this.controls && this.controls.update()
+    this.loopId = window.requestAnimationFrame(this.loop)
   }
 
-  sendRequest = (op, dataset, camera, image, tfcn) => {
-    this.ws.send(JSON.stringify({
-      operation: op,
-      params: {
-        dataset,
-        image: {
-          width: image[0] || 1024,
-          height: image[1] || 768
-        },
-        tfcn: {
-          colors: tfcn.map(p => p.color),
-          opacities: tfcn.map(p => p.y)
-        },
-        camera: {
-          type: camera.type,
-          pos: {
-            x: camera.pos.x || 0,
-            y: camera.pos.y || 0,
-            z: camera.pos.z || 1
-          },
-          up: {
-            x: camera.up.x || 0,
-            y: camera.up.y || 1,
-            z: camera.up.z || 0
-          },
-          dir: {
-            x: camera.dir.x || 0,
-            y: camera.dir.y || 0,
-            z: camera.dir.z || -1
-          }
-        }
-      }
-    }))
+  updateCamera = () => {
+    const { model } = this.props
+    const dir = new Vector3()
+    const camera = this.controls.object
+    camera.getWorldDirection(dir)
+    const links = model.ports.image.links
+    const linkKeys = Object.keys(links)
+    const renderer = links[linkKeys[0]].sourcePort.parent
+    const pos = camera.position
+    const up = camera.up
+    renderer.extras.values.pos = [pos.x, pos.y, pos.z]
+    renderer.extras.values.up = [up.x, up.y, up.z]
+    renderer.extras.values.dir = [ dir.x, dir.y, dir.z ]
+    this.renderImage()
+  }
+
+  renderImage = () => {
+    this.sendRequest('render')
   }
 
   generate = () => {
-    const data = this.props.node.extras.values;
-    const dataset = data.image.model ? (
-      data.image.model.volume ?
-        (
-          data.image.model.volume.dataset ?
-            data.image.model.volume.dataset.source :
-            undefined
-        ) : undefined
-    ) : undefined;
-    const camera = data.camera;
-    const image = data.size;
-    if (!dataset || /* !transferFunction || !volume || !geometries || !model || */ !camera || /* !lights || */ !image) return
-    if (!camera.type || !camera.pos || !camera.up) return
-    const tfcn = data.image.model.volume.transferfunction.tfcn
-    this.sendRequest('generate', dataset, camera, image, tfcn)
+    this.sendRequest('generate')
+  }
+
+  sendRequest = (operation) => {
+    const { model } = this.props
+    const { url } = this.state
+    const params = model.extras.values
+    if (!model.extras.status) {
+      this.setState({ data: null, url: '' })
+      this.controls = null
+      return
+    }
+    if (url.length) {
+      this.setState({ url: '' })
+    }
+    this.ws.send(JSON.stringify({ operation, params }))
   }
 
   render() {
@@ -178,7 +127,8 @@ export default class extends Component {
       <div>
         <div>
           <img
-            ref={img => this.image = img} className={'rendered-image' + (interacting ? ' interacting' : '')}
+            ref={img => this.image = img}
+            className={'rendered-image' + (interacting ? ' interacting' : '')}
             src={data}
             alt=""
           />

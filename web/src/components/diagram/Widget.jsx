@@ -64,7 +64,7 @@ export default class VovisDiagramWidget extends DiagramWidget {
 				let link = model.model.getLink();
 				let sourcePort = link.getSourcePort();
 				let targetPort = link.getTargetPort();
-				if (sourcePort !== null && targetPort !== null) {
+				if (sourcePort !== null && targetPort !== null && sourcePort !== targetPort) {
 					if (!sourcePort.canLinkToPort(targetPort)) {
 						//link not allowed
 						link.remove();
@@ -78,13 +78,29 @@ export default class VovisDiagramWidget extends DiagramWidget {
 						//link is a duplicate
 						link.remove();
 					} else {
-            const source = sourcePort.in ? targetPort : sourcePort
-            const target = sourcePort.in ? sourcePort : targetPort
+						if (sourcePort.in) {
+							let temp = link.getSourcePort()
+							link.setSourcePort(link.getTargetPort())
+							link.setTargetPort(temp)
+						}
+            const source = link.getSourcePort()
+            const target = link.getTargetPort()
 						target.parent.extras.values[source.name] = source.parent.extras.values
-						if (target.parent.type === 'display') {
-							target.parent.el.update()
+						target.parent.extras.children[source.name] = true
+						const childKeys = Object.keys(target.parent.extras.children)
+						let status = true
+						for (let i = 0; i < childKeys.length; i++) {
+							if (!target.parent.extras.children[childKeys[i]]) {
+								status = false
+							}
+						}
+						target.parent.extras.status = status && source.parent.extras.status
+						if (target.parent.extras.category === 'Display' && target.parent.extras.status === true) {
+							target.parent.el.renderImage()
 						}
           }
+				} else {
+					link.remove()
 				}
 			});
 

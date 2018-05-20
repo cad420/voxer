@@ -7,7 +7,12 @@ export default class PortLabelWidget extends BaseWidget {
 	}
 
 	getClassName() {
-		return super.getClassName() + (this.props.model.in ? this.bem("--in") : this.bem("--out"));
+		const { model } = this.props
+		let cn = model.in ? this.bem("--in") : this.bem("--out")
+		if (model.repeatable) {
+			cn += 'repeatable'
+		}
+		return super.getClassName() + cn;
 	}
 
 	render() {

@@ -11,30 +11,36 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
   auto start = chrono::steady_clock::now();
   auto params = values.GetObject();
 
+  auto &displayParams = params;
+  auto &rendererParams = params["image"];
+  auto &modelParams = rendererParams["model"];
+  auto &geometryParams = modelParams["geometry"];
+  auto &volumeParams = modelParams["volume"];
+  auto &tfcnParams = volumeParams["transferfunction"];
+  auto &datasetParams = volumeParams["dataset"];
+
   vec2f valueRange{0, 255};
-  if (params["dataset"] == "magnetic") {
+  if (datasetParams["source"] == "magnetic") {
     valueRange.x = 0.44;
     valueRange.y = 0.77;
   }
+
   vector<vec3f> colors;
   vector<float> opacities;
-  const auto &tfcn = params["tfcn"];
-  const auto &colorJSON = tfcn["colors"].GetArray();
-  const auto &opacityJSON = tfcn["opacities"].GetArray();
-  for (auto &color : colorJSON) {
-    const auto hex = string(color.GetString());
+  const auto &points = tfcnParams["tfcn"].GetArray();
+  for (auto &point : points) {
+    const auto hex = string(point["color"].GetString());
+    const auto opacity = point["y"].GetFloat();
     colors.push_back(vec3f{strtol(hex.substr(1, 2).c_str(), nullptr, 16) * 1.0f / 255,
                            strtol(hex.substr(3, 2).c_str(), nullptr, 16) * 1.0f / 255,
                            strtol(hex.substr(5, 2).c_str(), nullptr, 16) * 1.0f / 255});
-  }
-  for (auto &opacity : opacityJSON) {
-    opacities.push_back(opacity.GetFloat());
+    opacities.push_back(opacity);
   }
 
   ospray::cpp::Data colorsData(colors.size(), OSP_FLOAT3, colors.data());
   ospray::cpp::Data opacityData(opacities.size(), OSP_FLOAT, opacities.data());
   colorsData.commit();
-  opacityData.commit();
+  opacityData.commit();  
 
   volume.tfcn.set("valueRange", valueRange);
   volume.tfcn.set("colors", colorsData);
@@ -43,6 +49,18 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
   volume.volume.set("voxelRange", valueRange);
   volume.volume.commit();
 
+  auto geoType = geometryParams["type"].GetString();
+  ospray::cpp::Geometry geometry(geoType);
+  if (geoType == string("isosurfaces")) {
+    vector<float> isovaluesData;
+    isovaluesData.push_back(geometryParams["isovalues"].GetFloat());
+    ospray::cpp::Data isovalues(isovaluesData.size(), OSP_FLOAT, isovaluesData.data());
+    isovalues.commit();
+    geometry.set("isovalues", isovalues);
+    geometry.set("volume", volume.volume);
+    geometry.commit();
+  }
+ 
   ospray::cpp::Model world;
   world.addVolume(volume.volume);
   vector<box3f> regions{volume.bounds};
@@ -50,22 +68,20 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
   world.set("regions", regionData);
   world.commit();
 
-  auto &cameraData = params["camera"];
-  auto cameraType = cameraData.FindMember("type")->value.GetString();
-  auto &cameraPosData = cameraData.FindMember("pos")->value;
-  auto &cameraUpData = cameraData.FindMember("up")->value;
-  auto &cameraDirData = cameraData.FindMember("dir")->value;
-  auto &imageData = params["image"];
-  vec2i imgSize{imageData["width"].GetInt(), imageData["height"].GetInt()};
-  vec3f camPos{cameraPosData.FindMember("x")->value.GetFloat(),
-               cameraPosData.FindMember("y")->value.GetFloat(),
-               cameraPosData.FindMember("z")->value.GetFloat()};
-  vec3f camUp{cameraUpData.FindMember("x")->value.GetFloat(),
-              cameraUpData.FindMember("y")->value.GetFloat(),
-              cameraUpData.FindMember("z")->value.GetFloat()};
-  vec3f camDir{cameraDirData.FindMember("x")->value.GetFloat(),
-               cameraDirData.FindMember("y")->value.GetFloat(),
-               cameraDirData.FindMember("z")->value.GetFloat()};
+  // create OSP Camera
+  auto cameraPosData = (rendererParams.FindMember("pos")->value).GetArray();
+  auto cameraUpData = (rendererParams.FindMember("up")->value).GetArray();
+  auto cameraDirData = (rendererParams.FindMember("dir")->value).GetArray();
+  vec2i imgSize{displayParams["width"].GetInt(), displayParams["height"].GetInt()};
+  vec3f camPos{cameraPosData[0].GetFloat(),
+               cameraPosData[1].GetFloat(),
+               cameraPosData[2].GetFloat()};
+  vec3f camUp{cameraUpData[0].GetFloat(),
+              cameraUpData[1].GetFloat(),
+              cameraUpData[2].GetFloat()};
+  vec3f camDir{cameraDirData[0].GetFloat(),
+               cameraDirData[1].GetFloat(),
+               cameraDirData[2].GetFloat()};
   if (extraParams) {
     auto params = *extraParams;
     if (params.find("width") != params.end()) {
@@ -93,7 +109,8 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
       camDir.z = stoi(params["dir.z"]);
     }
   }
-  ospray::cpp::Camera camera(cameraType);
+
+  ospray::cpp::Camera camera("perspective");
   camera.set("aspect", (float)imgSize.x / (float)imgSize.y);
   camera.set("pos", camPos);
   camera.set("dir", camDir);
@@ -109,6 +126,7 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
   ospray::cpp::Data lights(1, OSP_LIGHT, &lightHandle);
   lights.commit();
 
+  // create OSP Renderer
   renderer.set("aoSamples", 1);
   renderer.set("bgColor", 1.0f);
   renderer.set("model", world);

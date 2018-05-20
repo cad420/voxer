@@ -1,6 +1,26 @@
-import React from 'react'
-import Module from './Module'
+import React, { Component } from 'react'
 import modules from '../modules'
+
+class Module extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { onDragging: false }
+  }
+
+  render() {
+    return (
+      <div
+        draggable={true}
+        onDragStart={e => {
+          e.dataTransfer.setData('module-info', JSON.stringify({...this.props}))
+        }}
+        className="module-option">
+        {this.props.name}
+      </div>
+    )
+  }
+}
+
 
 export default (props) => {
   const moduleCategories = Object.keys(modules)
@@ -21,6 +41,7 @@ export default (props) => {
                   <Module
                     key={name}
                     name={name}
+                    category={cate}
                     type={type}
                     ports={_ports}
                     node={node}

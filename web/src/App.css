@@ -149,3 +149,7 @@
   padding: 10px 0;
   user-select: all;
 }
+
+.App .srd-default-port.repeatable .srd-port {
+  border-radius: 50%;
+}
