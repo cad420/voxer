@@ -67,8 +67,7 @@ public:
           extraParams[param.first] = param.second;
         }
         response.setContentType("image/jpeg");
-        auto data = renderer.render(
-            config, datasets.get(params["dataset"].GetString()), &extraParams);
+        auto data = renderer.render(config, &extraParams);
         auto imageData = params["image"].GetObject();
         auto imgSize = ospcommon::vec2ui(imageData["width"].GetInt(),
                                          imageData["height"].GetInt());
@@ -94,7 +93,7 @@ public:
 class WebSocketRequestHandler : public HTTPRequestHandler {
 public:
   rapidjson::Document d;
-  char buffer[1024];
+  char buffer[1024 * 1024];
   void handleRequest(HTTPServerRequest &request, HTTPServerResponse &response) {
     Application &app = Application::instance();
     try {
@@ -122,12 +121,7 @@ public:
               }
               auto params = d["params"].GetObject();
               auto &rendererParams = params["image"];
-              auto &modelParams = rendererParams["model"];
-              auto &volumeParams = modelParams["volume"];
-              auto &datasetParams = volumeParams["dataset"];
-              auto data = renderer.render(
-                  d["params"],
-                  datasets.get(datasetParams["source"].GetString()));
+              auto data = renderer.render(d["params"]);
               auto imgSize = ospcommon::vec2ui(params["width"].GetInt(),
                                                params["height"].GetInt());
               auto img = encoder.encode(data, imgSize, "JPEG");

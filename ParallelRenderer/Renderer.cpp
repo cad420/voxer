@@ -5,82 +5,40 @@
 using namespace std;
 using namespace ospcommon;
 
+extern DatasetManager datasets;
+
 vector<unsigned char> Renderer::render(rapidjson::Value &values,
-                                        gensv::LoadedVolume &volume, 
                                        map<string, string> *extraParams) {
   auto start = chrono::steady_clock::now();
   auto params = values.GetObject();
 
   auto &displayParams = params;
   auto &rendererParams = params["image"];
-  auto &modelParams = rendererParams["model"];
-  auto &geometryParams = modelParams["geometry"];
-  auto &volumeParams = modelParams["volume"];
-  auto &tfcnParams = volumeParams["transferfunction"];
-  auto &datasetParams = volumeParams["dataset"];
+  auto modelsParams = rendererParams["model"].GetArray();
 
-  vec2f valueRange{0, 255};
-  if (datasetParams["source"] == "magnetic") {
-    valueRange.x = 0.44;
-    valueRange.y = 0.77;
-  }
-
-  vector<vec3f> colors;
-  vector<float> opacities;
-  const auto &points = tfcnParams["tfcn"].GetArray();
-  for (auto &point : points) {
-    const auto hex = string(point["color"].GetString());
-    const auto opacity = point["y"].GetFloat();
-    colors.push_back(vec3f{strtol(hex.substr(1, 2).c_str(), nullptr, 16) * 1.0f / 255,
-                           strtol(hex.substr(3, 2).c_str(), nullptr, 16) * 1.0f / 255,
-                           strtol(hex.substr(5, 2).c_str(), nullptr, 16) * 1.0f / 255});
-    opacities.push_back(opacity);
-  }
-
-  ospray::cpp::Data colorsData(colors.size(), OSP_FLOAT3, colors.data());
-  ospray::cpp::Data opacityData(opacities.size(), OSP_FLOAT, opacities.data());
-  colorsData.commit();
-  opacityData.commit();  
-
-  volume.tfcn.set("valueRange", valueRange);
-  volume.tfcn.set("colors", colorsData);
-  volume.tfcn.set("opacities", opacityData);
-  volume.tfcn.commit();
-  volume.volume.set("voxelRange", valueRange);
-  volume.volume.commit();
-
-  auto geoType = geometryParams["type"].GetString();
-  ospray::cpp::Geometry geometry(geoType);
-  if (geoType == string("isosurfaces")) {
-    vector<float> isovaluesData;
-    isovaluesData.push_back(geometryParams["isovalues"].GetFloat());
-    ospray::cpp::Data isovalues(isovaluesData.size(), OSP_FLOAT, isovaluesData.data());
-    isovalues.commit();
-    geometry.set("isovalues", isovalues);
-    geometry.set("volume", volume.volume);
-    geometry.commit();
-  }
- 
-  ospray::cpp::Model world;
-  world.addVolume(volume.volume);
-  vector<box3f> regions{volume.bounds};
-  ospray::cpp::Data regionData(regions.size() * 2, OSP_FLOAT3, regions.data());
-  world.set("regions", regionData);
-  world.commit();
-
+  ospray::cpp::Renderer renderer("scivis");
+  ospray::cpp::Light light = renderer.newLight("ambient");
+  light.commit();
+  auto lightHandle = light.handle();
+  ospray::cpp::Data lights(1, OSP_LIGHT, &lightHandle);
+  lights.commit();
+  cout << 1 << endl;
+  renderer.set("aoSamples", rendererParams["aoSamples"].GetInt());
+  renderer.set("bgColor", 1.0f);
+  renderer.set("lights", lights);
+  cout << 2 << endl;
   // create OSP Camera
   auto cameraPosData = (rendererParams.FindMember("pos")->value).GetArray();
   auto cameraUpData = (rendererParams.FindMember("up")->value).GetArray();
   auto cameraDirData = (rendererParams.FindMember("dir")->value).GetArray();
-  vec2i imgSize{displayParams["width"].GetInt(), displayParams["height"].GetInt()};
-  vec3f camPos{cameraPosData[0].GetFloat(),
-               cameraPosData[1].GetFloat(),
+  vec2i imgSize{displayParams["width"].GetInt(),
+                displayParams["height"].GetInt()};
+
+  vec3f camPos{cameraPosData[0].GetFloat(), cameraPosData[1].GetFloat(),
                cameraPosData[2].GetFloat()};
-  vec3f camUp{cameraUpData[0].GetFloat(),
-              cameraUpData[1].GetFloat(),
+  vec3f camUp{cameraUpData[0].GetFloat(), cameraUpData[1].GetFloat(),
               cameraUpData[2].GetFloat()};
-  vec3f camDir{cameraDirData[0].GetFloat(),
-               cameraDirData[1].GetFloat(),
+  vec3f camDir{cameraDirData[0].GetFloat(), cameraDirData[1].GetFloat(),
                cameraDirData[2].GetFloat()};
   if (extraParams) {
     auto params = *extraParams;
@@ -110,6 +68,8 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
     }
   }
 
+cout << 3 << endl;
+
   ospray::cpp::Camera camera("perspective");
   camera.set("aspect", (float)imgSize.x / (float)imgSize.y);
   camera.set("pos", camPos);
@@ -117,21 +77,74 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
   camera.set("up", camUp);
   camera.commit();
 
-  // create renderer
-  ospray::cpp::Renderer renderer("scivis");
-
-  ospray::cpp::Light light = renderer.newLight("ambient");
-  light.commit();
-  auto lightHandle = light.handle();
-  ospray::cpp::Data lights(1, OSP_LIGHT, &lightHandle);
-  lights.commit();
-
-  // create OSP Renderer
-  renderer.set("aoSamples", 1);
-  renderer.set("bgColor", 1.0f);
-  renderer.set("model", world);
   renderer.set("camera", camera);
-  renderer.set("lights", lights);
+
+  ospray::cpp::Model world;
+  for (auto &modelParams : modelsParams) {
+
+    auto &volumeParams = modelParams["volume"];
+    auto &tfcnParams = volumeParams["transferfunction"];
+    auto &datasetParams = volumeParams["dataset"];
+    auto volumeName = datasetParams["source"].GetString();
+    auto volume = datasets.get(volumeName);
+
+    vec2f valueRange{0, 255};
+    if (datasetParams["source"] == "magnetic") {
+      valueRange.x = 0.44;
+      valueRange.y = 0.77;
+    }
+    vector<vec3f> colors;
+    vector<float> opacities;
+    const auto &points = tfcnParams["tfcn"].GetArray();
+    for (auto &point : points) {
+      const auto hex = string(point["color"].GetString());
+      const auto opacity = point["y"].GetFloat();
+      colors.push_back(
+          vec3f{strtol(hex.substr(1, 2).c_str(), nullptr, 16) * 1.0f / 255,
+                strtol(hex.substr(3, 2).c_str(), nullptr, 16) * 1.0f / 255,
+                strtol(hex.substr(5, 2).c_str(), nullptr, 16) * 1.0f / 255});
+      opacities.push_back(opacity);
+    }
+    ospray::cpp::Data colorsData(colors.size(), OSP_FLOAT3, colors.data());
+    ospray::cpp::Data opacityData(opacities.size(), OSP_FLOAT,
+                                  opacities.data());
+    colorsData.commit();
+    opacityData.commit();
+    volume.tfcn.set("valueRange", valueRange);
+    volume.tfcn.set("colors", colorsData);
+    volume.tfcn.set("opacities", opacityData);
+    volume.tfcn.commit();
+    volume.volume.set("voxelRange", valueRange);
+    volume.volume.commit();
+
+cout << 4 << endl;
+
+    world.addVolume(volume.volume);
+    vector<box3f> regions{volume.bounds};
+    ospray::cpp::Data regionData(regions.size() * 2, OSP_FLOAT3,
+                                 regions.data());
+    world.set("regions", regionData);
+
+    auto geometriesParams = modelParams["geometry"].GetArray();
+    for (auto &geometryParams : geometriesParams) {
+      auto geoType = geometryParams["type"].GetString();
+      ospray::cpp::Geometry geometry(geoType);
+      if (geoType == string("isosurfaces")) {
+        vector<float> isovaluesData;
+        isovaluesData.push_back(geometryParams["isovalues"].GetFloat());
+        ospray::cpp::Data isovalues(isovaluesData.size(), OSP_FLOAT,
+                                    isovaluesData.data());
+        isovalues.commit();
+        geometry.set("isovalues", isovalues);
+        geometry.set("volume", volume.volume);
+        geometry.commit();
+      }
+      world.addGeometry(geometry);
+    }
+  }
+  world.commit();
+  renderer.set("model", world);
+  cout << 5 << endl;
   renderer.commit();
 
   ospray::cpp::FrameBuffer framebuffer(
