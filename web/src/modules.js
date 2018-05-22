@@ -183,7 +183,7 @@ export default {
         name: 'Isosurfaces',
         type: 'isosurfaces',
         params: [
-          { label: 'isovalues', type: 'Float', max: 255, min: 0, default: 0.3 },
+          { label: 'isovalues', type: 'Slider', max: 255, min: 0, default: 0.3 },
         ]
       },
       {
@@ -318,7 +318,7 @@ export default {
         type: 'scivis',
         params: [
           { label: 'shadowsEnabled', type: 'Switch' },
-          { label: 'aoSamples', type: 'Int' },
+          { label: 'aoSamples', type: 'Int', default: 0 },
           { label: 'aoDistance', type: 'Float' },
           { label: 'aoTransparencyEnabled', type: 'Switch' },
           { label: 'oneSidedLighting', type: 'Switch' },

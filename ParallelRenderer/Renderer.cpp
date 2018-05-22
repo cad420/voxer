@@ -14,19 +14,18 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
 
   auto &displayParams = params;
   auto &rendererParams = params["image"];
-  auto modelsParams = rendererParams["model"].GetArray();
 
   ospray::cpp::Renderer renderer("scivis");
-  ospray::cpp::Light light = renderer.newLight("ambient");
+  ospray::cpp::Light light("scivis", "ambient");
   light.commit();
   auto lightHandle = light.handle();
   ospray::cpp::Data lights(1, OSP_LIGHT, &lightHandle);
   lights.commit();
-  cout << 1 << endl;
+
   renderer.set("aoSamples", rendererParams["aoSamples"].GetInt());
   renderer.set("bgColor", 1.0f);
   renderer.set("lights", lights);
-  cout << 2 << endl;
+
   // create OSP Camera
   auto cameraPosData = (rendererParams.FindMember("pos")->value).GetArray();
   auto cameraUpData = (rendererParams.FindMember("up")->value).GetArray();
@@ -68,20 +67,17 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
     }
   }
 
-cout << 3 << endl;
-
   ospray::cpp::Camera camera("perspective");
   camera.set("aspect", (float)imgSize.x / (float)imgSize.y);
   camera.set("pos", camPos);
   camera.set("dir", camDir);
   camera.set("up", camUp);
   camera.commit();
-
   renderer.set("camera", camera);
 
+  auto modelsParams = rendererParams["model"].GetArray();
   ospray::cpp::Model world;
   for (auto &modelParams : modelsParams) {
-
     auto &volumeParams = modelParams["volume"];
     auto &tfcnParams = volumeParams["transferfunction"];
     auto &datasetParams = volumeParams["dataset"];
@@ -117,8 +113,6 @@ cout << 3 << endl;
     volume.volume.set("voxelRange", valueRange);
     volume.volume.commit();
 
-cout << 4 << endl;
-
     world.addVolume(volume.volume);
     vector<box3f> regions{volume.bounds};
     ospray::cpp::Data regionData(regions.size() * 2, OSP_FLOAT3,
@@ -127,24 +121,26 @@ cout << 4 << endl;
 
     auto geometriesParams = modelParams["geometry"].GetArray();
     for (auto &geometryParams : geometriesParams) {
-      auto geoType = geometryParams["type"].GetString();
-      ospray::cpp::Geometry geometry(geoType);
-      if (geoType == string("isosurfaces")) {
-        vector<float> isovaluesData;
-        isovaluesData.push_back(geometryParams["isovalues"].GetFloat());
-        ospray::cpp::Data isovalues(isovaluesData.size(), OSP_FLOAT,
-                                    isovaluesData.data());
+      auto geoType = string(geometryParams["type"].GetString());
+      ospray::cpp::Geometry geometry(geoType.c_str());
+      if (geoType == "triangles") {
+      } else if (geoType == "spheres") {
+      } else if (geoType == "cylinders") {
+      } else if (geoType == "isosurfaces") {
+        auto isovalue = geometryParams["isovalues"].GetFloat();
+        ospray::cpp::Data isovalues(1, OSP_FLOAT, &isovalue);
         isovalues.commit();
         geometry.set("isovalues", isovalues);
         geometry.set("volume", volume.volume);
-        geometry.commit();
+      } else if (geoType == "streamlines") {
+      } else if (geoType == "slices") {
       }
+      geometry.commit();
       world.addGeometry(geometry);
     }
   }
   world.commit();
   renderer.set("model", world);
-  cout << 5 << endl;
   renderer.commit();
 
   ospray::cpp::FrameBuffer framebuffer(

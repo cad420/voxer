@@ -9,8 +9,8 @@ ENDIF()
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CONFIGURATION_TYPES})
 set(OSPRAY_LIB_PATH "/usr/local/lib" CACHE PATH "Path of ospray library.")
 set(OSPRAY_INCLUDE_PATH "/usr/local/include/ospray/" CACHE PATH "Path of ospray header files.")
-set(EMBREE_LIB_PATH "/home/ukabuer/ospray/embree-2.17.2.x86_64.linux/lib/" CACHE PATH "Path of embree library.")
-set(TBB_LIB_PATH "/home/ukabuer/ospray/tbb2018_20171205oss/lib/intel64/gcc4.7/" CACHE PATH "Path of tbb library.")
+set(EMBREE_LIB_PATH "${embree_DIR}/lib" CACHE PATH "Path of embree library.")
+set(TBB_LIB_PATH "${TBB_ROOT}/lib/intel64/gcc4.7/" CACHE PATH "Path of tbb library.")
 set(MPI_LIB_PATH "/usr/lib" CACHE PATH "Path of mpi library.")
 set(MPI_INCLUDE_PATH "/usr/lib/mpich/include" CACHE PATH "Path of mpi header files.")
 set(POCO_INCLUDE_PATH "/usr/local/include/Poco" CACHE PATH "Path of poco header files.")
@@ -38,7 +38,7 @@ find_library(
 )
 find_library(
   EMBREE_LIB
-  NAMES embree
+  NAMES embree3
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${EMBREE_LIB_PATH}
 )
 find_library(
@@ -47,19 +47,9 @@ find_library(
   HINTS "${CMAKE_PREFIX_PATH}/lib" ${TBB_LIB_PATH}
 )
 find_library(
-  Z_LIB
-  NAMES z
-  HINTS "${CMAKE_PREFIX_PATH}/lib" ${Z_LIB}
-)
-find_library(
-  SSL_LIB
-  NAMES ssl
-  HINTS "${CMAKE_PREFIX_PATH}/lib" ${SSL_LIB}
-)
-find_library(
-  CRYPTO_LIB
-  NAMES crypto
-  HINTS "${CMAKE_PREFIX_PATH}/lib" ${CRYPTO_LIB}
+  TBB_MALLOC_LIB
+  NAMES tbbmalloc
+  HINTS "${CMAKE_PREFIX_PATH}/lib" ${TBB_LIB_PATH}
 )
 find_library(
   POCO_FOUNDATION_LIB
@@ -105,8 +95,8 @@ else()
   unset(TBB_LIB_PATH CACHE)
 endif()
 
-if (NOT POCO_LIB)
-  unset(POCO_LIB CACHE)
+if (NOT POCO_NET_LIB)
+  unset(POCO_NET_LIB CACHE)
   message(FATAL_ERROR "Poco not found, please set POCO_LIB_PATH.")
 else()
   unset(POCO_LIB_PATH CACHE)
@@ -125,15 +115,13 @@ target_include_directories(
 )
 target_link_libraries(
   VovisRenderer
-  ${SSL_LIB}
   ${OSPRAY_LIB}
   ${OSPRAY_LIB_COMMON}
   ${OSPRAY_LIB_MPI}
   ${EMBREE_LIB}
   ${TBB_LIB}
+  ${TBB_MALLOC_LIB}
   ${MPI_LIB}
-  ${Z_LIB}
-  ${CRYPTO_LIB}
   ${POCO_FOUNDATION_LIB}
   ${POCO_NET_LIB}
   ${POCO_UTIL_LIB}

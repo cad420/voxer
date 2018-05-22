@@ -7,7 +7,7 @@ using namespace std;
 
 void ConfigManager::load(string filepath) {
   ifstream filestream;
-  filestream.open("configures.json");
+  filestream.open(filepath);
   if (!filestream.is_open()) {
     throw string("Unable to open file configures.json!");
   }

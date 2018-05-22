@@ -20,6 +20,7 @@
 #include "Renderer.h"
 #include <iostream>
 #include <map>
+#include <string>
 
 using namespace std;
 using Poco::format;
@@ -181,6 +182,8 @@ class VoVis : public ServerApplication {
 public:
   VoVis() : _helpRequested(false) {}
   ~VoVis() {}
+  string datasetFile;
+  string configureFile;
 
 protected:
   void initialize(Application &self) {
@@ -211,6 +214,15 @@ protected:
     options.addOption(Option("mpi", "", "OSPRay MPI Offload Rendering Mode.")
                           .required(false)
                           .repeatable(false));
+    options.addOption(Option("datasets", "", "volume datasets configure file.")
+                          .required(true)
+                          .argument("<the value>", true)
+                          .repeatable(false));
+    options.addOption(
+        Option("configures", "", "visuailization configures save file.")
+            .required(true)
+            .argument("<the value>", true)
+            .repeatable(false));
     options.addOption(
         Option("help", "h",
                "display help information on command line arguments")
@@ -220,8 +232,11 @@ protected:
 
   void handleOption(const string &name, const string &value) {
     ServerApplication::handleOption(name, value);
-
-    if (name == "help")
+    if (name == "datasets") {
+      datasetFile = value;
+    } else if (name == "configures") {
+      configureFile = value;
+    } else if (name == "help")
       _helpRequested = true;
   }
 
@@ -238,9 +253,8 @@ protected:
       displayHelp();
     } else {
       try {
-        auto filepath = config().find(string("datafile")).get();
-        datasets.load(string("datasets.json"));
-        configs.load(string("configures.json"));
+        datasets.load(datasetFile);
+        configs.load(configureFile);
       } catch (string &exc) {
         logger().error(exc);
         exit(1);
