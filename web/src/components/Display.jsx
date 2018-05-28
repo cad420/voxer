@@ -13,6 +13,7 @@ export default class extends Component {
     this.ws = null
     // this.server =  window.location.hostname + ':3000/'
     this.server =  '10.189.130.250' + ':3000/'
+    this.timeoutId = null;
   }
 
   componentDidMount() {
@@ -25,7 +26,7 @@ export default class extends Component {
         this.setState({ data: URL.createObjectURL(blob) })
       } else {
         const data = JSON.parse(msg.data)
-        if (data.type === 'url') {
+        if (data.type === 'config') {
           this.setState({ url: this.server + data.value })
         } else if (data.type === 'error') {
           window.alert(data.value)
@@ -52,6 +53,7 @@ export default class extends Component {
     camera.position.z = renderer.extras.values.pos[2]
     this.controls = new Trackball(camera, this.image)
     this.controls.rotateSpeed = 3.0;
+    this.controls.updateCount = 0;
     this.controls.zoomSpeed = 1.2;
     this.controls.panSpeed = 2.8;
     this.controls.staticMoving = true;
@@ -84,6 +86,9 @@ export default class extends Component {
   }
 
   updateCamera = () => {
+    this.controls.updateCount++;
+    if (this.controls.updateCount < 5) return;
+    this.controls.updateCount = 0;
     const { model } = this.props
     const dir = new Vector3()
     const camera = this.controls.object
@@ -96,18 +101,18 @@ export default class extends Component {
     renderer.extras.values.pos = [pos.x, pos.y, pos.z]
     renderer.extras.values.up = [up.x, up.y, up.z]
     renderer.extras.values.dir = [ dir.x, dir.y, dir.z ]
-    this.renderImage()
+    this.renderImage(true)
   }
 
-  renderImage = () => {
-    this.sendRequest('render')
+  renderImage = (interacting) => {
+    this.sendRequest('render', interacting)
   }
 
   generate = () => {
     this.sendRequest('generate')
   }
 
-  sendRequest = (operation) => {
+  sendRequest = (operation, interacting = false) => {
     const { model } = this.props
     const { url } = this.state
     const params = model.extras.values
@@ -119,7 +124,18 @@ export default class extends Component {
     if (url.length) {
       this.setState({ url: '' })
     }
-    this.ws.send(JSON.stringify({ operation, params }))
+    if (operation === 'render' && interacting) {
+      this.ws.send(JSON.stringify({ operation, params: {
+        ...params,
+        width: 64, height: 64
+      } }))
+      if (this.timeoutId) clearTimeout(this.timeoutId)
+      this.timeoutId = setTimeout(() => {
+        this.sendRequest('render')
+      })
+    } else {
+      this.ws.send(JSON.stringify({ operation, params }))
+    }
   }
 
   render() {
