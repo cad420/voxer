@@ -7,14 +7,22 @@ using namespace ospcommon;
 
 extern DatasetManager datasets;
 
-gensv::LoadedVolume &setupVolume(rapidjson::Value &volumeParams) {
+void setupVolume(gensv::LoadedVolume *volume,rapidjson::Value &volumeParams) {
   auto &tfcnParams = volumeParams["transferfunction"];
   auto &datasetParams = volumeParams["dataset"];
   auto volumeName = string(datasetParams["source"].GetString());
   if (datasetParams.HasMember("timestep")) {
     volumeName += to_string(datasetParams["timestep"].GetInt());
   }
-  auto &volume = datasets.get(volumeName.c_str());
+  auto &dataset = datasets.get(volumeName.c_str());
+  const auto upper = ospcommon::vec3f(dataset.dimensions);
+  const auto halfLength = ospcommon::vec3i(dataset.dimensions) / 2;
+  gensv::loadVolume(volume, dataset.buffer, ospcommon::vec3i(dataset.dimensions),
+                        dataset.dtype, dataset.sizeForDType);
+  volume->bounds.lower -= ospcommon::vec3f(halfLength);
+  volume->bounds.upper -= ospcommon::vec3f(halfLength);
+  volume->volume.set("gridOrigin",
+                    volume->ghostGridOrigin - ospcommon::vec3f(halfLength));
 
   vec2f valueRange{0, 255};
   if (datasetParams["source"] == "magnetic") {
@@ -41,11 +49,10 @@ gensv::LoadedVolume &setupVolume(rapidjson::Value &volumeParams) {
   ospray::cpp::Data opacityData(opacities.size(), OSP_FLOAT, opacities.data());
   colorsData.commit();
   opacityData.commit();
-  volume.tfcn.set("colors", colorsData);
-  volume.tfcn.set("opacities", opacityData);
-  volume.tfcn.set("valueRange", valueRange);
-  volume.tfcn.commit();
-  return volume;
+  volume->tfcn.set("colors", colorsData);
+  volume->tfcn.set("opacities", opacityData);
+  volume->tfcn.set("valueRange", valueRange);
+  volume->tfcn.commit();
 }
 
 vector<unsigned char> Renderer::render(rapidjson::Value &values,
@@ -120,11 +127,10 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
   ospray::cpp::Model world;
   for (auto &modelParams : modelsParams) {
     auto &volumeParams = modelParams["volume"];
-    gensv::LoadedVolume *volumePtr;
+    gensv::LoadedVolume volume;
     if (volumeParams["type"] == "structured") {
-      auto &volume = setupVolume(volumeParams);
+      setupVolume(&volume, volumeParams);
       volume.volume.commit();
-      volumePtr = &volume;
     } else if (volumeParams["type"] == "clipping") {
       auto &upperParams = volumeParams["upper"];
       auto &lowerParams = volumeParams["lower"];
@@ -133,19 +139,16 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
       auto lower = vec3f(lowerParams[0].GetFloat(), lowerParams[1].GetFloat(),
                          lowerParams[2].GetFloat());
       auto &_volumeParams = volumeParams["volume1"];
-      auto &volume = setupVolume(_volumeParams);
+      setupVolume(&volume, _volumeParams);
       volume.volume.set("volumeClippingBoxLower", upper);
       volume.volume.set("volumeClippingBoxUpper", lower);
       volume.volume.commit();
-      volumePtr = &volume;
     } else if (volumeParams["type"] == "diff") {
       auto &volume1Params = volumeParams["volume1"];
       auto &volume2Params = volumeParams["volume2"];
-      auto &volume = setupVolume(volumeParams);
+      setupVolume(&volume, volumeParams);
       volume.volume.commit();
-      volumePtr = &volume;
     }
-    auto volume = *volumePtr;
     world.addVolume(volume.volume);
     vector<box3f> regions{volume.bounds};
     ospray::cpp::Data regionData(regions.size() * 2, OSP_FLOAT3,

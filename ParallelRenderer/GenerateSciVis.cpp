@@ -92,14 +92,12 @@ OSPDataType typeForString(const std::string &dtype) {
   return OSP_UCHAR;
 }
 
-LoadedVolume loadVolume(RawReader &reader, const vec3i &dimensions,
-                        const std::string &dtype) {
+void loadVolume(struct LoadedVolume* vol, std::vector<unsigned char> &buffer, const vec3i &dimensions,
+                        const std::string &dtype, size_t sizeForDtype) {
   auto numRanks = static_cast<float>(mpicommon::numGlobalRanks());
   auto myRank = mpicommon::globalRank();
   numRanks = 1;
   myRank = 0;
-
-  LoadedVolume vol;
 
   const vec3sz grid = vec3sz(computeGrid(numRanks));
   const vec3sz brickDims = vec3sz(dimensions) / grid;
@@ -121,34 +119,31 @@ LoadedVolume loadVolume(RawReader &reader, const vec3i &dimensions,
   const vec3i ghostOffset(ghosts[0] & NEG_FACE ? 1 : 0,
                           ghosts[1] & NEG_FACE ? 1 : 0,
                           ghosts[2] & NEG_FACE ? 1 : 0);
-  vol.ghostGridOrigin = gridOrigin - vec3f(ghostOffset);
+  vol->ghostGridOrigin = gridOrigin - vec3f(ghostOffset);
 
-  // vol.volume = ospray::cpp::Volume("shared_structured_volume");
-  vol.volume = ospray::cpp::Volume("block_bricked_volume");
-  vol.volume.set("voxelType", dtype.c_str());
-  vol.volume.set("dimensions", vec3i(fullDims));
-  vol.volume.set("transferFunction", vol.tfcn);
-  vol.volume.set("gridOrigin", vol.ghostGridOrigin);
+  vol->volume = ospray::cpp::Volume("shared_structured_volume");
+  // vol->volume = ospray::cpp::Volume("block_bricked_volume");
+  vol->volume.set("voxelType", dtype.c_str());
+  vol->volume.set("dimensions", vec3i(fullDims));
+  vol->volume.set("transferFunction", vol->tfcn);
 
-  const size_t dtypeSize = sizeForDtype(dtype);
-  std::vector<unsigned char> volumeData(
-      fullDims.x * fullDims.y * fullDims.z * dtypeSize, 0);
-
-  auto size = reader.readRegion(brickId * brickDims - vec3sz(ghostOffset), vec3sz(fullDims),
-                    volumeData.data());
+  // const size_t dtypeSize = sizeForDtype(dtype);
+  // std::vector<unsigned char> volumeData(
+  //     fullDims.x * fullDims.y * fullDims.z * dtypeSize, 0);
+  // auto size = reader.readRegion(brickId * brickDims - vec3sz(ghostOffset), vec3sz(fullDims),
+  //                   volumeData.data());
 
   // for shared_structured_volume
-  // const OSPDataType ospVoxelType = typeForString(dtype);
-  // OSPData data = ospNewData(volumeData.size(), ospVoxelType, volumeData.data(), OSP_DATA_SHARED_BUFFER);
-  // vol.volume.set("voxelData", data);
+  const OSPDataType ospVoxelType = typeForString(dtype);
+  OSPData data = ospNewData(buffer.size(), ospVoxelType, buffer.data(), OSP_DATA_SHARED_BUFFER);
+  vol->volume.set("voxelData", data);
   // end
 
   // for block_bricked_volume
-  vol.volume.setRegion(volumeData.data(), vec3i(0), vec3i(fullDims));
+  // vol->volume.setRegion(volumeData.data(), vec3i(0), vec3i(fullDims));
   // end
 
-  vol.bounds = box3f(gridOrigin, gridOrigin + vec3f(brickDims));
-  return vol;
+  vol->bounds = box3f(gridOrigin, gridOrigin + vec3f(brickDims));
 }
 
 } // namespace gensv

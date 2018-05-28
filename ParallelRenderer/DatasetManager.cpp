@@ -32,8 +32,9 @@ void DatasetManager::load(string filepath) {
     auto name = string(info["name"].GetString());
     auto filepath = string(info["path"].GetString());
     auto dimsData = info["dimensions"].GetArray();
-    auto timesteps = info.HasMember("timesteps") ? info["timesteps"].GetInt() : 1;
-    
+    auto timesteps =
+        info.HasMember("timesteps") ? info["timesteps"].GetInt() : 1;
+
     for (auto dim = dimsData.Begin(); dim != dimsData.end(); dim++) {
       dimensions[dim - dimsData.Begin()] = dim->GetInt();
     }
@@ -49,26 +50,33 @@ void DatasetManager::load(string filepath) {
     for (auto step = 1; step <= timesteps; step++) {
       auto _filepath = filepath;
       auto _name = name;
-      if(timesteps > 1) {
-        _filepath.replace(_filepath.end() - 10, _filepath.end() - 4, to_string(step));
+      if (timesteps > 1) {
+        _filepath.replace(_filepath.end() - 10, _filepath.end() - 4,
+                          to_string(step));
         _name += to_string(step);
       }
       gensv::RawReader reader(ospcommon::FileName(_filepath), dimensions,
-                            sizeForType);
-      const auto upper = ospcommon::vec3f(dimensions);
-      const auto halfLength = ospcommon::vec3i(dimensions) / 2;
-      auto volume = gensv::loadVolume(reader, ospcommon::vec3i(dimensions), dtype);
-      volume.bounds.lower -= ospcommon::vec3f(halfLength);
-      volume.bounds.upper -= ospcommon::vec3f(halfLength);
-      volume.volume.set("gridOrigin",
-                        volume.ghostGridOrigin - ospcommon::vec3f(halfLength));
-      volume.volume.commit();
-      datasets[_name] = volume;
+                              sizeForType);
+      Dataset dataset(ospcommon::vec3i(dimensions), dtype);
+      auto size = reader.readRegion(vec3sz(0, 0, 0),
+                                    dimensions, dataset.buffer.data());
+      // const auto upper = ospcommon::vec3f(dimensions);
+      // const auto halfLength = ospcommon::vec3i(dimensions) / 2;
+      // auto volume =
+      //     gensv::loadVolume(reader, ospcommon::vec3i(dimensions), dtype);
+      // volume.bounds.lower -= ospcommon::vec3f(halfLength);
+      // volume.bounds.upper -= ospcommon::vec3f(halfLength);
+      // volume.volume.set("gridOrigin",
+      //                   volume.ghostGridOrigin - ospcommon::vec3f(halfLength));
+      // volume.volume.commit();
+      cout << dataset.buffer.size() << endl;
+      datasets.emplace(_name, dataset);
+      cout << datasets[_name].buffer.size() << endl;
     }
   }
 }
 
-gensv::LoadedVolume& DatasetManager::get(const char *name) {
+Dataset &DatasetManager::get(const char *name) {
   auto search = datasets.find(name);
   if (search == datasets.end()) {
     throw string("Volume ") + name + " not found";

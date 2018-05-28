@@ -31,7 +31,7 @@ struct LoadedVolume {
  * Returns the ghostGridOrigin of the volume which may be outside the bounding
  * box, due to the ghost voxels.
  */
-LoadedVolume loadVolume(RawReader &reader, const vec3i &dimensions,
-                        const std::string &dtype);
+void loadVolume(struct LoadedVolume* volume, std::vector<unsigned char> &buffer, const vec3i &dimensions,
+                        const std::string &dtype, size_t sizeForDtype);
 
 } // namespace gensv
