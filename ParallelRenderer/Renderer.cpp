@@ -7,6 +7,47 @@ using namespace ospcommon;
 
 extern DatasetManager datasets;
 
+gensv::LoadedVolume &setupVolume(rapidjson::Value &volumeParams) {
+  auto &tfcnParams = volumeParams["transferfunction"];
+  auto &datasetParams = volumeParams["dataset"];
+  auto volumeName = string(datasetParams["source"].GetString());
+  if (datasetParams.HasMember("timestep")) {
+    volumeName += to_string(datasetParams["timestep"].GetInt());
+  }
+  auto &volume = datasets.get(volumeName.c_str());
+
+  vec2f valueRange{0, 255};
+  if (datasetParams["source"] == "magnetic") {
+    valueRange.x = 0.44;
+    valueRange.y = 0.77;
+  }
+  // vector<vec3f> colors;
+  // vector<float> opacities;
+  // const auto &points = tfcnParams["tfcn"].GetArray();
+  // for (auto &point : points) {
+  //   const auto hex = string(point["color"].GetString());
+  //   const auto opacity = point["y"].GetFloat();
+  //   colors.push_back(
+  //       vec3f{strtol(hex.substr(1, 2).c_str(), nullptr, 16) * 1.0f / 255,
+  //             strtol(hex.substr(3, 2).c_str(), nullptr, 16) * 1.0f / 255,
+  //             strtol(hex.substr(5, 2).c_str(), nullptr, 16) * 1.0f / 255});
+  //   opacities.push_back(opacity);
+  // }
+  const std::vector<vec3f> colors{
+      vec3f(0, 0, 0.56), vec3f(0, 0, 1), vec3f(0, 1, 1),  vec3f(0.5, 1, 0.5),
+      vec3f(1, 1, 0),    vec3f(1, 0, 0), vec3f(0.5, 0, 0)};
+  const std::vector<float> opacities{0.0001f, 1.0f};
+  ospray::cpp::Data colorsData(colors.size(), OSP_FLOAT3, colors.data());
+  ospray::cpp::Data opacityData(opacities.size(), OSP_FLOAT, opacities.data());
+  colorsData.commit();
+  opacityData.commit();
+  volume.tfcn.set("colors", colorsData);
+  volume.tfcn.set("opacities", opacityData);
+  volume.tfcn.set("valueRange", valueRange);
+  volume.tfcn.commit();
+  return volume;
+}
+
 vector<unsigned char> Renderer::render(rapidjson::Value &values,
                                        map<string, string> *extraParams) {
   auto start = chrono::steady_clock::now();
@@ -22,7 +63,7 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
   ospray::cpp::Data lights(1, OSP_LIGHT, &lightHandle);
   lights.commit();
 
-  renderer.set("aoSamples", rendererParams["aoSamples"].GetInt());
+  renderer.set("aoSamples", 0);
   renderer.set("bgColor", 1.0f);
   renderer.set("lights", lights);
 
@@ -79,64 +120,57 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
   ospray::cpp::Model world;
   for (auto &modelParams : modelsParams) {
     auto &volumeParams = modelParams["volume"];
-    auto &tfcnParams = volumeParams["transferfunction"];
-    auto &datasetParams = volumeParams["dataset"];
-    auto volumeName = datasetParams["source"].GetString();
-    auto volume = datasets.get(volumeName);
-
-    vec2f valueRange{0, 255};
-    if (datasetParams["source"] == "magnetic") {
-      valueRange.x = 0.44;
-      valueRange.y = 0.77;
+    gensv::LoadedVolume *volumePtr;
+    if (volumeParams["type"] == "structured") {
+      auto &volume = setupVolume(volumeParams);
+      volume.volume.commit();
+      volumePtr = &volume;
+    } else if (volumeParams["type"] == "clipping") {
+      auto &upperParams = volumeParams["upper"];
+      auto &lowerParams = volumeParams["lower"];
+      auto upper = vec3f(upperParams[0].GetFloat(), upperParams[1].GetFloat(),
+                         upperParams[2].GetFloat());
+      auto lower = vec3f(lowerParams[0].GetFloat(), lowerParams[1].GetFloat(),
+                         lowerParams[2].GetFloat());
+      auto &_volumeParams = volumeParams["volume1"];
+      auto &volume = setupVolume(_volumeParams);
+      volume.volume.set("volumeClippingBoxLower", upper);
+      volume.volume.set("volumeClippingBoxUpper", lower);
+      volume.volume.commit();
+      volumePtr = &volume;
+    } else if (volumeParams["type"] == "diff") {
+      auto &volume1Params = volumeParams["volume1"];
+      auto &volume2Params = volumeParams["volume2"];
+      auto &volume = setupVolume(volumeParams);
+      volume.volume.commit();
+      volumePtr = &volume;
     }
-    vector<vec3f> colors;
-    vector<float> opacities;
-    const auto &points = tfcnParams["tfcn"].GetArray();
-    for (auto &point : points) {
-      const auto hex = string(point["color"].GetString());
-      const auto opacity = point["y"].GetFloat();
-      colors.push_back(
-          vec3f{strtol(hex.substr(1, 2).c_str(), nullptr, 16) * 1.0f / 255,
-                strtol(hex.substr(3, 2).c_str(), nullptr, 16) * 1.0f / 255,
-                strtol(hex.substr(5, 2).c_str(), nullptr, 16) * 1.0f / 255});
-      opacities.push_back(opacity);
-    }
-    ospray::cpp::Data colorsData(colors.size(), OSP_FLOAT3, colors.data());
-    ospray::cpp::Data opacityData(opacities.size(), OSP_FLOAT,
-                                  opacities.data());
-    colorsData.commit();
-    opacityData.commit();
-    volume.tfcn.set("valueRange", valueRange);
-    volume.tfcn.set("colors", colorsData);
-    volume.tfcn.set("opacities", opacityData);
-    volume.tfcn.commit();
-    volume.volume.set("voxelRange", valueRange);
-    volume.volume.commit();
-
+    auto volume = *volumePtr;
     world.addVolume(volume.volume);
     vector<box3f> regions{volume.bounds};
     ospray::cpp::Data regionData(regions.size() * 2, OSP_FLOAT3,
                                  regions.data());
     world.set("regions", regionData);
-
-    auto geometriesParams = modelParams["geometry"].GetArray();
-    for (auto &geometryParams : geometriesParams) {
-      auto geoType = string(geometryParams["type"].GetString());
-      ospray::cpp::Geometry geometry(geoType.c_str());
-      if (geoType == "triangles") {
-      } else if (geoType == "spheres") {
-      } else if (geoType == "cylinders") {
-      } else if (geoType == "isosurfaces") {
-        auto isovalue = geometryParams["isovalues"].GetFloat();
-        ospray::cpp::Data isovalues(1, OSP_FLOAT, &isovalue);
-        isovalues.commit();
-        geometry.set("isovalues", isovalues);
-        geometry.set("volume", volume.volume);
-      } else if (geoType == "streamlines") {
-      } else if (geoType == "slices") {
+    if (modelParams.HasMember("geometry")) {
+      auto geometriesParams = modelParams["geometry"].GetArray();
+      for (auto &geometryParams : geometriesParams) {
+        auto geoType = string(geometryParams["type"].GetString());
+        ospray::cpp::Geometry geometry(geoType.c_str());
+        if (geoType == "triangles") {
+        } else if (geoType == "spheres") {
+        } else if (geoType == "cylinders") {
+        } else if (geoType == "isosurfaces") {
+          auto isovalue = geometryParams["isovalues"].GetFloat();
+          ospray::cpp::Data isovalues(1, OSP_FLOAT, &isovalue);
+          isovalues.commit();
+          geometry.set("isovalues", isovalues);
+          geometry.set("volume", volume.volume);
+        } else if (geoType == "streamlines") {
+        } else if (geoType == "slices") {
+        }
+        geometry.commit();
+        world.addGeometry(geometry);
       }
-      geometry.commit();
-      world.addGeometry(geometry);
     }
   }
   world.commit();

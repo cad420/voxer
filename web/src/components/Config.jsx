@@ -26,11 +26,11 @@ export default class Config extends Component {
             if (!Entry) return JSON.stringify(param)
             return (
               <div className="config-item" key={param.label}>
-              <Entry
-                {...param}
-                value={values[param.label]}
-                onChange={onChange}
-              />
+                <Entry
+                  {...param}
+                  value={values[param.label]}
+                  onChange={onChange}
+                />
               </div>
             )
           })

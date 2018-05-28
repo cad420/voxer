@@ -92,13 +92,16 @@ export default class VovisDiagramWidget extends DiagramWidget {
 								values[source.name].push(source.parent.extras.values)
 							}
 						} else {
-							target.parent.extras.values[source.name] = source.parent.extras.values
+							// const name = target.name === 'volume1' || target.name === 'volume2' ? target.name : source.name
+							target.parent.extras.values[target.name] = source.parent.extras.values
 						}
-						target.parent.extras.children[source.name] = true
+						// const name = target.name === 'volume1' || target.name === 'volume2' ? target.name : source.name
+						target.parent.extras.children[target.name] = true
+
 						const childKeys = Object.keys(target.parent.extras.children)
 						let status = true
 						for (let i = 0; i < childKeys.length; i++) {
-							if (!target.parent.extras.children[childKeys[i]]) {
+							if (!target.parent.extras.children[childKeys[i]] && target.parent.ports[childKeys[i]].required) {
 								status = false
 							}
 						}

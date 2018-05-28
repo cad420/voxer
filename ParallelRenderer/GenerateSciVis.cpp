@@ -3,6 +3,7 @@
 #include "ospray/ospray_cpp/TransferFunction.h"
 #include "ospray/ospray_cpp/Volume.h"
 #include "third_party/RawReader/RawReader.h"
+#include "ospray/ospray.h"
 #include <array>
 #include <ospray/mpiCommon/MPICommon.h>
 #include <random>
@@ -77,14 +78,26 @@ size_t sizeForDtype(const std::string &dtype) {
   return 0;
 }
 
+OSPDataType typeForString(const std::string &dtype) {
+  if (dtype == "uchar" || dtype == "char") {
+    return OSP_UCHAR;
+  }
+  if (dtype == "float") {
+    return OSP_FLOAT;
+  }
+  if (dtype == "double") {
+    return OSP_DOUBLE;
+  }
+
+  return OSP_UCHAR;
+}
+
 LoadedVolume loadVolume(RawReader &reader, const vec3i &dimensions,
                         const std::string &dtype) {
   auto numRanks = static_cast<float>(mpicommon::numGlobalRanks());
   auto myRank = mpicommon::globalRank();
-  if (numRanks == -1)
-    numRanks = 1;
-  if (myRank == -1)
-    myRank = 0;
+  numRanks = 1;
+  myRank = 0;
 
   LoadedVolume vol;
 
@@ -110,6 +123,7 @@ LoadedVolume loadVolume(RawReader &reader, const vec3i &dimensions,
                           ghosts[2] & NEG_FACE ? 1 : 0);
   vol.ghostGridOrigin = gridOrigin - vec3f(ghostOffset);
 
+  // vol.volume = ospray::cpp::Volume("shared_structured_volume");
   vol.volume = ospray::cpp::Volume("block_bricked_volume");
   vol.volume.set("voxelType", dtype.c_str());
   vol.volume.set("dimensions", vec3i(fullDims));
@@ -120,9 +134,18 @@ LoadedVolume loadVolume(RawReader &reader, const vec3i &dimensions,
   std::vector<unsigned char> volumeData(
       fullDims.x * fullDims.y * fullDims.z * dtypeSize, 0);
 
-  reader.readRegion(brickId * brickDims - vec3sz(ghostOffset), vec3sz(fullDims),
+  auto size = reader.readRegion(brickId * brickDims - vec3sz(ghostOffset), vec3sz(fullDims),
                     volumeData.data());
+
+  // for shared_structured_volume
+  // const OSPDataType ospVoxelType = typeForString(dtype);
+  // OSPData data = ospNewData(volumeData.size(), ospVoxelType, volumeData.data(), OSP_DATA_SHARED_BUFFER);
+  // vol.volume.set("voxelData", data);
+  // end
+
+  // for block_bricked_volume
   vol.volume.setRegion(volumeData.data(), vec3i(0), vec3i(fullDims));
+  // end
 
   vol.bounds = box3f(gridOrigin, gridOrigin + vec3f(brickDims));
   return vol;

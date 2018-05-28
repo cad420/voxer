@@ -8,19 +8,19 @@
   top: 0;
   background-color: #222;
   line-height: 60px;
-  color: white;
   user-select: none;
   z-index: 999;
 }
 
 .App-header h1 {
   font-size: 1.5em;
+  color: white;
   margin: 0;
 }
 
 .App-container {
   position: relative;
-  margin-top: 60px;
+  top: 60px;
   height: calc(100vh - 60px);
   overflow: hidden;
 }
@@ -38,7 +38,7 @@
   left: 0;
   height: 100%;
   overflow-y: auto;
-  border-right: 1px solid #000;
+  border-right: 1px solid #999;
 }
 
 .module-type {
@@ -59,7 +59,7 @@
   top: 0;
   right: 0;
   height: 100%;
-  border-left: 1px solid #000;
+  border-left: 1px solid #999;
   box-sizing: border-box;
   overflow: auto;
 }
@@ -122,6 +122,8 @@
 
 .App .srd-port {
   cursor: pointer;
+  background: rgba(255,255,255,0.3);
+  border: 1px solid rgba(255,255,255,0.4);
 }
 
 .App .generate {
@@ -135,6 +137,11 @@
 
 .App .config-item {
   margin: 10px 0;
+}
+
+.App .config-item .line {
+  height: 36px;
+  line-height: 36px;
 }
 
 .App .rendered-image {
@@ -154,4 +161,8 @@
 
 .App .srd-default-port.repeatable .srd-port {
   border-radius: 50%;
+}
+
+.App .srd-default-port.nullable .srd-port {
+  border-style: dashed;
 }

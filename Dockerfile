@@ -1,14 +1,12 @@
-FROM ubuntu:xenial
+FROM openmpi
 
 ARG build_parallel
 
-RUN sed -i 's/http:\/\/archive\.ubuntu\.com\/ubuntu\//http:\/\/mirrors\.163\.com\/ubuntu\//g' /etc/apt/sources.list && \
-    apt-get update && \
+ADD temp/sources.list /etc/apt/
+RUN apt-get update && \
     apt-get install -y \
             build-essential \
             cmake \
-            mpich \
-            libmpich-dev \
     && \
     rm -rf /var/lib/apt/lists/*
 
@@ -22,10 +20,26 @@ RUN mv /opt/tbb2018_20180312oss /opt/tbb
 ADD temp/embree-3.2.0.x86_64.linux.tar.gz /opt/
 RUN mv /opt/embree-3.2.0.x86_64.linux /opt/embree
 
+ADD temp/poco-1.9.0.tar.gz /opt/
+RUN mv /opt/poco-1.9.0 /opt/poco && \
+    cd /opt/poco && \
+    ./configure && \
+    make ${build_parallel} && \
+    make install && \
+    rm -rf /opt/poco
+
+RUN apt remove -y libopenmpi-dev openmpi-bin openmpi-common openmpi-doc
+
+ADD temp/openmpi-3.1.0.tar.gz /opt/
+RUN cd /opt/openmpi-3.1.0 && \
+    ./configure --prefix=/usr/ && \
+    make all install
+
 ADD temp/ospray-1.6.0.tar.gz /opt/
 RUN mv /opt/ospray-1.6.0 /opt/ospray && \
     mkdir /opt/ospray/build && \
     cd /opt/ospray/build && \
+    export LD_LIBRARY_PATH=/usr/local/lib && \
     cmake .. \
           -Dembree_DIR=/opt/embree \
           -DOSPRAY_ENABLE_APPS:BOOL=OFF \
@@ -39,14 +53,6 @@ RUN mv /opt/ospray-1.6.0 /opt/ospray && \
     make install && \
     rm -rf /opt/ospray
 
-ADD temp/poco-1.9.0.tar.gz /opt/
-RUN mv /opt/poco-1.9.0 /opt/poco && \
-    cd /opt/poco && \
-    ./configure && \
-    make ${build_parallel} && \
-    make install && \
-    rm -rf /opt/poco
-
 COPY ParallelRenderer /opt/vovis/ParallelRenderer
 COPY third_party /opt/vovis/third_party
 COPY CMakeLists.txt /opt/vovis
@@ -56,4 +62,7 @@ RUN cmake .. \
    -DTBB_ROOT=/opt/tbb && \
     make ${build_parallel}
 
-CMD ["sh", "-c", "ls"]
+ADD configs/ssh_config /home/mpirun/.ssh/config
+RUN chown mpirun:mpirun /home/mpirun/.ssh/config
+
+CMD ["/usr/sbin/sshd", "-D"]

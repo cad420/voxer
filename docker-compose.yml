@@ -5,21 +5,22 @@ services:
     #   context: .
     #   args:
     #     build_parallel: "-j5"
-    image: vovis
-    deploy:
-      replicas: 5
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 1024M
-      restart_policy:
-        condition: on-failure
+    image: vovis:xenial
+    # deploy:
+    #   replicas: 5
+    #   resources:
+    #     limits:
+    #       cpus: "0.5"
+    #       memory: 1024M
+    #   restart_policy:
+    #     condition: on-failure
     volumes:
-      - d:/:/data
+      - ./data:/data
       - ./configs:/configs
-    command: ./VovisRenderer --datasets /configs/datasets.json --configures /configs/configures.json
+    command: /usr/sbin/sshd -D
     ports:
-     - "3000:3000"
+      - "2223:22"
+      - "3000:3000"
     networks:
       - vovisnet
 

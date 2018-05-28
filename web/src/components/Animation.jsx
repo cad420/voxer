@@ -8,11 +8,12 @@ export default class extends Component {
     this.state = {
       data: null,
       url: '',
-      interacting: false
+      interacting: false,
+      step: 0,
+      isAnimate: false
     }
     this.ws = null
-    // this.server =  window.location.hostname + ':3000/'
-    this.server =  '10.189.130.250' + ':3000/'
+    this.server =  window.location.hostname + ':3000/'
   }
 
   componentDidMount() {
@@ -25,7 +26,7 @@ export default class extends Component {
         this.setState({ data: URL.createObjectURL(blob) })
       } else {
         const data = JSON.parse(msg.data)
-        if (data.type === 'url') {
+        if (data.type === 'config') {
           this.setState({ url: this.server + data.value })
         } else if (data.type === 'error') {
           window.alert(data.value)
@@ -107,6 +108,14 @@ export default class extends Component {
     this.sendRequest('generate')
   }
 
+  play = () => {
+    const { model } = this.props
+    if (!model.status) return
+    this.setState({ isAnimate: true })
+    const rendererParams = model.extras.values.image;
+    const modelParams = rendererParams.model;
+  }
+
   sendRequest = (operation) => {
     const { model } = this.props
     const { url } = this.state
@@ -133,6 +142,12 @@ export default class extends Component {
             src={data}
             alt=""
           />
+        </div>
+        <div className="center">
+          <button onClick={this.play}>play</button>
+          <button onClick={this.stop}>stop</button>
+          <button onClick={this.next}>next</button>
+          <button onClick={this.prev}>prev</button>
         </div>
         <div className="center generate"><button onClick={this.generate}>Generate Configure</button></div>
         {url.length > 0 && <div className="center image-url" onMouseDown={e => e.stopPropagation()}>{url}</div>}

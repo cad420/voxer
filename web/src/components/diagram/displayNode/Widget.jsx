@@ -2,6 +2,7 @@ import * as React from "react";
 import { BaseWidget } from "storm-react-diagrams";
 import PortLabelWidget from '../port/Widget'
 import Display from '../../Display' 
+import Animate from '../../Animation'
 
 export default class Widget extends BaseWidget {
 	constructor(props) {
@@ -16,7 +17,7 @@ export default class Widget extends BaseWidget {
   }
   
 	render() {
-    const { node } = this.props
+		const { node } = this.props
 		return (
 			<div {...this.getProps()} style={{ background: node.color }}>
         <div className={this.bem("__ports")}>
@@ -30,7 +31,8 @@ export default class Widget extends BaseWidget {
 					<br/>
 				</div>
         <div style={{ width: '500px', minHeight: '1px' }}>
-					<Display ref={node.setElement} model={node} />
+					{ node.name === 'Image Display' && <Display ref={node.setElement} model={node} /> }
+					{ node.name === 'Animation Display' && <Animate ref={node.setElement} model={node} /> }
 				</div>
 			</div>
 		);

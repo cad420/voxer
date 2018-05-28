@@ -161,6 +161,8 @@ export default class PieceWiseFunctionEditorWidget extends Component {
           <div>
             <div>
               <input type="color" name="" id="" onChange={this.updateActivePointColor} />
+              &nbsp;&nbsp;&nbsp;
+              <button onClick={this.removePoint}>Delete</button>
             </div>
             <br/>
             <div>
@@ -190,7 +192,7 @@ export default class PieceWiseFunctionEditorWidget extends Component {
               <br/>
             </div>
             <div>
-              <button onClick={this.removePoint}>Delete</button>
+              
             </div>
           </div>
         )}

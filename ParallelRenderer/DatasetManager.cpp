@@ -32,6 +32,8 @@ void DatasetManager::load(string filepath) {
     auto name = string(info["name"].GetString());
     auto filepath = string(info["path"].GetString());
     auto dimsData = info["dimensions"].GetArray();
+    auto timesteps = info.HasMember("timesteps") ? info["timesteps"].GetInt() : 1;
+    
     for (auto dim = dimsData.Begin(); dim != dimsData.end(); dim++) {
       dimensions[dim - dimsData.Begin()] = dim->GetInt();
     }
@@ -44,17 +46,25 @@ void DatasetManager::load(string filepath) {
     } else if (dtype == "double") {
       sizeForType = 8;
     }
-    gensv::RawReader reader(ospcommon::FileName(filepath), dimensions,
+    for (auto step = 1; step <= timesteps; step++) {
+      auto _filepath = filepath;
+      auto _name = name;
+      if(timesteps > 1) {
+        _filepath.replace(_filepath.end() - 10, _filepath.end() - 4, to_string(step));
+        _name += to_string(step);
+      }
+      gensv::RawReader reader(ospcommon::FileName(_filepath), dimensions,
                             sizeForType);
-    const auto upper = ospcommon::vec3f(dimensions);
-    const auto halfLength = ospcommon::vec3i(dimensions) / 2;
-    auto volume = gensv::loadVolume(reader, ospcommon::vec3i(dimensions), dtype);
-    volume.bounds.lower -= ospcommon::vec3f(halfLength);
-    volume.bounds.upper -= ospcommon::vec3f(halfLength);
-    volume.volume.set("gridOrigin",
-                      volume.ghostGridOrigin - ospcommon::vec3f(halfLength));
-    volume.volume.commit();
-    datasets[name] = volume;
+      const auto upper = ospcommon::vec3f(dimensions);
+      const auto halfLength = ospcommon::vec3i(dimensions) / 2;
+      auto volume = gensv::loadVolume(reader, ospcommon::vec3i(dimensions), dtype);
+      volume.bounds.lower -= ospcommon::vec3f(halfLength);
+      volume.bounds.upper -= ospcommon::vec3f(halfLength);
+      volume.volume.set("gridOrigin",
+                        volume.ghostGridOrigin - ospcommon::vec3f(halfLength));
+      volume.volume.commit();
+      datasets[_name] = volume;
+    }
   }
 }
 

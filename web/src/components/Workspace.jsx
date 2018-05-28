@@ -19,8 +19,11 @@ export default class Workspace extends Component {
     if (!dropped) return
     const data = JSON.parse(dropped);
     let node = null
-    if (data.node && data.node === 'display') {
-      node = new DisplayNodeModel(data.name, '#333');
+    if (data.node && data.node === 'image') {
+      node = new DisplayNodeModel(data.name, '#333', 'image');
+      app.displays.push(node)
+    } else if (data.node && data.node === 'animation') {
+      node = new DisplayNodeModel(data.name, '#333', 'animation');
       app.displays.push(node)
     } else {
       node = new VovisNodeModel(data.name, '#333');
@@ -38,6 +41,7 @@ export default class Workspace extends Component {
         this._status = value
         Object.keys(node.ports).forEach(portId => {
           if (node.ports[portId].in) return
+          if (node.ports[portId].in.required === false) return
           const links = node.ports[portId].links
           Object.keys(links).forEach(linkId => {
             const target = links[linkId].targetPort.parent.extras
@@ -66,7 +70,7 @@ export default class Workspace extends Component {
       }
     })
     data.ports.inputs.forEach(port => {
-      node.addPort(new VovisPortModel(true, port.name, port.label, port.repeatable));
+      node.addPort(new VovisPortModel(true, port.name, port.label, port.repeatable, port.required));
       node.extras.children[port.name] = false
     })
     data.ports.outputs.forEach(port => {

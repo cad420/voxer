@@ -10,7 +10,7 @@ export default class extends Component {
   render() {
     const { label, value, min = 0, max = 100, step = 1 } = this.props;
     return (
-      <Row gutter={16}>
+      <Row gutter={16} className="line">
         <Col span={6}>
           <b>{label}</b>
         </Col>

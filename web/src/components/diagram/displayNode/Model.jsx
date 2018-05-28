@@ -4,18 +4,20 @@ import PortModel from '../port/Model'
 import * as _ from "lodash";
 
 export default class Model extends NodeModel {
-	constructor(name, color) {
+	constructor(name, color, displayType) {
     super("display");
     this.name = name;
     this.color = color;
 		this.ports = {};
 		this.el = null;
+		this.displayType = displayType;
   }
 
 	deSerialize(object, engine) {
 		super.deSerialize(object, engine);
 		this.name = object.name;
 		this.color = object.color;
+		this.displayType = object.displayType
 	}
 
 	serialize() {

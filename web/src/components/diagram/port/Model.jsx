@@ -2,10 +2,11 @@ import { DefaultPortModel } from 'storm-react-diagrams'
 import LinkModel from '../link/Model'
 
 export default class Model extends DefaultPortModel {
-	constructor(isInput, name, label, repeatable) {
+	constructor(isInput, name, label, repeatable, required = true) {
 		super(isInput, name, label)
 		this.type = 'vovis'
 		this.repeatable = repeatable
+		this.required = required
 	}
 
 	createLinkModel() {
@@ -13,6 +14,12 @@ export default class Model extends DefaultPortModel {
 	}
 
 	canLinkToPort(port) {
+		if (this.name === 'volume' && port.name.substr(0, 6) === 'volume') {
+			return true
+		}
+		if (port.name === 'volume' && port.name.substr(0, 6) === 'volume') {
+			return true
+		}
 		if (this.name !== port.name) {
 			return false
 		}

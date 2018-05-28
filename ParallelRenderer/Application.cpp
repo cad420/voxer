@@ -128,15 +128,17 @@ public:
               auto img = encoder.encode(data, imgSize, "JPEG");
               ws.sendFrame(img.data(), img.size(), WebSocket::FRAME_BINARY);
             } catch (string &exc) {
+              auto msg = "{\"type\": \"error\" , \"value\": \"" + exc + "\"}";
               ws.sendFrame(exc.c_str(), exc.size());
             }
           } else if (operation == "generate") {
             if (!d.HasMember("params") || !d["params"].IsObject()) {
-              auto msg = "{\"type\": \"error\" , \"value\": \"Invalid params\"";
+              auto msg =
+                  "{\"type\": \"error\" , \"value\": \"Invalid params\"}";
               ws.sendFrame(msg, sizeof(msg));
             }
             auto id = configs.save(d["params"]);
-            auto msg = "{\"type\": \"url\" , \"value\":" + id;
+            auto msg = "{\"type\": \"config\" , \"value\":\"" + id + "\"}";
             ws.sendFrame(msg.c_str(), msg.size());
           }
         }
@@ -194,6 +196,10 @@ protected:
     for (auto &arg : self.argv()) {
       if (arg == "--mpi") {
         argvec.push_back("--osp:mpi");
+      } else if (arg == "--loglevel") {
+        argvec.push_back("--osp:loglevel");
+      } else if (arg == "--nthreads") {
+        argvec.push_back("--osp:numthreads");
       } else {
         argvec.push_back(const_cast<char *>(arg.c_str()));
       }
@@ -213,6 +219,14 @@ protected:
     ServerApplication::defineOptions(options);
     options.addOption(Option("mpi", "", "OSPRay MPI Offload Rendering Mode.")
                           .required(false)
+                          .repeatable(false));
+    options.addOption(Option("loglevel", "", "OSPRay loglevel.")
+                          .required(false)
+                          .argument("<the value>", true)
+                          .repeatable(false));
+    options.addOption(Option("nthreads", "", "OSPRay numthreads.")
+                          .required(false)
+                          .argument("<the value>", true)
                           .repeatable(false));
     options.addOption(Option("datasets", "", "volume datasets configure file.")
                           .required(true)

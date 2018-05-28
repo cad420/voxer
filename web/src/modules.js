@@ -20,41 +20,10 @@ export default {
         name: 'Time-varying Scalar',
         type: 'time',
         params: [
-          { label: 'step', type: 'Int' }
+          { label: 'source', type: 'Select', options: ['lsabel'], default: 'lsabel' },
+          { label: 'timestep', type: 'Int', min: 0, max: 48, default: 0 }
         ]
       },
-    ]
-  },
-  'Volume Processing': {
-    common: {
-      params: [],
-      ports: {
-        inputs: [
-          { name: 'volume', label: 'in' }
-        ],
-        outputs: [
-          { name: 'volume', label: 'out' }
-        ]
-      }
-    },
-    type: [
-      {
-        name: 'Clipping',
-        type: 'clipping',
-        params: [
-          { label: 'lower bounds', type: 'Vec3f', default: [0, 0, 0] },
-          { label: 'upper bounds', type: 'Vec3f', default: [0, 0, 0] }
-        ]
-      },
-      {
-        name: 'Diff',
-        type: 'diff',
-        params: [
-          { label: 'volume 1', type: 'Select' },
-          { label: 'volume 2', type: 'Select' }
-        ]
-      },
-      { name: 'Filter', type: 'filter' },
     ]
   },
   TransferFunction: {
@@ -95,8 +64,6 @@ export default {
         { label: 'adaptiveMaxSamplingRate', type: 'Float', default: 2 },
         { label: 'samplingRate', type: 'Float', default: 0.125, min: 0.01, max: 20 },
         { label: 'specular', type: 'Vec3f', default: [0.3, 0.3, 0.3] },
-        { label: 'volumeClippingBoxLower', type: 'Vec3f' },
-        { label: 'volumeClippingBoxUpper', type: 'Vec3f' }
       ],
       ports: {
         inputs: [
@@ -113,33 +80,67 @@ export default {
         name: 'Structured Volume',
         type: 'structured',
         params: [
-          { label: 'dimensions', type: 'Vec3i' },
-          { label: 'voxelType', type: 'Select', values: ['unchar', 'short', 'ushort', 'float'] },
           { label: 'gridOrigin', type: 'Vec3f' },
           { label: 'gridSpacing', type: 'Vec3f' },
         ],
       },
-      {
-        name: 'AMR Volume',
-        type: 'AMR',
-        params: [
-          { label: 'gridOrigin', type: 'Vec3f' },
-          { label: 'gridSpacing', type: 'Vec3f' },
-          { label: 'amrMethod', type: 'select' },
-          { label: 'voxelType', type: 'select' },
-          { label: 'brickInfo', type: '_data' },
-          { label: 'brickData', type: '_data' },
+      // {
+      //   name: 'AMR Volume',
+      //   type: 'AMR',
+      //   params: [
+      //     { label: 'gridOrigin', type: 'Vec3f' },
+      //     { label: 'gridSpacing', type: 'Vec3f' },
+      //     { label: 'amrMethod', type: 'select' },
+      //     { label: 'voxelType', type: 'select' },
+      //     { label: 'brickInfo', type: '_data' },
+      //     { label: 'brickData', type: '_data' },
+      //   ],
+      // },
+      // {
+      //   name: 'Unstructured Volume',
+      //   type: 'unstructured',
+      //   params: [
+      //     { label: 'vertices', type: 'vec3if[]' },
+      //     { label: 'field', type: 'intices' },
+      //     { label: 'hexMethod', type: 'select' },
+      //   ]
+      // },
+    ]
+  },
+  'Volume Processing': {
+    common: {
+      params: [],
+      ports: {
+        inputs: [
+          { name: 'volume1', label: 'in' }
         ],
-      },
+        outputs: [
+          { name: 'volume', label: 'out' }
+        ]
+      }
+    },
+    type: [
       {
-        name: 'Unstructured Volume',
-        type: 'unstructured',
+        name: 'Volume Clipping',
+        type: 'clipping',
         params: [
-          { label: 'vertices', type: 'vec3if[]' },
-          { label: 'field', type: 'intices' },
-          { label: 'hexMethod', type: 'select' },
+          { label: 'lower', type: 'Vec3f', default: [0, 0, 0] },
+          { label: 'upper', type: 'Vec3f', default: [0, 0, 0] }
         ]
       },
+      {
+        name: 'Volume Difference',
+        type: 'diff',
+        ports: {
+          inputs: [
+            { name: 'volume2', label: 'in' }
+          ]
+        }
+      },
+      {
+        name: 'Volume Transform',
+        type: 'transform'
+      }
     ]
   },
   Geometry: {
@@ -161,7 +162,7 @@ export default {
         ]
       },
       {
-        name: 'Spheres',
+        name: 'Sphere',
         type: 'sphere',
         params: [
           { label: 'radius', type: 'Float' },
@@ -180,14 +181,14 @@ export default {
         name: 'Streamlines'
       },
       {
-        name: 'Isosurfaces',
+        name: 'Isosurface',
         type: 'isosurfaces',
         params: [
           { label: 'isovalues', type: 'Slider', max: 255, min: 0, default: 0.3 },
         ]
       },
       {
-        name: 'Slices'
+        name: 'Slice'
       },
       {
         name: 'Bounding Box'
@@ -198,7 +199,7 @@ export default {
     common: {
       ports: {
         inputs: [
-          { name: 'geometry', label: 'in', repeatable: true },
+          { name: 'geometry', label: 'in', repeatable: true, required: false },
           { name: 'volume', label: 'in' }
         ],
         outputs: [
@@ -292,13 +293,12 @@ export default {
       }
     ]
   }, */
-  Renderer: {
+  Rendering: {
     common: {
       ports: {
         inputs: [
-          { name: 'model', label: 'in', repeatable: true },
-          // { name: 'lights', label: 'in' },
-          // { name: 'camera', label: 'in' }
+          { name: 'lights', label: 'in', repeatable: true, required: false },
+          { name: 'model', label: 'in', repeatable: true }
         ],
         outputs: [
           { name: 'image', label: 'out' }
@@ -309,20 +309,18 @@ export default {
         { label: 'spp', type: 'Int' },
         { label: 'maxDepth', type: 'Int' },
         { label: 'minContribution', type: 'Float' },
-        { label: 'varianceThreshold', type: 'Float' },
       ]
     },
     type: [
       {
-        name: 'SciVis Renderer',
+        name: 'SciVis Rendering',
         type: 'scivis',
         params: [
           { label: 'shadowsEnabled', type: 'Switch' },
-          { label: 'aoSamples', type: 'Int', default: 0 },
+          { label: 'aoSamples', type: 'Int', default: 1 },
           { label: 'aoDistance', type: 'Float' },
           { label: 'aoTransparencyEnabled', type: 'Switch' },
           { label: 'oneSidedLighting', type: 'Switch' },
-          { label: 'bgColor', type: 'Vec3f' },
           { label: 'pos', type: 'Vec3f', default: [100, 100, 100] },
           { label: 'dir', type: 'Vec3f', default: [-1, -1, -1] },
           { label: 'up', type: 'Vec3f', default: [0, 1, 0], max: 1, min: -1 },
@@ -332,14 +330,30 @@ export default {
             { label: 'left eye', value: 1 },
             { label: 'right eye', value: 2 },
             { label: 'side-by-side', value: 3 }
-          ]},
+          ], default: 0 },
           { label: 'fovy', type: 'Float' },
           { label: 'apertureRadius', type: 'Float' },
           { label: 'foucsDistance', type: 'Float' },
           { label: 'architectural', type: 'Float' },
           { label: 'interpupillartDistance', type: 'Float' },
-          // { name: 'maxDepthTexture', type: '_texture' },
         ]
+      }
+    ]
+  },
+  'Image Processing': {
+    common: {
+      ports: {
+        inputs: [
+          { name: 'image', label: 'in' },
+        ],
+        outputs: [
+          { name: 'image', label: 'out' },
+        ]
+      },
+    },
+    type: [
+      {
+        name: 'Image Scale'
       }
     ]
   },
@@ -358,15 +372,13 @@ export default {
     type: [
       {
         name: 'Image Display',
-        node: 'display',
+        node: 'image',
         params: []
       },
       {
         name: 'Animation Display',
-        node: 'display',
-        params: [
-          { label: 'frame', type: 'Int' }
-        ]
+        node: 'animation',
+        params: []
       }
     ]
   },
