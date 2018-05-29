@@ -1,4 +1,4 @@
-#include "ConfigManager.h"
+  #include "ConfigManager.h"
 #include "DatasetManager.h"
 #include "ParallelRenderer/Encoder.h"
 #include "Poco/Buffer.h"

@@ -7,14 +7,14 @@ using namespace ospcommon;
 
 extern DatasetManager datasets;
 
-void setupVolume(gensv::LoadedVolume *volume,rapidjson::Value &volumeParams) {
+void setupVolume(gensv::LoadedVolume *volume,rapidjson::Value &volumeParams, bool diff = false) {
   auto &tfcnParams = volumeParams["transferfunction"];
   auto &datasetParams = volumeParams["dataset"];
   auto volumeName = string(datasetParams["source"].GetString());
   if (datasetParams.HasMember("timestep")) {
     volumeName += to_string(datasetParams["timestep"].GetInt());
   }
-  auto &dataset = datasets.get(volumeName.c_str());
+  auto &dataset = diff ? datasets.get("diff") : datasets.get(volumeName.c_str());
   const auto upper = ospcommon::vec3f(dataset.dimensions);
   const auto halfLength = ospcommon::vec3i(dataset.dimensions) / 2;
   gensv::loadVolume(volume, dataset.buffer, ospcommon::vec3i(dataset.dimensions),
@@ -147,6 +147,19 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
       auto &volume1Params = volumeParams["volume1"];
       auto &volume2Params = volumeParams["volume2"];
       setupVolume(&volume, volumeParams);
+      volume.volume.commit();
+    } else if (volumeParams["type"] == "transform") {
+      auto x = volumeParams["x"].GetFloat();
+      auto y = volumeParams["y"].GetFloat();
+      auto z = volumeParams["z"].GetFloat();
+      auto &_volumeParams = volumeParams["volume1"];
+      auto &datasetParams = _volumeParams["dataset"];
+      auto volumeName = string(datasetParams["source"].GetString());
+      setupVolume(&volume, _volumeParams);
+      auto &dataset = datasets.get(_volumeName.c_str());
+      const auto halfLength = ospcommon::vec3i(dataset.dimensions) / 2;
+      auto origin = volume.ghostGridOrigin - ospcommon::vec3f(halfLength) + ospcommon::vec3f(x, y, z);
+      volume.volume.set("gridOrigin", origin);
       volume.volume.commit();
     }
     world.addVolume(volume.volume);

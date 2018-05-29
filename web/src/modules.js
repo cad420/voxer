@@ -139,7 +139,12 @@ export default {
       },
       {
         name: 'Volume Transform',
-        type: 'transform'
+        type: 'transform',
+        params: [
+          { label: 'x', type: 'Float', min: -500, max: 500 },
+          { label: 'y', type: 'Float', min: -500, max: 500 },
+          { label: 'z', type: 'Float', min: -500, max: 500 }
+        ]
       }
     ]
   },
