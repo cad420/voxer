@@ -4,6 +4,7 @@
 #include "ospray/ospray_cpp/Geometry.h"
 #include "ospray/ospray_cpp/TransferFunction.h"
 #include "ospray/ospray_cpp/Volume.h"
+#include "ospray/ospray_cpp/Data.h"
 #include "third_party/RawReader/RawReader.h"
 
 namespace gensv {
@@ -31,7 +32,7 @@ struct LoadedVolume {
  * Returns the ghostGridOrigin of the volume which may be outside the bounding
  * box, due to the ghost voxels.
  */
-void loadVolume(struct LoadedVolume* volume, std::vector<unsigned char> &buffer, const vec3i &dimensions,
+void loadVolume(struct LoadedVolume* volume, ospray::cpp::Data *data, const vec3i &dimensions,
                         const std::string &dtype, size_t sizeForDtype);
 
 } // namespace gensv

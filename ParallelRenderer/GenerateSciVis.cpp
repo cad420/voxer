@@ -92,7 +92,7 @@ OSPDataType typeForString(const std::string &dtype) {
   return OSP_UCHAR;
 }
 
-void loadVolume(struct LoadedVolume* vol, std::vector<unsigned char> &buffer, const vec3i &dimensions,
+void loadVolume(struct LoadedVolume* vol, ospray::cpp::Data *data, const vec3i &dimensions,
                         const std::string &dtype, size_t sizeForDtype) {
   auto numRanks = static_cast<float>(mpicommon::numGlobalRanks());
   auto myRank = mpicommon::globalRank();
@@ -134,9 +134,8 @@ void loadVolume(struct LoadedVolume* vol, std::vector<unsigned char> &buffer, co
   //                   volumeData.data());
 
   // for shared_structured_volume
-  const OSPDataType ospVoxelType = typeForString(dtype);
-  OSPData data = ospNewData(buffer.size(), ospVoxelType, buffer.data(), OSP_DATA_SHARED_BUFFER);
-  vol->volume.set("voxelData", data);
+  vol->volume.set("voxelData", *data);
+  
   // end
 
   // for block_bricked_volume

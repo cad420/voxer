@@ -17,7 +17,7 @@ void setupVolume(gensv::LoadedVolume *volume,rapidjson::Value &volumeParams, boo
   auto &dataset = diff ? datasets.get("diff") : datasets.get(volumeName.c_str());
   const auto upper = ospcommon::vec3f(dataset.dimensions);
   const auto halfLength = ospcommon::vec3i(dataset.dimensions) / 2;
-  gensv::loadVolume(volume, dataset.buffer, ospcommon::vec3i(dataset.dimensions),
+  gensv::loadVolume(volume, dataset.data, ospcommon::vec3i(dataset.dimensions),
                         dataset.dtype, dataset.sizeForDType);
   volume->bounds.lower -= ospcommon::vec3f(halfLength);
   volume->bounds.upper -= ospcommon::vec3f(halfLength);
@@ -29,22 +29,22 @@ void setupVolume(gensv::LoadedVolume *volume,rapidjson::Value &volumeParams, boo
     valueRange.x = 0.44;
     valueRange.y = 0.77;
   }
-  // vector<vec3f> colors;
-  // vector<float> opacities;
-  // const auto &points = tfcnParams["tfcn"].GetArray();
-  // for (auto &point : points) {
-  //   const auto hex = string(point["color"].GetString());
-  //   const auto opacity = point["y"].GetFloat();
-  //   colors.push_back(
-  //       vec3f{strtol(hex.substr(1, 2).c_str(), nullptr, 16) * 1.0f / 255,
-  //             strtol(hex.substr(3, 2).c_str(), nullptr, 16) * 1.0f / 255,
-  //             strtol(hex.substr(5, 2).c_str(), nullptr, 16) * 1.0f / 255});
-  //   opacities.push_back(opacity);
-  // }
-  const std::vector<vec3f> colors{
-      vec3f(0, 0, 0.56), vec3f(0, 0, 1), vec3f(0, 1, 1),  vec3f(0.5, 1, 0.5),
-      vec3f(1, 1, 0),    vec3f(1, 0, 0), vec3f(0.5, 0, 0)};
-  const std::vector<float> opacities{0.0001f, 1.0f};
+  vector<vec3f> colors;
+  vector<float> opacities;
+  const auto &points = tfcnParams["tfcn"].GetArray();
+  for (auto &point : points) {
+    const auto hex = string(point["color"].GetString());
+    const auto opacity = point["y"].GetFloat();
+    colors.push_back(
+        vec3f{strtol(hex.substr(1, 2).c_str(), nullptr, 16) * 1.0f / 255,
+              strtol(hex.substr(3, 2).c_str(), nullptr, 16) * 1.0f / 255,
+              strtol(hex.substr(5, 2).c_str(), nullptr, 16) * 1.0f / 255});
+    opacities.push_back(opacity);
+  }
+  // const std::vector<vec3f> colors{
+  //     vec3f(0, 0, 0.56), vec3f(0, 0, 1), vec3f(0, 1, 1),  vec3f(0.5, 1, 0.5),
+  //     vec3f(1, 1, 0),    vec3f(1, 0, 0), vec3f(0.5, 0, 0)};
+  // const std::vector<float> opacities{0.0001f, 1.0f};
   ospray::cpp::Data colorsData(colors.size(), OSP_FLOAT3, colors.data());
   ospray::cpp::Data opacityData(opacities.size(), OSP_FLOAT, opacities.data());
   colorsData.commit();
@@ -156,7 +156,7 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
       auto &datasetParams = _volumeParams["dataset"];
       auto volumeName = string(datasetParams["source"].GetString());
       setupVolume(&volume, _volumeParams);
-      auto &dataset = datasets.get(_volumeName.c_str());
+      auto &dataset = datasets.get(volumeName.c_str());
       const auto halfLength = ospcommon::vec3i(dataset.dimensions) / 2;
       auto origin = volume.ghostGridOrigin - ospcommon::vec3f(halfLength) + ospcommon::vec3f(x, y, z);
       volume.volume.set("gridOrigin", origin);
@@ -189,10 +189,10 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
       }
     }
   }
+  
   world.commit();
   renderer.set("model", world);
   renderer.commit();
-
   ospray::cpp::FrameBuffer framebuffer(
       imgSize, OSP_FB_SRGBA, OSP_FB_COLOR | /*OSP_FB_DEPTH |*/ OSP_FB_ACCUM);
   framebuffer.clear(OSP_FB_COLOR | OSP_FB_ACCUM);

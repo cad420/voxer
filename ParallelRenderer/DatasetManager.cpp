@@ -8,6 +8,20 @@
 using namespace std;
 using vec3sz = ospcommon::vec_t<size_t, 3>;
 
+OSPDataType typeForString(const std::string &dtype) {
+  if (dtype == "uchar" || dtype == "char") {
+    return OSP_UCHAR;
+  }
+  if (dtype == "float") {
+    return OSP_FLOAT;
+  }
+  if (dtype == "double") {
+    return OSP_DOUBLE;
+  }
+
+  return OSP_UCHAR;
+}
+
 void DatasetManager::load(string filepath) {
   rapidjson::Document d;
   ifstream filestream;
@@ -60,6 +74,7 @@ void DatasetManager::load(string filepath) {
       Dataset dataset(ospcommon::vec3i(dimensions), dtype);
       auto size = reader.readRegion(vec3sz(0, 0, 0),
                                     dimensions, dataset.buffer.data());
+      const OSPDataType ospVoxelType = typeForString(dtype);
       // const auto upper = ospcommon::vec3f(dimensions);
       // const auto halfLength = ospcommon::vec3i(dimensions) / 2;
       // auto volume =
@@ -69,11 +84,17 @@ void DatasetManager::load(string filepath) {
       // volume.volume.set("gridOrigin",
       //                   volume.ghostGridOrigin - ospcommon::vec3f(halfLength));
       // volume.volume.commit();
-      cout << dataset.buffer.size() << endl;
       datasets.emplace(_name, dataset);
-      cout << datasets[_name].buffer.size() << endl;
+      datasets[_name].data = new ospray::cpp::Data(datasets[_name].buffer.size(), ospVoxelType, datasets[_name].buffer.data(), OSP_DATA_SHARED_BUFFER);
     }
   }
+  auto &a = datasets["lsabel1"];
+    auto &b = datasets["lsabel8"];
+    Dataset c(a.dimensions, a.dtype);
+    for (auto i=0; i<a.buffer.size(); i++) {
+      c.buffer[i] = (a.buffer[i] - b.buffer[i] + 255) / 2;
+    }
+    datasets.emplace("diff", c);
 }
 
 Dataset &DatasetManager::get(const char *name) {

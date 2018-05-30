@@ -9,6 +9,7 @@
 struct Dataset {
   std::vector<unsigned char> buffer;
   ospcommon::vec3i dimensions;
+  ospray::cpp::Data *data;
   std::string dtype;
   size_t sizeForDType;
   Dataset() = default;
