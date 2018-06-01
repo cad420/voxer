@@ -14,5 +14,6 @@ public:
 
 private:
   rapidjson::Document configs;
+  std::string filepath;
   Poco::UUIDGenerator UUID;
 };

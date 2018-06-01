@@ -6,6 +6,7 @@
 using namespace std;
 
 void ConfigManager::load(string filepath) {
+  filepath = filepath;
   ifstream filestream;
   filestream.open(filepath);
   if (!filestream.is_open()) {
@@ -31,7 +32,7 @@ string ConfigManager::save(rapidjson::Value &params) {
   configs.GetObject().AddMember(
       rapidjson::Value(id.c_str(), configs.GetAllocator()).Move(), params,
       configs.GetAllocator());
-  ofstream ofs("configures.json");
+  ofstream ofs(filepath);
   rapidjson::OStreamWrapper osw(ofs);
   rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
   configs.Accept(writer);
