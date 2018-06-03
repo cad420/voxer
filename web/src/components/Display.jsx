@@ -2,6 +2,40 @@ import React, { Component } from 'react'
 import { PerspectiveCamera, Vector3 } from 'three'
 import Trackball from './trackball'
 
+function verifyVolume(params) {
+  if (params.type === 'structured') {
+    const tfcnParams = params.transferfunction;
+    const datasetParams = params.dataset;
+    if (!tfcnParams || !datasetParams) return false;
+    if (!verifyVolume(params)) return false;
+  } else if (params.type === 'diff') {
+    if (!verifyVolume(params.volume1)) return false;
+    if (!verifyVolume(params.volume2)) return false;
+  } else if (params.type === 'transform') {
+    if (!verifyVolume(params.volume1)) return false;
+  } else if (params.type === 'clipping') {
+    if (!verifyVolume(params.volume1)) return false;
+  }
+}
+
+function verify(params) {
+  if (!params.width || !params.height) return false;
+  const renderParams = params.image;
+  if (!renderParams) return false;
+  const modelsParams = renderParams.model;
+  if (!modelsParams || modelsParams.length === 0) return false;
+  for (let i = 0; i < modelsParams.length; i++) {
+    const modelParams = modelsParams[i];
+    const volumesParams = modelParams.volume;
+    if (!volumesParams || volumesParams.length === 0) return false;
+    for (let j = 0; j < volumesParams.length; j++) {
+      const volumeParams = volumesParams[i];
+      if (!verifyVolume(volumeParams)) return false;
+    }
+  }
+  return true;
+}
+
 export default class extends Component {
   constructor(props) {
     super(props)
@@ -9,10 +43,11 @@ export default class extends Component {
       data: null,
       url: '',
       interacting: false
-    }
-    this.ws = null
-    // this.server =  window.location.hostname + ':3000/'
-    this.server =  '10.189.130.250' + ':3000/'
+    };
+    this.ws = null;
+    this.server =  window.location.hostname + ':3000/'
+    // this.server =  '10.76.3.118:3000/'
+    // this.server =  '34.213.39.15:3000/';
     this.timeoutId = null;
   }
 
@@ -41,7 +76,7 @@ export default class extends Component {
   }
 
   componentDidUpdate() {
-    const imageSize = this.image.getBoundingClientRect().height
+    const imageSize = this.image.getBoundingClientRect()
     const { data } = this.state
     if (!data || this.controls || imageSize.height === 0 ) return
     const camera = new PerspectiveCamera(60, 1, 0.01, 10000)
@@ -53,11 +88,11 @@ export default class extends Component {
     camera.position.z = renderer.extras.values.pos[2]
     this.controls = new Trackball(camera, this.image)
     this.controls.rotateSpeed = 3.0;
-    this.controls.updateCount = 0;
     this.controls.zoomSpeed = 1.2;
     this.controls.panSpeed = 2.8;
     this.controls.staticMoving = true;
     this.controls.dynamicDampingFactor = 0.3;
+    this.controls.updateCount = 0;
     this.controls.addEventListener('change', this.updateCamera)
   }
 
@@ -101,22 +136,24 @@ export default class extends Component {
     renderer.extras.values.pos = [pos.x, pos.y, pos.z]
     renderer.extras.values.up = [up.x, up.y, up.z]
     renderer.extras.values.dir = [ dir.x, dir.y, dir.z ]
-    this.renderImage(true)
+    this.renderImage()
   }
 
-  renderImage = (interacting) => {
-    this.sendRequest('render', interacting)
+  renderImage = () => {
+    this.sendRequest('render')
   }
 
   generate = () => {
-    this.sendRequest('generate')
+    this.sendRequest('generate', false)
   }
 
-  sendRequest = (operation, interacting = false) => {
+  sendRequestForHighQuality = () => this.sendRequest('render', false)
+
+  sendRequest = (operation, interacting = true) => {
     const { model } = this.props
     const { url } = this.state
     const params = model.extras.values
-    if (!model.extras.status) {
+    if (!verify(params)) {
       this.setState({ data: null, url: '' })
       this.controls = null
       return
@@ -124,15 +161,13 @@ export default class extends Component {
     if (url.length) {
       this.setState({ url: '' })
     }
-    if (operation === 'render' && interacting) {
+    if (interacting) {
+      clearTimeout(this.timeoutId)
       this.ws.send(JSON.stringify({ operation, params: {
         ...params,
-        width: 64, height: 64
+        width: 64, height: Math.ceil(64 / params.width * params.height)
       } }))
-      if (this.timeoutId) clearTimeout(this.timeoutId)
-      this.timeoutId = setTimeout(() => {
-        this.sendRequest('render')
-      })
+      this.timeoutId = setTimeout(this.sendRequestForHighQuality, 100);
     } else {
       this.ws.send(JSON.stringify({ operation, params }))
     }

@@ -10,10 +10,7 @@ export default class VovisDiagramModel extends DiagramModel {
           if (target.parent.extras.children[source.name]) {
             target.parent.extras.values[source.name] = undefined
             target.parent.extras.children[source.name] = false
-            if (target.required !== false) {
-              target.parent.extras.status = false
-            }
-          } 
+          }
         }
         this.removeLink(link);
       }

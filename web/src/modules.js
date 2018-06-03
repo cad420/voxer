@@ -13,7 +13,7 @@ export default {
         name: 'Default Dataset',
         type: 'default',
         params: [
-          { label: 'source', type: 'Select', options: ['tooth', 'bucky', 'heptane', 'magnetic'], default: 'heptane' }
+          { label: 'source', type: 'Select', options: ['tooth', 'bucky', 'heptane', 'magnetic', 'diff'], default: 'heptane' }
         ]
       },
       {

@@ -114,6 +114,7 @@ export default class extends Component {
     this.setState({ isAnimate: true })
     const rendererParams = model.extras.values.image;
     const modelParams = rendererParams.model;
+    console.log(modelParams);
   }
 
   sendRequest = (operation) => {

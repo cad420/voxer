@@ -32,38 +32,6 @@ export default class Workspace extends Component {
     node.extras.category = data.category
     node.extras.values = { type: data.type }
     node.extras.children = {}
-    node.extras._status = data.ports.inputs.length === 0
-    Object.defineProperty(node.extras, 'status', {
-      get: function () {
-        return this._status
-      },
-      set: function (value) {
-        this._status = value
-        Object.keys(node.ports).forEach(portId => {
-          if (node.ports[portId].in) return
-          if (node.ports[portId].in.required === false) return
-          const links = node.ports[portId].links
-          Object.keys(links).forEach(linkId => {
-            const target = links[linkId].targetPort.parent.extras
-            const childKeys = Object.keys(target.children)
-            if (value === false) {
-              target.status = false
-            } else {
-              let status = true
-              for (let i = 0; i < childKeys.length; i++) {
-                if (!target.children[childKeys[i]]) {
-                  status = false
-                }
-              }
-              target.status = status
-              if (target.category === 'Display') {
-                links[linkId].targetPort.parent.el.renderImage()
-              }
-            }
-          })
-        })
-      }
-    })
     data.params.forEach(param => {
       if (param.default) {
         node.extras.values[param.label] = param.default
