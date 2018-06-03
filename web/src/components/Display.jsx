@@ -133,9 +133,9 @@ export default class extends Component {
     const renderer = links[linkKeys[0]].sourcePort.parent
     const pos = camera.position
     const up = camera.up
-    renderer.extras.values.pos = [pos.x, pos.y, pos.z]
-    renderer.extras.values.up = [up.x, up.y, up.z]
-    renderer.extras.values.dir = [ dir.x, dir.y, dir.z ]
+    renderer.extras.values.pos = [pos.x.toFixed(2), pos.y.toFixed(2), pos.z.toFixed(2)]
+    renderer.extras.values.up = [up.x.toFixed(2), up.y.toFixed(2), up.z.toFixed(2)]
+    renderer.extras.values.dir = [dir.x.toFixed(2), dir.y.toFixed(2), dir.z.toFixed(2)]
     this.renderImage()
   }
 

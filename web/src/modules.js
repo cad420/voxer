@@ -159,11 +159,10 @@ export default {
         name: 'Triangle Mesh',
         type: 'triangle',
         params: [
-          { label: 'vertex', type: 'Vec3f(a)[]' },
-          { label: 'vertex.normal', type: 'Vec3f(a)[]' },
-          { label: 'vertex.color', type: 'vec4f(a)[]' },
-          { label: 'vertex.texcoord', type: 'vec2f[]' },
-          { label: 'index', type: 'vec3i(a)[]' },
+          { label: 'vertex 1', type: 'Vec3f' },
+          { label: 'vertex 2', type: 'Vec3f' },
+          { label: 'vertex 3', type: 'Vec3f' },
+          { label: 'color', type: 'Color' },
         ]
       },
       {
@@ -171,32 +170,23 @@ export default {
         type: 'sphere',
         params: [
           { label: 'radius', type: 'Float' },
-          { label: 'spheres', type: '_data' },
-          { label: 'bytes_per_sphere', type: 'int' },
-          { label: 'offset_center', type: 'int' },
-          { label: 'offset_radius', type: 'int' },
-          { label: 'color', type: 'vec4f[]' },
-          { label: 'texcoord', type: 'vec2f[]' },
+          { label: 'position', type: 'Vec3f' },
+          { label: 'color', type: 'Color' }
         ]
       },
       {
-        name: 'Cylinders',
-      },
-      {
-        name: 'Streamlines'
-      },
-      {
         name: 'Isosurface',
-        type: 'isosurfaces',
+        type: 'isosurface',
         params: [
           { label: 'isovalues', type: 'Slider', max: 255, min: 0, default: 0.3 },
         ]
       },
       {
-        name: 'Slice'
-      },
-      {
-        name: 'Bounding Box'
+        name: 'Slice',
+        type: 'slice',
+        params: [
+          { label: 'plane', type: 'Vec4f', max: 255, min: 0 },
+        ]
       }
     ],
   },
@@ -220,25 +210,17 @@ export default {
         outputs: [{ name: 'light', label: 'out' }]
       },
       params: [
-        { label: 'color', type: 'Color', default: [255, 255, 255] },
-        { label: 'intensity', type: 'float', default: 1 },
+        { label: 'color', type: 'Color', default: '#FFFFFF' },
+        { label: 'intensity', type: 'Float', default: 1 },
         { label: 'isVisible', type: 'Switch', default: true },
       ]
     },
     type: [
       {
-        name: 'Directional Light',
-        type: 'directional',
-        params: [
-          { label: 'direction', type: 'Vec3f(a)' },
-          { label: 'angularDiameter', type: 'Float' }
-        ]
-      },
-      {
         name: 'Point Light',
         type: 'point',
         params: [
-          { label: 'poition', type: 'Vec3f(a)' },
+          { label: 'poition', type: 'Vec3f' },
           { label: 'radius', type: 'Float' },
         ]
       },
@@ -253,51 +235,9 @@ export default {
           { label: 'radius', type: 'Float' }
         ]
       },
-      { name: 'Quad Light' },
-      { name: 'HDRI Light' },
       { name: 'Ambient Light' },
     ]
   },
-  /* Camera: {
-    common: {
-      params: [
-        { label: 'pos', type: 'Vec3f' },
-        { label: 'dir', type: 'Vec3f' },
-        { label: 'up', type: 'Vec3f', default: [0, 1, 0], max: 1, min: -1 },
-        { label: 'nearClip', type: 'Float', min: 0.0, max: 500, default: 0.0 },
-      ],
-      ports: {
-        outputs: [{ name: 'camera', label: 'out' }]
-      }
-    },
-    type: [
-      {
-        name: 'Perspective Camera',
-        type: 'perspective',
-        params: [
-          { label: 'stereoMode', type: 'Select', options: [
-            { label: 'no stereo', value: 0 },
-            { label: 'left eye', value: 1 },
-            { label: 'right eye', value: 2 },
-            { label: 'side-by-side', value: 3 }
-          ]},
-          { label: 'fovy', type: 'Float' },
-          { label: 'apertureRadius', type: 'Float' },
-          { label: 'foucsDistance', type: 'Float' },
-          { label: 'architectural', type: 'Float' },
-          { label: 'interpupillartDistance', type: 'Float' },
-        ]
-      },
-      {
-        name: 'Orthographic Camera',
-        type: 'orthographic',
-        params: [
-          { label: 'height', type: 'Float' },
-          { label: 'aspect', type: 'Float' }
-        ]
-      }
-    ]
-  }, */
   Rendering: {
     common: {
       ports: {

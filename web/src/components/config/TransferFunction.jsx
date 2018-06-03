@@ -115,7 +115,11 @@ export default class PieceWiseFunctionEditorWidget extends Component {
       y: pt.y,
       color: pt.color
     }));
-    points[this.state.activePoint].color = e.target.value;
+    let color = e.target.value;
+    if (color.length === 4) {
+      color = '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+    }
+    points[this.state.activePoint].color = color;
     this.editor.setControlPoints(points, this.state.activePoint);
   }
 
