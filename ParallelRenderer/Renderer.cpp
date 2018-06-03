@@ -7,52 +7,122 @@ using namespace ospcommon;
 
 extern DatasetManager datasets;
 
-void setupVolume(gensv::LoadedVolume *volume,rapidjson::Value &volumeParams, bool diff = false) {
-  auto &tfcnParams = volumeParams["transferfunction"];
-  auto &datasetParams = volumeParams["dataset"];
-  auto volumeName = string(datasetParams["source"].GetString());
-  if (datasetParams.HasMember("timestep")) {
-    volumeName += to_string(datasetParams["timestep"].GetInt());
+void setupVolume(gensv::LoadedVolume &volume, rapidjson::Value &volumeParams, int timestep = 0) {
+  if (volumeParams["type"] == "structured") {
+    auto &tfcnParams = volumeParams["transferfunction"];
+    auto &datasetParams = volumeParams["dataset"];
+    auto volumeName = string(datasetParams["source"].GetString());
+    if (timestep != 0) {
+      volumeName += to_string(timestep);
+    } else if (datasetParams.HasMember("timestep")) {
+      volumeName += to_string(datasetParams["timestep"].GetInt());
+    }
+    auto &dataset = datasets.get(volumeName.c_str());
+    const auto upper = ospcommon::vec3f(dataset.dimensions);
+    const auto halfLength = dataset.dimensions / 2;
+    gensv::loadVolume(volume, dataset.buffer, dataset.dimensions, dataset.dtype,
+                      dataset.sizeForDType);
+    volume.bounds.lower -= ospcommon::vec3f(halfLength);
+    volume.bounds.upper -= ospcommon::vec3f(halfLength);
+    volume.volume.set("gridOrigin",
+                      volume.ghostGridOrigin - ospcommon::vec3f(halfLength));
+    vec2f valueRange{0, 255};
+    if (datasetParams["source"] == "magnetic") {
+      valueRange.x = 0.44;
+      valueRange.y = 0.77;
+    }
+    vector<vec3f> colors;
+    vector<float> opacities;
+    const auto &points = tfcnParams["tfcn"].GetArray();
+    for (auto point = points.Begin(); point != points.End() - 1; ++point) {
+      auto &startParams = *point;
+      auto &endParams = *(point + 1);
+      auto start = startParams["x"].GetFloat();
+      auto end = endParams["x"].GetFloat();
+      auto startHex = string(startParams["color"].GetString());
+      auto startR =
+          strtol(startHex.substr(1, 2).c_str(), nullptr, 16) * 1.0f / 255;
+      auto startG =
+          strtol(startHex.substr(3, 2).c_str(), nullptr, 16) * 1.0f / 255;
+      auto startB =
+          strtol(startHex.substr(5, 2).c_str(), nullptr, 16) * 1.0f / 255;
+      auto endHex = string(endParams["color"].GetString());
+      auto endR = strtol(endHex.substr(1, 2).c_str(), nullptr, 16) * 1.0f / 255;
+      auto endG = strtol(endHex.substr(3, 2).c_str(), nullptr, 16) * 1.0f / 255;
+      auto endB = strtol(endHex.substr(5, 2).c_str(), nullptr, 16) * 1.0f / 255;
+      auto startOpa = startParams["y"].GetFloat();
+      auto endOpa = endParams["y"].GetFloat();
+      auto period = 100 * (end - start);
+      auto step = 1.0f / period;
+      auto rDiff = (endR - startR) * step;
+      auto gDiff = (endG - startG) * step;
+      auto bDiff = (endB - startB) * step;
+      auto opaDiff = (endOpa - startOpa) * step;
+      for (auto j = 0; j < period; j++) {
+        opacities.push_back(startOpa + j * opaDiff);
+        colors.push_back(
+            vec3f{startR + j * rDiff, startG + j * gDiff, startB + j * bDiff});
+      }
+    }
+    ospray::cpp::Data colorsData(colors.size(), OSP_FLOAT3, colors.data());
+    ospray::cpp::Data opacityData(opacities.size(), OSP_FLOAT,
+                                  opacities.data());
+    colorsData.commit();
+    opacityData.commit();
+    volume.tfcn.set("colors", colorsData);
+    volume.tfcn.set("opacities", opacityData);
+    volume.tfcn.set("valueRange", valueRange);
+    volume.tfcn.commit();
+  } else if (volumeParams["type"] == "clipping") {
+    auto &upperParams = volumeParams["upper"];
+    auto &lowerParams = volumeParams["lower"];
+    auto upper = vec3f(upperParams[0].GetFloat(), upperParams[1].GetFloat(),
+                       upperParams[2].GetFloat());
+    auto lower = vec3f(lowerParams[0].GetFloat(), lowerParams[1].GetFloat(),
+                       lowerParams[2].GetFloat());
+    auto &_volumeParams = volumeParams["volume1"];
+    setupVolume(volume, _volumeParams);
+    volume.volume.set("volumeClippingBoxLower", upper);
+    volume.volume.set("volumeClippingBoxUpper", lower);
+  } else if (volumeParams["type"] == "diff") {
+    auto &volume1Params = volumeParams["volume1"];
+    auto &volume2Params = volumeParams["volume2"];
+    gensv::LoadedVolume volume1;
+    gensv::LoadedVolume volume2;
+    setupVolume(volume1, volume1Params);
+    setupVolume(volume2, volume2Params);
+    auto buffer1 = *volume1.buffer;
+    auto buffer2 = *volume2.buffer;
+    auto dimensions = buffer1.size() > buffer2.size() ? *volume1.dimensions
+                                                      : *volume2.dimensions;
+    auto limit =
+        buffer1.size() > buffer2.size() ? buffer2.size() : buffer1.size();
+    const auto upper = ospcommon::vec3f(dimensions);
+    const auto halfLength = ospcommon::vec3i(dimensions) / 2;
+    auto ptr = new vector<unsigned char>(dimensions.x * dimensions.y * dimensions.z);
+    cout << 0 << endl;
+    for (auto i = 0; i < limit; i++) {
+      (*ptr)[i] = (buffer1[i] - buffer2[i] + 255) / 2;
+    }
+    gensv::loadVolume(volume, *ptr, dimensions, "uchar", 1);
+    volume.isNewBuffer = true;
+    volume.bounds.lower -= ospcommon::vec3f(halfLength);
+    volume.bounds.upper -= ospcommon::vec3f(halfLength);
+    volume.volume.set("transferFunction", volume1.tfcn);
+    volume.volume.set("gridOrigin",
+                      volume.ghostGridOrigin - ospcommon::vec3f(halfLength));
+  } else if (volumeParams["type"] == "transform") {
+    auto x = volumeParams["x"].GetFloat();
+    auto y = volumeParams["y"].GetFloat();
+    auto z = volumeParams["z"].GetFloat();
+    auto &_volumeParams = volumeParams["volume1"];
+    auto &datasetParams = _volumeParams["dataset"];
+    setupVolume(volume, _volumeParams);
+    const auto halfLength = *volume.dimensions / 2;
+    auto origin = volume.ghostGridOrigin - ospcommon::vec3f(halfLength) +
+                  ospcommon::vec3f(x, y, z);
+    volume.volume.set("gridOrigin", origin);
   }
-  auto &dataset = diff ? datasets.get("diff") : datasets.get(volumeName.c_str());
-  const auto upper = ospcommon::vec3f(dataset.dimensions);
-  const auto halfLength = ospcommon::vec3i(dataset.dimensions) / 2;
-  gensv::loadVolume(volume, dataset.data, ospcommon::vec3i(dataset.dimensions),
-                        dataset.dtype, dataset.sizeForDType);
-  volume->bounds.lower -= ospcommon::vec3f(halfLength);
-  volume->bounds.upper -= ospcommon::vec3f(halfLength);
-  volume->volume.set("gridOrigin",
-                    volume->ghostGridOrigin - ospcommon::vec3f(halfLength));
-
-  vec2f valueRange{0, 255};
-  if (datasetParams["source"] == "magnetic") {
-    valueRange.x = 0.44;
-    valueRange.y = 0.77;
-  }
-  vector<vec3f> colors;
-  vector<float> opacities;
-  const auto &points = tfcnParams["tfcn"].GetArray();
-  for (auto &point : points) {
-    const auto hex = string(point["color"].GetString());
-    const auto opacity = point["y"].GetFloat();
-    colors.push_back(
-        vec3f{strtol(hex.substr(1, 2).c_str(), nullptr, 16) * 1.0f / 255,
-              strtol(hex.substr(3, 2).c_str(), nullptr, 16) * 1.0f / 255,
-              strtol(hex.substr(5, 2).c_str(), nullptr, 16) * 1.0f / 255});
-    opacities.push_back(opacity);
-  }
-  // const std::vector<vec3f> colors{
-  //     vec3f(0, 0, 0.56), vec3f(0, 0, 1), vec3f(0, 1, 1),  vec3f(0.5, 1, 0.5),
-  //     vec3f(1, 1, 0),    vec3f(1, 0, 0), vec3f(0.5, 0, 0)};
-  // const std::vector<float> opacities{0.0001f, 1.0f};
-  ospray::cpp::Data colorsData(colors.size(), OSP_FLOAT3, colors.data());
-  ospray::cpp::Data opacityData(opacities.size(), OSP_FLOAT, opacities.data());
-  colorsData.commit();
-  opacityData.commit();
-  volume->tfcn.set("colors", colorsData);
-  volume->tfcn.set("opacities", opacityData);
-  volume->tfcn.set("valueRange", valueRange);
-  volume->tfcn.commit();
 }
 
 vector<unsigned char> Renderer::render(rapidjson::Value &values,
@@ -62,17 +132,34 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
 
   auto &displayParams = params;
   auto &rendererParams = params["image"];
-
   ospray::cpp::Renderer renderer("scivis");
-  ospray::cpp::Light light("scivis", "ambient");
-  light.commit();
-  auto lightHandle = light.handle();
-  ospray::cpp::Data lights(1, OSP_LIGHT, &lightHandle);
+
+  vector<OSPLight> lightList;
+  if (rendererParams.HasMember("light")) {
+    auto lightsParams = rendererParams["light"].GetArray();
+    for (auto &lightParams : lightsParams) {
+      auto type = lightParams["type"].GetString();
+      ospray::cpp::Light light("scivis", type);
+      if (type == "point") {
+
+      } else if (type == "spot") {
+
+      } else if (type == "ambient") {
+
+      }
+      lightList.push_back(light.handle());
+    }
+  } else {
+    ospray::cpp::Light light("scivis", "ambient");
+    lightList.push_back(light.handle());
+  }
+
+  ospray::cpp::Data lights(lightList.size(), OSP_LIGHT, lightList.data());
   lights.commit();
+  renderer.set("lights", lights);
 
   renderer.set("aoSamples", 0);
   renderer.set("bgColor", 1.0f);
-  renderer.set("lights", lights);
 
   // create OSP Camera
   auto cameraPosData = (rendererParams.FindMember("pos")->value).GetArray();
@@ -87,6 +174,7 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
               cameraUpData[2].GetFloat()};
   vec3f camDir{cameraDirData[0].GetFloat(), cameraDirData[1].GetFloat(),
                cameraDirData[2].GetFloat()};
+  int timestep = 0;
   if (extraParams) {
     auto params = *extraParams;
     if (params.find("width") != params.end()) {
@@ -96,22 +184,34 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
       imgSize.y = stoi(params["height"]);
     }
     if (params.find("pos.x") != params.end()) {
-      camPos.x = stoi(params["pos.x"]);
+      camPos.x = stof(params["pos.x"]);
     }
     if (params.find("pos.y") != params.end()) {
-      camPos.y = stoi(params["pos.y"]);
+      camPos.y = stof(params["pos.y"]);
     }
-    if (params.find("dir.z") != params.end()) {
-      camDir.z = stoi(params["dir.z"]);
+    if (params.find("pos.z") != params.end()) {
+      camPos.z = stof(params["pos.z"]);
     }
     if (params.find("dir.x") != params.end()) {
-      camDir.x = stoi(params["dir.x"]);
+      camDir.x = stof(params["dir.x"]);
     }
     if (params.find("dir.y") != params.end()) {
-      camDir.y = stoi(params["dir.y"]);
+      camDir.y = stof(params["dir.y"]);
     }
     if (params.find("dir.z") != params.end()) {
-      camDir.z = stoi(params["dir.z"]);
+      camDir.z = stof(params["dir.z"]);
+    }
+    if (params.find("up.x") != params.end()) {
+      camUp.x = stof(params["up.x"]);
+    }
+    if (params.find("up.y") != params.end()) {
+      camUp.y = stof(params["up.y"]);
+    }
+    if (params.find("up.z") != params.end()) {
+      camUp.z = stof(params["up.z"]);
+    }
+    if (params.find("timestep") != params.end()) {
+      timestep = stoi(params["timestep"]);
     }
   }
 
@@ -125,43 +225,15 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
 
   auto modelsParams = rendererParams["model"].GetArray();
   ospray::cpp::Model world;
+  vector<vector<unsigned char> *> bufferToBeFree;
   for (auto &modelParams : modelsParams) {
     auto &volumeParams = modelParams["volume"];
     gensv::LoadedVolume volume;
-    if (volumeParams["type"] == "structured") {
-      setupVolume(&volume, volumeParams);
-      volume.volume.commit();
-    } else if (volumeParams["type"] == "clipping") {
-      auto &upperParams = volumeParams["upper"];
-      auto &lowerParams = volumeParams["lower"];
-      auto upper = vec3f(upperParams[0].GetFloat(), upperParams[1].GetFloat(),
-                         upperParams[2].GetFloat());
-      auto lower = vec3f(lowerParams[0].GetFloat(), lowerParams[1].GetFloat(),
-                         lowerParams[2].GetFloat());
-      auto &_volumeParams = volumeParams["volume1"];
-      setupVolume(&volume, _volumeParams);
-      volume.volume.set("volumeClippingBoxLower", upper);
-      volume.volume.set("volumeClippingBoxUpper", lower);
-      volume.volume.commit();
-    } else if (volumeParams["type"] == "diff") {
-      auto &volume1Params = volumeParams["volume1"];
-      auto &volume2Params = volumeParams["volume2"];
-      setupVolume(&volume, volumeParams);
-      volume.volume.commit();
-    } else if (volumeParams["type"] == "transform") {
-      auto x = volumeParams["x"].GetFloat();
-      auto y = volumeParams["y"].GetFloat();
-      auto z = volumeParams["z"].GetFloat();
-      auto &_volumeParams = volumeParams["volume1"];
-      auto &datasetParams = _volumeParams["dataset"];
-      auto volumeName = string(datasetParams["source"].GetString());
-      setupVolume(&volume, _volumeParams);
-      auto &dataset = datasets.get(volumeName.c_str());
-      const auto halfLength = ospcommon::vec3i(dataset.dimensions) / 2;
-      auto origin = volume.ghostGridOrigin - ospcommon::vec3f(halfLength) + ospcommon::vec3f(x, y, z);
-      volume.volume.set("gridOrigin", origin);
-      volume.volume.commit();
+    setupVolume(volume, volumeParams, timestep);
+    if (volume.isNewBuffer) {
+      bufferToBeFree.push_back(volume.buffer);
     }
+    volume.volume.commit();
     world.addVolume(volume.volume);
     vector<box3f> regions{volume.bounds};
     ospray::cpp::Data regionData(regions.size() * 2, OSP_FLOAT3,
@@ -172,17 +244,15 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
       for (auto &geometryParams : geometriesParams) {
         auto geoType = string(geometryParams["type"].GetString());
         ospray::cpp::Geometry geometry(geoType.c_str());
-        if (geoType == "triangles") {
-        } else if (geoType == "spheres") {
-        } else if (geoType == "cylinders") {
-        } else if (geoType == "isosurfaces") {
+        if (geoType == "triangle") {
+        } else if (geoType == "sphere") {
+        } else if (geoType == "isosurface") {
           auto isovalue = geometryParams["isovalues"].GetFloat();
           ospray::cpp::Data isovalues(1, OSP_FLOAT, &isovalue);
           isovalues.commit();
           geometry.set("isovalues", isovalues);
           geometry.set("volume", volume.volume);
-        } else if (geoType == "streamlines") {
-        } else if (geoType == "slices") {
+        } else if (geoType == "slice") {
         }
         geometry.commit();
         world.addGeometry(geometry);
@@ -210,5 +280,8 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
   vector<unsigned char> buf(fb, fb + imgSize.x * imgSize.y * 4);
   framebuffer.unmap(fb);
 
+  for(auto buffer : bufferToBeFree) {
+    delete buffer;
+  }
   return buf;
 }

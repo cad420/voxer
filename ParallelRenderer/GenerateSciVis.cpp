@@ -92,7 +92,7 @@ OSPDataType typeForString(const std::string &dtype) {
   return OSP_UCHAR;
 }
 
-void loadVolume(struct LoadedVolume* vol, ospray::cpp::Data *data, const vec3i &dimensions,
+void loadVolume(struct LoadedVolume &vol, std::vector<unsigned char> &buffer, vec3i &dimensions,
                         const std::string &dtype, size_t sizeForDtype) {
   auto numRanks = static_cast<float>(mpicommon::numGlobalRanks());
   auto myRank = mpicommon::globalRank();
@@ -119,13 +119,15 @@ void loadVolume(struct LoadedVolume* vol, ospray::cpp::Data *data, const vec3i &
   const vec3i ghostOffset(ghosts[0] & NEG_FACE ? 1 : 0,
                           ghosts[1] & NEG_FACE ? 1 : 0,
                           ghosts[2] & NEG_FACE ? 1 : 0);
-  vol->ghostGridOrigin = gridOrigin - vec3f(ghostOffset);
-
-  vol->volume = ospray::cpp::Volume("shared_structured_volume");
+  vol.ghostGridOrigin = gridOrigin - vec3f(ghostOffset);
+  vol.buffer = &buffer;
+  vol.isNewBuffer = false;
+  vol.dimensions = &dimensions;
+  vol.volume = ospray::cpp::Volume("shared_structured_volume");
   // vol->volume = ospray::cpp::Volume("block_bricked_volume");
-  vol->volume.set("voxelType", dtype.c_str());
-  vol->volume.set("dimensions", vec3i(fullDims));
-  vol->volume.set("transferFunction", vol->tfcn);
+  vol.volume.set("voxelType", dtype.c_str());
+  vol.volume.set("dimensions", vec3i(fullDims));
+  vol.volume.set("transferFunction", vol.tfcn);
 
   // const size_t dtypeSize = sizeForDtype(dtype);
   // std::vector<unsigned char> volumeData(
@@ -134,15 +136,16 @@ void loadVolume(struct LoadedVolume* vol, ospray::cpp::Data *data, const vec3i &
   //                   volumeData.data());
 
   // for shared_structured_volume
-  vol->volume.set("voxelData", *data);
-  
+  const OSPDataType ospVoxelType = typeForString(dtype);
+  OSPData data = ospNewData(buffer.size(), ospVoxelType, buffer.data(), OSP_DATA_SHARED_BUFFER);
+  vol.volume.set("voxelData", data);
   // end
 
   // for block_bricked_volume
   // vol->volume.setRegion(volumeData.data(), vec3i(0), vec3i(fullDims));
   // end
 
-  vol->bounds = box3f(gridOrigin, gridOrigin + vec3f(brickDims));
+  vol.bounds = box3f(gridOrigin, gridOrigin + vec3f(brickDims));
 }
 
 } // namespace gensv

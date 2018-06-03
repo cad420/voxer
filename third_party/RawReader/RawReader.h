@@ -19,6 +19,7 @@
 #include "ospray/ospcommon/FileName.h"
 #include "ospray/ospcommon/vec.h"
 #include <cstdio>
+#include <string>
 
 namespace gensv {
 
@@ -26,14 +27,14 @@ using vec3sz = ospcommon::vec_t<size_t, 3>;
 
 // Convenience class for reading/seeking around RAW volume files
 class RawReader {
-  ospcommon::FileName fileName;
+  std::string fileName;
   vec3sz dimensions;
   size_t voxelSize;
   FILE *file;
   int64_t offset;
 
 public:
-  RawReader(const ospcommon::FileName &fileName, const vec3sz &dimensions,
+  RawReader(const std::string &fileName, const vec3sz &dimensions,
             size_t voxelSize);
   ~RawReader();
   // Read a region of volume data from the file into the buffer passed.

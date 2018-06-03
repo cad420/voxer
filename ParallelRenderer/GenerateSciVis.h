@@ -19,9 +19,12 @@ vec3i computeGrid(int num);
 struct LoadedVolume {
   ospray::cpp::Volume volume;
   ospray::cpp::TransferFunction tfcn;
+  vec3i *dimensions;
   box3f bounds;
   vec3f ghostGridOrigin;
   box3f worldBounds;
+  std::vector<unsigned char> *buffer;
+  bool isNewBuffer;
 
   LoadedVolume();
 };
@@ -32,7 +35,7 @@ struct LoadedVolume {
  * Returns the ghostGridOrigin of the volume which may be outside the bounding
  * box, due to the ghost voxels.
  */
-void loadVolume(struct LoadedVolume* volume, ospray::cpp::Data *data, const vec3i &dimensions,
+void loadVolume(struct LoadedVolume &volume, std::vector<unsigned char> &buffer, vec3i &dimensions,
                         const std::string &dtype, size_t sizeForDtype);
 
 } // namespace gensv

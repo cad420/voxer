@@ -1,4 +1,4 @@
-  #include "ConfigManager.h"
+#include "ConfigManager.h"
 #include "DatasetManager.h"
 #include "ParallelRenderer/Encoder.h"
 #include "Poco/Buffer.h"
@@ -129,7 +129,7 @@ public:
               ws.sendFrame(img.data(), img.size(), WebSocket::FRAME_BINARY);
             } catch (string &exc) {
               auto msg = "{\"type\": \"error\" , \"value\": \"" + exc + "\"}";
-              ws.sendFrame(exc.c_str(), exc.size());
+              ws.sendFrame(msg.c_str(), msg.size());
             }
           } else if (operation == "generate") {
             if (!d.HasMember("params") || !d["params"].IsObject()) {

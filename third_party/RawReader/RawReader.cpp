@@ -5,14 +5,15 @@
 namespace gensv {
 
 using namespace ospcommon;
+using namespace std;
 
-RawReader::RawReader(const FileName &fileName, const vec3sz &dimensions,
+RawReader::RawReader(const string &fileName, const vec3sz &dimensions,
                      size_t voxelSize)
     : fileName(fileName), dimensions(dimensions), voxelSize(voxelSize),
       file(fopen(fileName.c_str(), "rb")), offset(0) {
   if (!file) {
     throw std::runtime_error("ImportRAW: Unable to open file " +
-                             fileName.str());
+                             fileName);
   }
 }
 
