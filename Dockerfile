@@ -1,4 +1,4 @@
-FROM openmpi
+FROM ubuntu:xenial
 
 ARG build_parallel
 
@@ -7,18 +7,10 @@ RUN apt-get update && \
     apt-get install -y \
             build-essential \
             cmake \
+            mpich \
+            libmpich-dev
     && \
     rm -rf /var/lib/apt/lists/*
-
-ADD temp/ispc-v1.9.2-linux.tar.gz /opt/
-RUN mv /opt/ispc-v1.9.2-linux /opt/ispc && \
-    update-alternatives --install /usr/bin/ispc ispc /opt/ispc/ispc 1
-
-ADD temp/tbb2018_20180312oss_lin.tar.gz /opt/
-RUN mv /opt/tbb2018_20180312oss /opt/tbb
-
-ADD temp/embree-3.2.0.x86_64.linux.tar.gz /opt/
-RUN mv /opt/embree-3.2.0.x86_64.linux /opt/embree
 
 ADD temp/poco-1.9.0.tar.gz /opt/
 RUN mv /opt/poco-1.9.0 /opt/poco && \
@@ -28,41 +20,19 @@ RUN mv /opt/poco-1.9.0 /opt/poco && \
     make install && \
     rm -rf /opt/poco
 
-RUN apt remove -y libopenmpi-dev openmpi-bin openmpi-common openmpi-doc
-
-ADD temp/openmpi-3.1.0.tar.gz /opt/
-RUN cd /opt/openmpi-3.1.0 && \
-    ./configure --prefix=/usr/ && \
-    make all install
-
 ADD temp/ospray-1.6.0.tar.gz /opt/
-RUN mv /opt/ospray-1.6.0 /opt/ospray && \
-    mkdir /opt/ospray/build && \
-    cd /opt/ospray/build && \
-    export LD_LIBRARY_PATH=/usr/local/lib && \
-    cmake .. \
-          -Dembree_DIR=/opt/embree \
-          -DOSPRAY_ENABLE_APPS:BOOL=OFF \
-          -DOSPRAY_APPS_BENCHMARK:BOOL=OFF \
-          -DOSPRAY_MODULE_MPI:BOOL=ON \
-          -DOSPRAY_APPS_EXAMPLEVIEWER:BOOL=OFF \
-          -DOSPRAY_APPS_BENCHMARK:BOOL=OFF \
-          -DTBB_ROOT=/opt/tbb \
-    && \
-    make ${build_parallel} && \
-    make install && \
-    rm -rf /opt/ospray
+RUN mv /opt/ospray-1.6.0 /opt/ospray
 
 COPY ParallelRenderer /opt/vovis/ParallelRenderer
 COPY third_party /opt/vovis/third_party
 COPY CMakeLists.txt /opt/vovis
 WORKDIR /opt/vovis/build
 RUN cmake .. \
-   -Dembree_DIR=/opt/embree \
-   -DTBB_ROOT=/opt/tbb && \
+   -DOSPRAY_LIB_PATH=/opt/ospray/lib \
+   -DOSPRAY_INCLUDE_PATH=/opt/ospray/include \
+   -DEMBREE_LIB_PATH=/opt/ospray/lib \
+   -DTBB_LIB_PATH=/opt/ospray/lib \
+   -DMPI_INCLUDE_PATH=/usr/include/mpi && \
     make ${build_parallel}
 
-ADD configs/ssh_config /home/mpirun/.ssh/config
-RUN chown mpirun:mpirun /home/mpirun/.ssh/config
-
-CMD ["/usr/sbin/sshd", "-D"]
+CMD ["echo", "ok"]
