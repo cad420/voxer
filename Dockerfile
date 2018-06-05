@@ -8,7 +8,7 @@ RUN apt-get update && \
             build-essential \
             cmake \
             mpich \
-            libmpich-dev
+            libmpich-dev \
     && \
     rm -rf /var/lib/apt/lists/*
 
