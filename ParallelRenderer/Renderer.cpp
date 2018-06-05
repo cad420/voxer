@@ -209,9 +209,12 @@ vector<unsigned char> Renderer::render(rapidjson::Value &values,
     }
     if (params.find("up.z") != params.end()) {
       camUp.z = stof(params["up.z"]);
+<<<<<<< HEAD
     }
     if (params.find("timestep") != params.end()) {
       timestep = stoi(params["timestep"]);
+=======
+>>>>>>> fix config & http bug
     }
   }
 

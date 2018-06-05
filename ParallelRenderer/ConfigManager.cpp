@@ -2,11 +2,12 @@
 #include "third_party/rapidjson/document.h"
 #include <fstream>
 #include <string>
+#include <iostream>
 
 using namespace std;
 
 void ConfigManager::load(string filepath) {
-  filepath = filepath;
+  this->filepath = filepath;
   ifstream filestream;
   filestream.open(filepath);
   if (!filestream.is_open()) {
@@ -29,6 +30,19 @@ rapidjson::Value &ConfigManager::get(string id) {
 
 string ConfigManager::save(rapidjson::Value &params) {
   auto id = UUID.createRandom().toString();
+  auto &rendererParams = params["renderer"];
+  auto &posParams = rendererParams["pos"];
+  auto &dirParams = rendererParams["dir"];
+  auto &upParams = rendererParams["up"];
+  posParams.AddMember("x", 100, configs.GetAllocator());
+  posParams.AddMember("y", 100, configs.GetAllocator());
+  posParams.AddMember("z", 100, configs.GetAllocator());
+  dirParams.AddMember("x", -1, configs.GetAllocator());
+  dirParams.AddMember("y", -1, configs.GetAllocator());
+  dirParams.AddMember("z", -1, configs.GetAllocator());
+  upParams.AddMember("x", 0, configs.GetAllocator());
+  upParams.AddMember("y", -1, configs.GetAllocator());
+  upParams.AddMember("z", 0, configs.GetAllocator());
   configs.GetObject().AddMember(
       rapidjson::Value(id.c_str(), configs.GetAllocator()).Move(), params,
       configs.GetAllocator());

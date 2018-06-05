@@ -6,7 +6,11 @@ export default class Config extends Component {
   render() {
     const { current, values = {}, onChange } = this.props
     if (!current) {
-      return <section className="config" />
+      return (
+        <section className="config">
+          <h3 className="panel-title">Config</h3>
+        </section>
+      )
     }
     const category = modules[current.extras.category]
     let typeParams = []

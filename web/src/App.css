@@ -27,27 +27,25 @@
 
 .panel-title {
   text-align: center;
+  font-weight: 800;
 }
 
 .module-list {
   position: absolute;
-  text-align: center;
   width: 250px;
   font-size: 14px;
   top: 0;
   left: 0;
   height: 100%;
   overflow-y: auto;
-  border-right: 1px solid #999;
 }
 
 .module-type {
   padding: 10px;
-  text-align: left;
   margin: 0;
   margin-top: 20px;
   font-weight: bold;
-  border-bottom: 1px solid #aaa;
+  border-bottom: 2px solid #ccc;
   user-select: none;
 }
 
@@ -59,7 +57,6 @@
   top: 0;
   right: 0;
   height: 100%;
-  border-left: 1px solid #999;
   box-sizing: border-box;
   overflow: auto;
 }
@@ -80,9 +77,10 @@
 .module-option {
   height: 40px;
   line-height: 40px;
-  border-bottom: 1px solid #aaa;
+  border-bottom: 2px solid #ccc;
   cursor: -webkit-grab;
-  cursor: grab;
+  padding: 0 10px;
+  font-family: consolas,monospace;
 }
 
 .module-option:hover {
@@ -165,4 +163,15 @@
 
 .App .srd-default-port.nullable .srd-port {
   border-style: dashed;
+}
+
+.module-list::-webkit-scrollbar {
+  background: #eee;
+}
+.module-list::-webkit-scrollbar-thumb {
+  background: #bbb;
+}
+
+.module-list::-webkit-scrollbar {
+  width: 6px;
 }

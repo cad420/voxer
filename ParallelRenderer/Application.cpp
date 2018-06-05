@@ -70,8 +70,8 @@ public:
         response.setContentType("image/jpeg");
         auto data = renderer.render(config, &extraParams);
         auto imageData = params["image"].GetObject();
-        auto imgSize = ospcommon::vec2ui(imageData["width"].GetInt(),
-                                         imageData["height"].GetInt());
+        auto imgSize = ospcommon::vec2ui(params["width"].GetInt(),
+                                         params["height"].GetInt());
         if (extraParams.find("width") != extraParams.end()) {
           imgSize.x = stoi(extraParams["width"]);
         }
