@@ -45,8 +45,8 @@ export default class extends Component {
       interacting: false
     };
     this.ws = null;
-    this.server =  window.location.hostname + ':3000/'
-    // this.server =  '10.76.3.118:3000/'
+    // this.server =  window.location.hostname + ':3000/'
+    this.server =  '10.189.141.214:3000/'
     // this.server =  '34.213.39.15:3000/';
     this.timeoutId = null;
   }

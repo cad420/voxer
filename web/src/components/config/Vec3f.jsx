@@ -23,7 +23,7 @@ export default class extends Component {
             <Float
               key={item}
               label={item}
-              max={max} min={min}              
+              max={max} min={min}
               value={value[i] || 0 }
               onChange={this.handleChange}
             />

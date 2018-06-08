@@ -31,3 +31,11 @@ cd web
 npm install
 npm run build
 ```
+
+## Roadmap
+- Lights modules
+- Modules in backend
+- Animation Display module
+- Transition & AnimationRender modules: specific params first state & last state, generate animation
+- Remove three.js & mout
+- Sort-last MPI

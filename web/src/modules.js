@@ -124,8 +124,8 @@ export default {
         name: 'Volume Clipping',
         type: 'clipping',
         params: [
-          { label: 'lower', type: 'Vec3f', default: [0, 0, 0] },
-          { label: 'upper', type: 'Vec3f', default: [0, 0, 0] }
+          { label: 'lower', type: 'Vec3f', default: [-500, -500, -500] },
+          { label: 'upper', type: 'Vec3f', default: [500, 500, 500] }
         ]
       },
       {
@@ -141,9 +141,9 @@ export default {
         name: 'Volume Transform',
         type: 'transform',
         params: [
-          { label: 'x', type: 'Float', min: -500, max: 500 },
-          { label: 'y', type: 'Float', min: -500, max: 500 },
-          { label: 'z', type: 'Float', min: -500, max: 500 }
+          { label: 'x', type: 'Float', min: -500, max: 500, default: 0 },
+          { label: 'y', type: 'Float', min: -500, max: 500, default: 0 },
+          { label: 'z', type: 'Float', min: -500, max: 500, default: 0 }
         ]
       }
     ]
@@ -310,8 +310,8 @@ export default {
         ]
       },
       params: [
-        { label: 'width', type: 'Int', max: 1024, min: 64, default: 64 },
-        { label: 'height', type: 'Int', max: 1024, min: 64, default: 64 },
+        { label: 'width', type: 'Int', max: 1024, min: 64, default: 256 },
+        { label: 'height', type: 'Int', max: 1024, min: 64, default: 256 },
       ]
     },
     type: [

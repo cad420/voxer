@@ -133,7 +133,7 @@ export default class LinearPieceWiseEditor extends Emitter {
 
     this.onDblClick = (event) => {
       const point = getNormalizePosition(event, this.ctx, this.radius);
-      const sanitizedPoint = { x: clamp(point.x), y: clamp(point.y), color: '#000' };
+      const sanitizedPoint = { x: clamp(point.x), y: clamp(point.y), color: '#000000' };
       this.controlPoints.push(sanitizedPoint);
       sortPoints(this.controlPoints);
       this.activeIndex = sanitizedPoint.index;
