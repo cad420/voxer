@@ -47,7 +47,6 @@ if (OSPRAY_INCLUDE_PATH-NOTFOUND)
   message(FATAL_ERROR "OSPRay header files not found, please set OSPRAY_INCLUDE_DIR.")
 else()
   unset(OSPRAY_INCLUDE_DIR CACHE)
-  message(${OSPRAY_INCLUDE_PATH})
 endif()
 
 # find embree
