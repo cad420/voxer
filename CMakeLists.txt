@@ -129,6 +129,7 @@ target_include_directories(
   VovisRenderer
   PUBLIC
   ${OSPRAY_INCLUDE_PATH}
+  ${OSPRAY_INCLUDE_PATH}/ospray
   ${MPI_CXX_INCLUDE_PATH}
   ${POCO_INCLUDE_PATH}
   ${PROJECT_SOURCE_DIR}
