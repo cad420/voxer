@@ -3,10 +3,11 @@ import Manager from './manager';
 import ModuleList from './components/ModuleList';
 import Workspace from './components/Workspace';
 import Config from './components/Config';
-import './App.css';
+import { hot } from 'react-hot-loader';
+import './styles/App.css';
 import '../node_modules/storm-react-diagrams/dist/style.min.css';
 
-export default class App extends Component {
+class App extends Component {
   constructor(props) {
     super(props)
     this.state = {
@@ -77,3 +78,5 @@ export default class App extends Component {
     );
   }
 }
+
+export default hot(module)(App);
