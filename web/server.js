@@ -27,12 +27,12 @@ fastify.get('/', (req, res) => {
   }));
 });
 
-const viewTemplate = Handlebars.compile(fs.readFileSync(abs('./templates/viewer.handlebars'), 'utf8'))
+const viewerTemplate = Handlebars.compile(fs.readFileSync(abs('./templates/viewer.handlebars'), 'utf8'))
 fastify.get('/viewer/:id', (req, res) => {
   res.type('html');
-  res.send(indexTemplate({
-    CSSPATH: '/build/view.css',
-    JSPATH: '/build/view.js'
+  res.send(viewerTemplate({
+    CSSPATH: '/build/viewer.css',
+    JSPATH: '/build/viewer.js'
   }));
 });
 

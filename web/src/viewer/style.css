@@ -1,0 +1,14 @@
+canvas {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  opacity: 0.5;
+  transition: opacity ease-out .3s;
+}
+
+canvas:hover {
+  opacity: 1;
+}
+.row {
+  height: 100vh;
+}

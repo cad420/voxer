@@ -1,6 +1,6 @@
 const path = require('path');
 const webpack = require('webpack')
-const ExtractTextPlugin = require('extract-text-webpack-plugin')
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 const abs = file => path.resolve(__dirname, file);
 const isProduction = process.env.NODE_ENV === 'production';
@@ -19,20 +19,24 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: [
-            { loader: 'css-loader', options: { importLoaders: 1 } },
-            { loader: 'postcss-loader', options: { plugins: [] } },
-          ]
-        })
+        use: [
+          { loader: MiniCssExtractPlugin.loader },
+          { loader: 'css-loader', options: { importLoaders: 1 } },
+          { loader: 'postcss-loader', options: { plugins: [] } },
+        ]
       }
     ]
   },
   plugins: isProduction ? [
-    new ExtractTextPlugin('[name].css'),
+    new MiniCssExtractPlugin({
+      filename: "[name].css",
+      chunkFilename: "[id].css"
+    })
   ] : [
-    new ExtractTextPlugin('[name].css'),
+    new MiniCssExtractPlugin({
+      filename: "[name].css",
+      chunkFilename: "[id].css"
+    }),
     new webpack.HotModuleReplacementPlugin(),
   ],
   resolve: {
