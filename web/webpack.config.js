@@ -19,11 +19,14 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: [
+        use: (isProduction ? [
           { loader: MiniCssExtractPlugin.loader },
+        ] : [
+          { loader: 'style-loader' },
+        ]).concat([
           { loader: 'css-loader', options: { importLoaders: 1 } },
           { loader: 'postcss-loader', options: { plugins: [] } },
-        ]
+        ])
       }
     ]
   },
@@ -33,10 +36,6 @@ module.exports = {
       chunkFilename: "[id].css"
     })
   ] : [
-    new MiniCssExtractPlugin({
-      filename: "[name].css",
-      chunkFilename: "[id].css"
-    }),
     new webpack.HotModuleReplacementPlugin(),
   ],
   resolve: {
