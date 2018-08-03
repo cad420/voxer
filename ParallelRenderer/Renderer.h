@@ -1,14 +1,28 @@
 #pragma once
+#include "ParallelRenderer/ConfigManager.h"
 #include "ParallelRenderer/DatasetManager.h"
 #include "ParallelRenderer/GenerateSciVis.h"
+#include "Poco/URI.h"
+#include "config/CameraConfig.h"
+#include "ospray/ospray_cpp.h"
 #include "third_party/rapidjson/document.h"
 #include <map>
 #include <string>
 #include <vector>
 
+typedef std::vector<unsigned char> Image;
+
 class Renderer {
 public:
-  std::vector<unsigned char>
-  render(rapidjson::Value &params,
-         std::map<std::string, std::string> *extraParams = nullptr);
+  Image render(const Config &config);
+  Image render(const Config &config, const ospcommon::vec2i &size,
+               const CameraConfig &cameraConfig);
+  // Image render(const Config &config, const ospcommon::vec2i &size,
+  //              const CameraConfig &cameraConfig,
+  //              std::map<std::string, TransferFunctionConfig> &tfcnConfigs);
+
+private:
+  Image renderImage(const CameraConfig &cameraConfig,
+                    const std::vector<VolumeConfig> &volumeConfigs,
+                    const ospcommon::vec2i &size);
 };

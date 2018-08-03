@@ -1,6 +1,6 @@
 build
 .vscode
-data
+./data
 yarn-error.log
 temp
 configs

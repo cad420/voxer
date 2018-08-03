@@ -18,6 +18,7 @@
 #include "Poco/Util/OptionSet.h"
 #include "Poco/Util/ServerApplication.h"
 #include "Renderer.h"
+#include "third_party/rapidjson/document.h"
 #include <iostream>
 #include <map>
 #include <string>
@@ -39,6 +40,7 @@ using Poco::Util::HelpFormatter;
 using Poco::Util::Option;
 using Poco::Util::OptionSet;
 using Poco::Util::ServerApplication;
+using ospcommon::vec2i;
 
 DatasetManager datasets;
 ConfigManager configs;
@@ -48,45 +50,47 @@ Encoder encoder;
 class PageRequestHandler : public HTTPRequestHandler {
 public:
   void handleRequest(HTTPServerRequest &request, HTTPServerResponse &response) {
-    Application &app = Application::instance();
     response.setChunkedTransferEncoding(true);
+    response.add("Access-Control-Allow-Origin", "*");
+    response.add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+    response.add("Access-Control-Allow-Headers", "content-type");
+
     Poco::URI uri(request.getURI().c_str());
     vector<string> segments;
     uri.getPathSegments(segments);
+
     if (segments.size() == 0) {
       response.setContentType("text/html");
       auto &ostr = response.send();
       ostr << "Websocket Server has been started!";
-    } else {
-      auto id = segments[segments.size() - 1];
-      try {
-        auto &config = configs.get(id);
-        auto params = config.GetObject();
-        auto queryParams = uri.getQueryParameters();
-        map<string, string> extraParams;
-        for (auto &param : queryParams) {
-          extraParams[param.first] = param.second;
-        }
-        response.setContentType("image/jpeg");
-        auto data = renderer.render(config, &extraParams);
-        auto imageData = params["image"].GetObject();
-        auto imgSize = ospcommon::vec2ui(params["width"].GetInt(),
-                                         params["height"].GetInt());
-        if (extraParams.find("width") != extraParams.end()) {
-          imgSize.x = stoi(extraParams["width"]);
-        }
-        if (extraParams.find("height") != extraParams.end()) {
-          imgSize.y = stoi(extraParams["height"]);
-        }
-        auto img = encoder.encode(data, imgSize, "JPEG");
-        response.sendBuffer(img.data(), img.size());
-      } catch (string &exc) {
-        response.setContentType("text/html");
-        response.setStatus(HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
-        response.setReason("Not Found");
-        auto &ostr = response.send();
-        ostr << "404, Not Found";
+      return;
+    }
+
+    response.setContentType("image/jpeg");
+    auto id = segments[segments.size() - 1];
+    try {
+      auto &config = configs.get(id);
+      map<string, string> params;
+      for (auto &param : uri.getQueryParameters()) {
+        params[param.first] = param.second;
       }
+      CameraConfig cameraConfig(config.cameraConfig, params);
+      vec2i size = config.size;
+      if (params.find("width") != params.end()) {
+        size.x = stoi(params["width"]);
+      }
+      if (params.find("height") != params.end()) {
+        size.y = stoi(params["height"]);
+      }
+      auto data = renderer.render(config, size, cameraConfig);
+      auto img = encoder.encode(data, size, "JPEG");
+      response.sendBuffer(img.data(), img.size());
+    } catch (string &exc) {
+      response.setContentType("text/html");
+      response.setStatus(HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
+      response.setReason("Not Found");
+      auto &ostr = response.send();
+      ostr << "404, Not Found";
     }
   }
 };
@@ -121,11 +125,9 @@ public:
                 ws.sendFrame(msg, sizeof(msg));
               }
               auto params = d["params"].GetObject();
-              auto &rendererParams = params["image"];
-              auto data = renderer.render(d["params"]);
-              auto imgSize = ospcommon::vec2ui(params["width"].GetInt(),
-                                               params["height"].GetInt());
-              auto img = encoder.encode(data, imgSize, "JPEG");
+              auto config = configs.create(d["params"]);
+              auto data = renderer.render(config);
+              auto img = encoder.encode(data, config.size, "JPEG");
               ws.sendFrame(img.data(), img.size(), WebSocket::FRAME_BINARY);
             } catch (string &exc) {
               auto msg = "{\"type\": \"error\" , \"value\": \"" + exc + "\"}";

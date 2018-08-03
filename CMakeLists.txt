@@ -123,6 +123,8 @@ else()
 endif()
 
 file(GLOB_RECURSE VOVIS_FILES ${PROJECT_SOURCE_DIR}/ParallelRenderer/*.cpp)
+file(GLOB_RECURSE VOVIS_CONFIG_FILES ${PROJECT_SOURCE_DIR}/ParallelRenderer/config/*.cpp)
+file(GLOB_RECURSE VOVIS_DATA_FILES ${PROJECT_SOURCE_DIR}/ParallelRenderer/data/*.cpp)
 file(GLOB_RECURSE RAWREADER_FILES ${PROJECT_SOURCE_DIR}/third_party/RawReader/*.cpp)
 add_executable(VovisRenderer ${VOVIS_FILES} ${RAWREADER_FILES})
 target_include_directories(

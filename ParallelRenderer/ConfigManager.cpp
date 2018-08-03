@@ -1,10 +1,12 @@
 #include "ParallelRenderer/ConfigManager.h"
 #include "third_party/rapidjson/document.h"
 #include <fstream>
-#include <string>
 #include <iostream>
+#include <string>
+#include <utility>
 
 using namespace std;
+using namespace ospcommon;
 
 void ConfigManager::load(string filepath) {
   this->filepath = filepath;
@@ -14,18 +16,23 @@ void ConfigManager::load(string filepath) {
     throw string("Unable to open file configures.json!");
   }
   rapidjson::IStreamWrapper isw(filestream);
-  configs.ParseStream(isw);
-  if (!configs.IsObject()) {
+  this->document.ParseStream(isw);
+  if (!this->document.IsObject()) {
     throw string("Invalid data file!");
+  }
+
+  auto paramsMap = this->document.GetObject();
+  for (auto &params : paramsMap) {
+    this->configs.emplace(params.name.GetString(), this->create(params.value));
   }
   filestream.close();
 }
 
-rapidjson::Value &ConfigManager::get(string id) {
-  if (!configs.HasMember(id.c_str())) {
+Config &ConfigManager::get(const string id) {
+  if (configs.find(id) == configs.end()) {
     throw string("Not Found");
   }
-  return configs[id.c_str()];
+  return configs.at(id);
 }
 
 string ConfigManager::save(rapidjson::Value &params) {
@@ -34,21 +41,59 @@ string ConfigManager::save(rapidjson::Value &params) {
   auto &posParams = rendererParams["pos"];
   auto &dirParams = rendererParams["dir"];
   auto &upParams = rendererParams["up"];
-  posParams.AddMember("x", 100, configs.GetAllocator());
-  posParams.AddMember("y", 100, configs.GetAllocator());
-  posParams.AddMember("z", 100, configs.GetAllocator());
-  dirParams.AddMember("x", -1, configs.GetAllocator());
-  dirParams.AddMember("y", -1, configs.GetAllocator());
-  dirParams.AddMember("z", -1, configs.GetAllocator());
-  upParams.AddMember("x", 0, configs.GetAllocator());
-  upParams.AddMember("y", -1, configs.GetAllocator());
-  upParams.AddMember("z", 0, configs.GetAllocator());
-  configs.GetObject().AddMember(
-      rapidjson::Value(id.c_str(), configs.GetAllocator()).Move(), params,
-      configs.GetAllocator());
+  auto &d = this->document;
+  posParams.AddMember("x", 100, d.GetAllocator());
+  posParams.AddMember("y", 100, d.GetAllocator());
+  posParams.AddMember("z", 100, d.GetAllocator());
+  dirParams.AddMember("x", -1, d.GetAllocator());
+  dirParams.AddMember("y", -1, d.GetAllocator());
+  dirParams.AddMember("z", -1, d.GetAllocator());
+  upParams.AddMember("x", 0, d.GetAllocator());
+  upParams.AddMember("y", -1, d.GetAllocator());
+  upParams.AddMember("z", 0, d.GetAllocator());
+
+  configs[id] = this->create(params);
+  d.GetObject().AddMember(rapidjson::Value(id.c_str(), d.GetAllocator()).Move(),
+                          params, d.GetAllocator());
   ofstream ofs(filepath);
   rapidjson::OStreamWrapper osw(ofs);
   rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
-  configs.Accept(writer);
+  d.Accept(writer);
   return id;
+}
+
+Config ConfigManager::create(rapidjson::Value &params) {
+  Config config;
+  auto &rendererParams = params["renderer"];
+
+  config.size = vec2i(rendererParams["width"].GetInt(),
+                      rendererParams["height"].GetInt());
+
+  auto &cameraParams = rendererParams["camera"];
+  config.cameraConfig = CameraConfig(cameraParams);
+
+  vector<VolumeConfig> volumeConfigs;
+  auto &volumesParams = rendererParams["volumes"];
+  for (auto &volumeParams : volumesParams.GetArray()) {
+    config.volumeConfigs.push_back(VolumeConfig(volumeParams));
+  }
+
+  /*
+  vector<GeometryConfig> geometryConfigs;
+  auto &geometiesParams = rendererParams["geometries"];
+  for (auto &geometryParams : geometiesParams.GetArray()) {
+    GeometryConfig config(geometryParams);
+    geometryConfigs.push_back(config);
+  }
+  */
+
+  /*
+  vector<LightConfig> lightConfigs;
+  auto &lightsParams = rendererParams["lights"];
+  for (auto &lightParams : lightsParams.GetArray()) {
+    LightConfig lightConfig(lightParams);
+    modelConfigs.push_back(ModelConfig(lightConfig));
+  }
+  */
+  return config;
 }

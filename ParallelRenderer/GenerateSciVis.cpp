@@ -1,9 +1,9 @@
 #include "GenerateSciVis.h"
+#include "ospray/ospray.h"
 #include "ospray/ospray_cpp/Data.h"
 #include "ospray/ospray_cpp/TransferFunction.h"
 #include "ospray/ospray_cpp/Volume.h"
 #include "third_party/RawReader/RawReader.h"
-#include "ospray/ospray.h"
 #include <array>
 #include <ospray/mpiCommon/MPICommon.h>
 #include <random>
@@ -92,8 +92,9 @@ OSPDataType typeForString(const std::string &dtype) {
   return OSP_UCHAR;
 }
 
-void loadVolume(struct LoadedVolume &vol, std::vector<unsigned char> &buffer, vec3i &dimensions,
-                        const std::string &dtype, size_t sizeForDtype) {
+void loadVolume(struct LoadedVolume &vol, std::vector<unsigned char> &buffer,
+                vec3i &dimensions, const std::string &dtype,
+                size_t sizeForDtype) {
   auto numRanks = static_cast<float>(mpicommon::numGlobalRanks());
   auto myRank = mpicommon::globalRank();
   numRanks = 1;
@@ -123,27 +124,23 @@ void loadVolume(struct LoadedVolume &vol, std::vector<unsigned char> &buffer, ve
   vol.buffer = &buffer;
   vol.isNewBuffer = false;
   vol.dimensions = &dimensions;
-  vol.volume = ospray::cpp::Volume("shared_structured_volume");
-  // vol->volume = ospray::cpp::Volume("block_bricked_volume");
-  vol.volume.set("voxelType", dtype.c_str());
-  vol.volume.set("dimensions", vec3i(fullDims));
-  vol.volume.set("transferFunction", vol.tfcn);
-
-  // const size_t dtypeSize = sizeForDtype(dtype);
-  // std::vector<unsigned char> volumeData(
-  //     fullDims.x * fullDims.y * fullDims.z * dtypeSize, 0);
-  // auto size = reader.readRegion(brickId * brickDims - vec3sz(ghostOffset), vec3sz(fullDims),
-  //                   volumeData.data());
-
-  // for shared_structured_volume
-  const OSPDataType ospVoxelType = typeForString(dtype);
-  OSPData data = ospNewData(buffer.size(), ospVoxelType, buffer.data(), OSP_DATA_SHARED_BUFFER);
-  vol.volume.set("voxelData", data);
-  // end
-
-  // for block_bricked_volume
-  // vol->volume.setRegion(volumeData.data(), vec3i(0), vec3i(fullDims));
-  // end
+  const bool sharedVolume = false;
+  if (sharedVolume) {
+    vol.volume = ospray::cpp::Volume("shared_structured_volume");
+    vol.volume.set("voxelType", dtype.c_str());
+    vol.volume.set("dimensions", vec3i(fullDims));
+    vol.volume.set("transferFunction", vol.tfcn);
+    const OSPDataType ospVoxelType = typeForString(dtype);
+    OSPData data = ospNewData(buffer.size(), ospVoxelType, buffer.data(),
+                              OSP_DATA_SHARED_BUFFER);
+    vol.volume.set("voxelData", data);
+  } else {
+    vol.volume = ospray::cpp::Volume("block_bricked_volume");
+    vol.volume.set("voxelType", dtype.c_str());
+    vol.volume.set("dimensions", vec3i(fullDims));
+    vol.volume.set("transferFunction", vol.tfcn);
+    vol.volume.setRegion(buffer.data(), vec3i(0), vec3i(fullDims));
+  }
 
   vol.bounds = box3f(gridOrigin, gridOrigin + vec3f(brickDims));
 }

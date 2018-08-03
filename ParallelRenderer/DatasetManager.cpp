@@ -73,25 +73,19 @@ void DatasetManager::load(string filepath) {
       Dataset dataset(ospcommon::vec3i(dimensions), dtype);
       auto size =
           reader.readRegion(vec3sz(0, 0, 0), dimensions, dataset.buffer.data());
-      // const auto upper = ospcommon::vec3f(dimensions);
-      // const auto halfLength = ospcommon::vec3i(dimensions) / 2;
-      // auto volume =
-      //     gensv::loadVolume(reader, ospcommon::vec3i(dimensions), dtype);
-      // volume.bounds.lower -= ospcommon::vec3f(halfLength);
-      // volume.bounds.upper -= ospcommon::vec3f(halfLength);
-      // volume.volume.set("gridOrigin",
-      //                   volume.ghostGridOrigin -
-      //                   ospcommon::vec3f(halfLength));
-      // volume.volume.commit();
       datasets.emplace(_name, dataset);
     }
   }
 }
 
-Dataset &DatasetManager::get(const char *name) {
+Dataset &DatasetManager::get(const string name) {
   auto search = datasets.find(name);
   if (search == datasets.end()) {
     throw string("Volume ") + name + " not found";
   }
   return search->second;
+}
+
+void DatasetManager::add(string name, Dataset &&exist) {
+  datasets.emplace(name, exist);
 }

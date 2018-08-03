@@ -1,3 +1,4 @@
+import './style.css';
 import LinearPieceWise from '../components/config/LinearPiesewise';
 import Trackball from '../components/trackball'
 import { PerspectiveCamera, Vector3 } from 'three'
@@ -6,10 +7,19 @@ import axios from 'axios'
 const canvas = document.getElementById('tf');
 
 const image = document.createElement('img');
-image.setAttribute('src', 'http://127.0.0.1:3000/20dc5d18-6e43-4379-91ad-75af8107f8b9?width=128&height=128');
+image.setAttribute('src', 'http://127.0.0.1:3000/20dc5d18-6e43-4379-91ad-75af8107f8b9?width=256&height=256');
 const initialPosition = [149, 149, 149];
 let controls = null;
-
+let points = [
+  { x: 0, y: 0, color: '#00008e' },
+  { x: 1/6, y: 1/6, color: '#0000ff' },
+  { x: 2/6, y: 2/6, color: '#00ffff' },
+  { x: 3/6, y: 3/6, color: '#80ff80' },
+  { x: 4/6, y: 4/6, color: '#ffff00' },
+  { x: 5/6, y: 5/6, color: '#ff00ff' },
+  { x: 1, y: 1, color: '#800000' }
+];
+let tf = '';
 function updateCamera() {
   controls.updateCount++;
   if (controls.updateCount < 5) return;
@@ -19,7 +29,19 @@ function updateCamera() {
   camera.getWorldDirection(dir)
   const pos = camera.position
   const up = camera.up;
-  getImage(pos, up, dir);
+  getImage({
+    x: pos.x.toFixed(3),
+    y: pos.y.toFixed(3),
+    z: pos.z.toFixed(3),
+  }, {
+    x: up.x.toFixed(3),
+    y: up.y.toFixed(3),
+    z: up.z.toFixed(3),
+  }, {
+    x: dir.x.toFixed(3),
+    y: dir.y.toFixed(3),
+    z: dir.z.toFixed(3),
+  });
 }
 
 function getImage(pos, up, dir) {
@@ -27,7 +49,8 @@ function getImage(pos, up, dir) {
   url += `?pos.x=${pos.x}&pos.y=${pos.y}&pos.z=${pos.z}&`;
   url += `dir.x=${dir.x}&dir.y=${dir.y}&dir.z=${dir.z}&`;
   url += `up.x=${up.x}&up.y=${up.y}&up.z=${up.z}&`;
-  url += 'width=128&height=128';
+  url += 'width=256&height=256&';
+  url += tf;
   axios.get(url, {
     responseType: 'arraybuffer'
   }).then((res) => {
@@ -60,16 +83,19 @@ function loop() {
   window.requestAnimationFrame(loop);
 }
 
-const editor = new LinearPieceWise(canvas);
-const initialPoints = [
-  { x: 0, y: 0, color: '#00008e' },
-  { x: 1/6, y: 1/6, color: '#0000ff' },
-  { x: 2/6, y: 2/6, color: '#00ffff' },
-  { x: 3/6, y: 3/6, color: '#80ff80' },
-  { x: 4/6, y: 4/6, color: '#ffff00' },
-  { x: 5/6, y: 5/6, color: '#ff00ff' },
-  { x: 1, y: 1, color: '#800000' }
-];
+function handlePointChange(points) {
+  const strs = points.map((point, index) => {
+    const clone = {
+      x: point.x.toFixed(3),
+      y: point.y.toFixed(3),
+      color: point.color.substr(1),
+    };
+    return ['x', 'y', 'color'].map(attri => `tf[${index}].${attri}=${clone[attri]}`).join('&')
+  });
+  tf = strs.join('&');
+}
 
-editor.setControlPoints(initialPoints);
+const editor = new LinearPieceWise(canvas);
+editor.onChange(handlePointChange);
+editor.setControlPoints(points);
 editor.render();
