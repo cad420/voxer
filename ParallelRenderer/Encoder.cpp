@@ -1,11 +1,14 @@
 #include "Encoder.h"
 #define TJE_IMPLEMENTATION
 #include "third_party/tiny_jpeg.h"
+#include "util/Debugger.h"
 #include <string>
 #include <vector>
 
 using namespace std;
 using ospcommon::vec2ui;
+
+static Debugger debug("encoder");
 
 void _encode(void *context, void *data, int size) {
   auto buf = (vector<unsigned char> *)context;
@@ -20,13 +23,15 @@ vector<unsigned char> Encoder::encode(vector<unsigned char> &data, vec2ui dim,
   if (format != "JPEG") {
     throw string("format not suppported!");
   }
+
   auto start = chrono::steady_clock::now();
+
   vector<unsigned char> img;
   img.reserve(dim.x * dim.y);
   tje_encode_with_func(_encode, &img, 1, dim.x, dim.y, 4, data.data());
 
-  cout << "encode: "
-       << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
-       << " ms " << endl;
+  const auto delta = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start);
+  debug.log(to_string(delta.count()) + " ms");
+
   return img;
 }

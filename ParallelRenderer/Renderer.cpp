@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include "config/CameraConfig.h"
 #include "config/TransferFunctionConfig.h"
+#include "util/Debugger.h"
 #include <cstdlib>
 
 using namespace std;
@@ -8,6 +9,7 @@ using namespace ospcommon;
 namespace o = ospray::cpp;
 
 extern DatasetManager datasets;
+static Debugger debug("renderer");
 
 Image Renderer::renderImage(const CameraConfig &cameraConfig,
                             const vector<VolumeConfig> &volumeConfigs,
@@ -97,11 +99,9 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
   framebuffer.release();
   model.release();
 
-  cout << "render: "
-       << chrono::duration_cast<chrono::milliseconds>(
-              chrono::steady_clock::now() - start)
-              .count()
-       << " ms " << endl;
+  const auto delta = chrono::duration_cast<chrono::milliseconds>(
+      chrono::steady_clock::now() - start);
+  debug.log(to_string(delta.count()) + " ms");
 
   return image;
 };
