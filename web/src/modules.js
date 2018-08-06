@@ -4,7 +4,7 @@ export default {
       params: [],
       ports: {
         outputs: [
-          { name:'dataset', label: 'out' }
+          { name:'dataset', type: 'raw_dataset' }
         ]
       }
     },
@@ -41,7 +41,7 @@ export default {
       ],
       ports: {
         outputs: [
-          { name: 'transferfunction', label: 'out' }
+          { name: 'transferfunction', type: 'tfcn' }
         ]
       }
     },
@@ -67,11 +67,11 @@ export default {
       ],
       ports: {
         inputs: [
-          { name: 'transferfunction', label: 'in' },
-          { name: 'dataset', label: 'in' }
+          { name: 'transferfunction', accepts: ['tfcn'] },
+          { name: 'dataset', accepts: ['raw_dataset', 'dataset'] }
         ],
         outputs: [
-          { name: 'volume', label: 'out' }
+          { name: 'volume', type: 'volume' }
         ]
       }
     },
@@ -111,11 +111,8 @@ export default {
     common: {
       params: [],
       ports: {
-        inputs: [
-          { name: 'volume1', label: 'in' }
-        ],
         outputs: [
-          { name: 'volume', label: 'out' }
+          { name: 'dataset', type: 'dataset' }
         ]
       }
     },
@@ -123,6 +120,11 @@ export default {
       {
         name: 'Volume Clipping',
         type: 'clipping',
+        ports: {
+          inputs: [
+            { name: 'source', accepts: ['dataset', 'raw_dataset'] }
+          ]
+        },
         params: [
           { label: 'lower', type: 'Vec3f', default: [-500, -500, -500] },
           { label: 'upper', type: 'Vec3f', default: [500, 500, 500] }
@@ -133,13 +135,19 @@ export default {
         type: 'diff',
         ports: {
           inputs: [
-            { name: 'volume2', label: 'in' }
+            { name: 'first', accepts: ['raw_dataset'] },
+            { name: 'second', accepts: ['raw_dataset'] }
           ]
         }
       },
       {
         name: 'Volume Transform',
         type: 'transform',
+        ports: {
+          inputs: [
+            { name: 'source', accepts: ['dataset', 'raw_dataset'] }
+          ]
+        },
         params: [
           { label: 'x', type: 'Float', min: -500, max: 500, default: 0 },
           { label: 'y', type: 'Float', min: -500, max: 500, default: 0 },
@@ -151,7 +159,9 @@ export default {
   Geometry: {
     common: {
       ports: {
-        outputs: [{ name: 'geometry', label: 'out' }]
+        outputs: [
+          { name: 'geometry', type: 'geometry' }
+        ]
       }
     },
     type: [
@@ -190,24 +200,12 @@ export default {
       }
     ],
   },
-  Model: {
-    common: {
-      ports: {
-        inputs: [
-          { name: 'geometry', label: 'in', repeatable: true, required: false },
-          { name: 'volume', label: 'in' }
-        ],
-        outputs: [
-          { name: 'model', label: 'out' }
-        ]
-      }
-    },
-    type: [{ name: 'Default Model' }]
-  },
   Lights: {
     common: {
       ports: {
-        outputs: [{ name: 'light', label: 'out' }]
+        outputs: [
+          { name: 'light', type: 'light' }
+        ]
       },
       params: [
         { label: 'color', type: 'Color', default: '#FFFFFF' },
@@ -242,11 +240,12 @@ export default {
     common: {
       ports: {
         inputs: [
-          { name: 'lights', label: 'in', repeatable: true, required: false },
-          { name: 'model', label: 'in', repeatable: true }
+          { name: 'lights', accepts: ['light'], repeatable: true, required: false },
+          { name: 'volume', accepts: ['volume'], repeatable: true },
+          { name: 'geometries', accepts: ['geometry'], repeatable: true, required: false },
         ],
         outputs: [
-          { name: 'image', label: 'out' }
+          { name: 'image', type: 'image' }
         ]
       },
       params: [
@@ -289,10 +288,10 @@ export default {
     common: {
       ports: {
         inputs: [
-          { name: 'image', label: 'in' },
+          { name: 'image', accepts: ['image'] },
         ],
         outputs: [
-          { name: 'image', label: 'out' },
+          { name: 'image', type: 'image' },
         ]
       },
     },
@@ -306,7 +305,7 @@ export default {
     common: {
       ports: {
         inputs: [
-          { name: 'image', label: 'in' },
+          { name: 'image', accepts: ['image'] },
         ]
       },
       params: [
@@ -326,8 +325,5 @@ export default {
         params: []
       }
     ]
-  },
-  /* Transition: {
-    ports: []
-  } */
+  }
 }

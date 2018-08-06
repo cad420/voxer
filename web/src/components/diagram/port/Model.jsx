@@ -2,11 +2,12 @@ import { DefaultPortModel } from 'storm-react-diagrams'
 import LinkModel from '../link/Model'
 
 export default class Model extends DefaultPortModel {
-	constructor(isInput, name, label, repeatable, required = true) {
-		super(isInput, name, label)
-		this.type = 'vovis'
-		this.repeatable = repeatable
-		this.required = required
+	constructor(isInput, name, type, repeatable, required = true) {
+		super(isInput, name, type)
+		if (isInput) this.accepts = type;
+		else this.type = type;
+		this.repeatable = repeatable;
+		this.required = required;
 	}
 
 	createLinkModel() {
@@ -14,21 +15,23 @@ export default class Model extends DefaultPortModel {
 	}
 
 	canLinkToPort(port) {
-		if (this.name === 'volume' && port.name.substr(0, 6) === 'volume') {
-			return true
+		if (this.in) {
+			if (this.accepts.indexOf(port.type) === -1) {
+				return false;
+			}
+			if (this.repeatable && Object.keys(this.getLinks()).length > 1) {
+				return false;
+			}
+			return true;
+		} else if (port.in) {
+			if (port.accepts.indexOf(this.type) === -1) {
+				return false;
+			}
+			if (!port.repeatable && Object.keys(port.getLinks()).length > 1) {
+				return false
+			}
+			return true;
 		}
-		if (port.name === 'volume' && port.name.substr(0, 6) === 'volume') {
-			return true
-		}
-		if (this.name !== port.name) {
-			return false
-		}
-		if (this.in && !this.repeatable && Object.keys(this.getLinks()).length > 1) {
-			return false
-		}
-		if (port.in && !port.repeatable && Object.keys(port.getLinks()).length > 1) {
-			return false
-		}
-		return true
+		return false;
 	}
 }

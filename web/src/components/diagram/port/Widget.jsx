@@ -20,8 +20,14 @@ export default class PortLabelWidget extends BaseWidget {
 
 	render() {
 		const { model } = this.props
-		var port = <PortWidget extraProps={{ title: model.name }} node={model.getParent()} name={model.name} />;
-		var label = <div className="name" title={model.name}>{model.label}</div>;
+		const port = (
+			<PortWidget
+				extraProps={{ title: model.in ? model.accepts.join(', ') : model.type }}
+				node={model.getParent()}
+				name={model.name}
+			/>
+		);
+		const label = <div className="name" title={model.in ? model.accepts.join(', ') : model.type}>{model.name}</div>;
 
 		return (
 			<div {...this.getProps()}>

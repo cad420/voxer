@@ -38,11 +38,11 @@ export default class Workspace extends Component {
       }
     })
     data.ports.inputs.forEach(port => {
-      node.addPort(new VovisPortModel(true, port.name, port.label, port.repeatable, port.required));
+      node.addPort(new VovisPortModel(true, port.name, port.accepts, port.repeatable, port.required));
       node.extras.children[port.name] = false
     })
     data.ports.outputs.forEach(port => {
-      node.addPort(new VovisPortModel(false, port.name, port.label, port.repeatable));
+      node.addPort(new VovisPortModel(false, port.name, port.type, port.repeatable));
     })
     const points = app.getDiagramEngine().getRelativeMousePoint(e);
     node.x = points.x;
