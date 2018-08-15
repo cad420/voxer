@@ -6,7 +6,9 @@ const config = require('./webpack.config.js');
 const compiler = webpack(config);
 const path = require('path');
 const fs = require('fs');
+
 const abs = file => path.resolve(__dirname, file);
+const isProduction = process.env.NODE_ENV === 'production';
 
 fastify.register(require('fastify-static'), {
   root: path.join(__dirname, 'public'),
@@ -22,7 +24,7 @@ const indexTemplate = Handlebars.compile(fs.readFileSync(abs('./templates/index.
 fastify.get('/', (req, res) => {
   res.type('html');
   res.send(indexTemplate({
-    CSSPATH: '/build/main.css',
+    CSSPATH: isProduction ? '/build/main.css' : false,
     JSPATH: '/build/main.js'
   }));
 });

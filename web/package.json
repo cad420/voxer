@@ -16,7 +16,10 @@
     "handlebars": "^4.0.11",
     "mini-css-extract-plugin": "^0.4.1",
     "mout": "^1.1.0",
+    "pickr-widget": "^0.2.0",
+    "postcss-css-variables": "^0.9.0",
     "postcss-loader": "^2.1.6",
+    "postcss-nested": "^3.0.0",
     "react": "^16.3.1",
     "react-dom": "^16.3.1",
     "react-hot-loader": "^4.3.3",
@@ -28,7 +31,7 @@
     "webpack-hot-middleware": "^2.22.2"
   },
   "scripts": {
-    "start": "node server.js",
-    "build": "node build.js"
+    "deb": "node server.js",
+    "start": "node server.js"
   }
 }

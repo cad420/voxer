@@ -1,18 +1,33 @@
 @import '~antd/dist/antd.css';
 
+:root {
+  --headerHeight: 65px;
+}
+
 .App-header {
-  text-align: center;
   position: fixed;
-  height: 60px;
+  height: var(--headerHeight);
+  padding: 10px;
   width: 100%;
   top: 0;
   background-color: #222;
-  line-height: 60px;
+  color: #fff;
   user-select: none;
   z-index: 999;
+  span {
+    display: inline-block;
+    cursor: pointer;
+    &:hover {
+      text-decoration: underline;
+    }
+    + span {
+      margin-left: 20px;
+    }
+  }
 }
 
 .App-header h1 {
+  text-align: center;
   font-size: 1.5em;
   color: white;
   margin: 0;
@@ -20,8 +35,8 @@
 
 .App-container {
   position: relative;
-  top: 60px;
-  height: calc(100vh - 60px);
+  top: var(--headerHeight);
+  height: calc(100vh - var(--headerHeight));
   overflow: hidden;
 }
 
@@ -134,7 +149,14 @@
 }
 
 .App .config-item {
-  margin: 10px 0;
+  &::after {
+    content: " ";
+    display: block;
+    margin: 12px auto;
+    height: 1px;
+    width: 128px;
+    background-color: #dedede;
+  }
 }
 
 .App .config-item .line {

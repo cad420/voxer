@@ -1,31 +1,53 @@
 import React, { Component } from 'react'
+import Pickr from 'pickr-widget';
+import 'pickr-widget/dist/pickr.min.css'
 
 export default class extends Component {
-  handleChange = (e) => {
-    const { onChange, label } = this.props
-    let color = e.target.value
-    console.log(color)
-    if (color.length === 4) {
-      color = '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+  componentDidMount() {
+    const { value = '#ffffff' } = this.props;
+    this.pickr = Pickr.create({
+      el: this.ref,
+      appendToBody: true,
+      default: value.substring(1),
+      components: {
+        preview: true,
+        hue: true,
+        interaction: {
+          hex: true,
+          rgba: true,
+          hsva: true,
+          input: true,
+          save: true
+        }
+      },
+      onSave: (hsva) => {
+        const { value } = this.props;
+        const hex = hsva.toHEX();
+        const color = `#${hex[0]}${hex[1]}${hex[2]}`;
+        if (color === value) return;
+        this.handleChange(hsva.toHEX());
+      }
+    });
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if ('value' in nextProps) {
+      this.pickr.setColor(nextProps.value);
     }
-    onChange && onChange(label, color)
+  }
+
+  handleChange = (color) => {
+    const { onChange, label } = this.props
+    const value = `#${color[0]}${color[1]}${color[2]}`
+    onChange && onChange(label, value)
   }
 
   render() {
     const { label, value } = this.props
     return (
       <div>
-        <label>
-          {label}
-          &nbsp;&nbsp;
-          <input
-            type="color"
-            value={value}
-            onChange={this.handleChange}
-          />
-          &nbsp;&nbsp;
-          {value}
-        </label>
+        {label && <div>{label}</div>}
+        <div ref={ref => this.ref = ref}></div>
       </div>
     )
   }

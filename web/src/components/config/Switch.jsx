@@ -1,39 +1,21 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
+import { Switch } from 'antd';
 
 export default class extends Component {
-  handleChange = (e) => {
+  handleChange = (checked) => {
     const { onChange, label } = this.props
-    const value = e.target.value
-    onChange && onChange(label, value === 'true')
+    onChange && onChange(label, checked)
   }
 
   render() {
     const { label, value } = this.props
     return (
       <div>
-        {label}
-        &nbsp;&nbsp;
-        <label>
-          <input
-            name={label}
-            type="radio"
-            value={true}
-            checked={value === true}
+        <div><b>{label}</b></div>
+          <Switch
+            value={value}
             onChange={this.handleChange}
           />
-          ON
-        </label>
-        &nbsp;&nbsp;
-        <label>
-          <input
-            name={label}
-            type="radio"
-            value={false}
-            checked={value === false}
-            onChange={this.handleChange}
-          />
-          OFF
-        </label>
       </div>
     )
   }

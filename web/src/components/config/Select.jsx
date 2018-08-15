@@ -1,30 +1,28 @@
 import React, { Component } from 'react'
+import { Select } from 'antd';
+
+const { Option } = Select;
 
 export default class extends Component {
-  handleChange = e => {
-    const { onChange, label } = this.props
-    onChange && onChange(label, e.target.value)
+  handleChange = value => {
+    const { onChange, label } = this.props;
+    onChange && onChange(label, value);
   }
 
   render() {
-    const { label, options = [], value = '' } = this.props
+    const { label, options = [], value = '' } = this.props;
     return (
       <div>
-        <label>
-        {label}&nbsp;&nbsp;
-        <select id={label} name={label} value={value} onChange={this.handleChange}>
-          <option value="">Please choose</option>
+        <div><b>{label}</b></div>
+        <Select value={value} onChange={this.handleChange} style={{ width: '60%' }}>
           {
-            options.map(option => {
-              if (typeof option === 'object') {
-                return <option key={option.value} value={option.value}>{option.label}</option>
-              } else {
-                return <option key={option} value={option}>{option}</option>
-              }
-            })
+            options.map(option => (
+              typeof option === 'object' ?
+              <Option key={option.value}>{option.label}</Option> :
+              <Option key={option}>{option}</Option> 
+            ))
           }
-        </select>
-        </label>
+        </Select>
       </div>
     )
   }

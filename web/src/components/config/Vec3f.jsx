@@ -17,7 +17,7 @@ export default class extends Component {
     const { label, value = [], max, min  } = this.props
     return (
       <div>
-        <div>{label}</div>
+        <div><b>{label}</b></div>
         <div>{
           ['x', 'y', 'z'].map((item, i) => (
             <Float

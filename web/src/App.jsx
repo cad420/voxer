@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
+import { hot } from 'react-hot-loader';
 import Manager from './manager';
+import Header from './components/Header';
 import ModuleList from './components/ModuleList';
 import Workspace from './components/Workspace';
 import Config from './components/Config';
-import { hot } from 'react-hot-loader';
+import ConfigContext from './store/config';
 import './styles/App.css';
 import '../node_modules/storm-react-diagrams/dist/style.min.css';
 
@@ -13,10 +15,23 @@ class App extends Component {
     this.state = {
       current: null,
       params: {},
-      values: {}
+      values: {},
+      config: {
+        server: 'localhost:3000',
+        update: this.updateConfig
+      }
     }
     window.app = this.app = new Manager();
     this.app.on('selectionChanged', this.handleSelectionChange)
+  }
+
+  updateConfig = (key, value) => {
+    this.setState({
+      config: {
+        ...this.state.config,
+        [key]: value
+      }
+    })
   }
 
   handleSelectionChange = (data) => {
@@ -59,22 +74,22 @@ class App extends Component {
   }
 
   render() {
-    const { current, values } = this.state
+    const { current, values, config } = this.state
     return (
-      <div className="App">
-        <header className="App-header">
-          <h1>Volume Visualization</h1>
-        </header>
-        <div className="App-container">
-          <ModuleList />
-          <Workspace app={this.app} />
-          <Config
-            current={current}
-            values={values}
-            onChange={this.handleConfigChange}
-          />
+      <ConfigContext.Provider value={config}>
+        <div className="App">
+          <Header />
+          <div className="App-container">
+            <ModuleList />
+            <Workspace app={this.app} />
+            <Config
+              current={current}
+              values={values}
+              onChange={this.handleConfigChange}
+            />
+          </div>
         </div>
-      </div>
+      </ConfigContext.Provider>
     );
   }
 }

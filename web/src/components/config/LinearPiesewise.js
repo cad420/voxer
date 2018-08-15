@@ -33,8 +33,14 @@ function getCanvasCoordinates(ctx, point, margin) {
   return { x, y, color };
 }
 
-function drawControlPoint(ctx, point, radius, color) {
+function drawControlPoint(ctx, point, radius, color, selected) {
   const { x, y } = point;
+  if (selected) {
+    ctx.beginPath();
+    ctx.fillStyle = '#00c0ff';
+    ctx.arc(x, y, radius + 2, 0, 2 * Math.PI, false);
+    ctx.fill();
+  }
   ctx.beginPath();
   ctx.fillStyle = color;
   ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
@@ -263,7 +269,8 @@ export default class LinearPieceWiseEditor extends Emitter {
         this.ctx,
         point,
         this.radius,
-        this.activeIndex === index ? this.activePointColor : point.color
+        point.color,
+        this.activeIndex === index
       );
     });
 

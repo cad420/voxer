@@ -1,6 +1,8 @@
 const path = require('path');
 const webpack = require('webpack')
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const postcssNested = require('postcss-nested');
+const postcssVariables = require('postcss-css-variables');
 
 const abs = file => path.resolve(__dirname, file);
 const isProduction = process.env.NODE_ENV === 'production';
@@ -25,7 +27,15 @@ module.exports = {
           { loader: 'style-loader' },
         ]).concat([
           { loader: 'css-loader', options: { importLoaders: 1 } },
-          { loader: 'postcss-loader', options: { plugins: [] } },
+          {
+            loader: 'postcss-loader',
+            options: {
+              plugins: [
+                postcssNested(),
+                postcssVariables()
+              ]
+            } 
+          },
         ])
       }
     ]
@@ -40,6 +50,9 @@ module.exports = {
   ],
   resolve: {
     extensions: ['.js', '.jsx'],
+    alias: {
+      '@': path.resolve(__dirname, 'src')
+    }
   },
   mode: isProduction ? 'production' : 'development',
   devtool: isProduction ? false : 'cheap-eval-source-map',

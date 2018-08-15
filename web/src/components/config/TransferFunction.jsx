@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import LinearPieceWise from './LinearPiesewise'
+import Color from './Color';
 import equals from 'mout/src/lang/deepEquals';
 
 export default class PieceWiseFunctionEditorWidget extends Component {
@@ -106,7 +107,7 @@ export default class PieceWiseFunctionEditorWidget extends Component {
     this.editor.setControlPoints(points, this.state.activePoint);
   }
 
-  updateActivePointColor = (e) => {
+  updateActivePointColor = (label, color) => {
     if (this.state.activePoint === -1) {
       return;
     }
@@ -115,10 +116,6 @@ export default class PieceWiseFunctionEditorWidget extends Component {
       y: pt.y,
       color: pt.color
     }));
-    let color = e.target.value;
-    if (color.length === 4) {
-      color = '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
-    }
     points[this.state.activePoint].color = color;
     this.editor.setControlPoints(points, this.state.activePoint);
   }
@@ -138,16 +135,13 @@ export default class PieceWiseFunctionEditorWidget extends Component {
   }
 
   render() {
+    const { activePoint } = this.state;
+    const { value, rangeMin, rangeMax } = this.props;
+    const point = activePoint === -1 ? value[0] : value[activePoint];
     const activePointDataValue =
-      (this.state.activePoint !== -1
-        ? this.props.value[this.state.activePoint].x
-        : 0.5) *
-        (this.props.rangeMax - this.props.rangeMin) +
-      this.props.rangeMin;
-    const activePointOpacity =
-      this.state.activePoint !== -1
-        ? this.props.value[this.state.activePoint].y
-        : 0.5;
+      (activePoint !== -1 ? point.x : 0.5)
+      * (rangeMax - rangeMin) + rangeMin;
+    const activePointOpacity = activePoint !== -1 ? point.y : 0.5;
     return (
       <div
         style={{ userSelect: 'none' }}
@@ -164,11 +158,11 @@ export default class PieceWiseFunctionEditorWidget extends Component {
         {this.props.hidePointControl ? null : (
           <div>
             <div>
-              <input type="color" name="" id="" onChange={this.updateActivePointColor} />
-              &nbsp;&nbsp;&nbsp;
+              <Color value={point.color} onChange={this.updateActivePointColor} />
+              <br/>
               <button onClick={this.removePoint}>Delete</button>
             </div>
-            <br/>
+            <br />
             <div>
               <div>
                 <label>Data</label>&nbsp;&nbsp;
@@ -181,7 +175,7 @@ export default class PieceWiseFunctionEditorWidget extends Component {
                   onChange={this.updateActivePointDataValue}
                 />
               </div>
-              <br/>
+              <br />
               <div>
                 <label>Opacity</label>&nbsp;&nbsp;
                 <input
@@ -193,10 +187,10 @@ export default class PieceWiseFunctionEditorWidget extends Component {
                   onChange={this.updateActivePointOpacity}
                 />
               </div>
-              <br/>
+              <br />
             </div>
             <div>
-              
+
             </div>
           </div>
         )}

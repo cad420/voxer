@@ -1,18 +1,20 @@
 import React, { Component } from 'react'
+import { message } from 'antd';
 import { PerspectiveCamera, Vector3 } from 'three'
 import Trackball from './trackball'
+import ConfigContext from '../store/config';
 
 function verifyVolume(params) {
   if (params.type === 'structured') {
     const tfcnParams = params.transferfunction;
     const datasetParams = params.dataset;
     if (!tfcnParams || !datasetParams) return false;
-    if (!verifyVolume(params)) return false;
+    return true;
   } else if (params.type === 'diff') {
-    if (!verifyVolume(params.volume1)) return false;
-    if (!verifyVolume(params.volume2)) return false;
+    if (!verifyVolume(params.first)) return false;
+    if (!verifyVolume(params.second)) return false;
   } else if (params.type === 'transform') {
-    if (!verifyVolume(params.volume1)) return false;
+    if (!verifyVolume(params.volume)) return false;
   } else if (params.type === 'clipping') {
     if (!verifyVolume(params.volume1)) return false;
   }
@@ -22,21 +24,17 @@ function verify(params) {
   if (!params.width || !params.height) return false;
   const renderParams = params.image;
   if (!renderParams) return false;
-  const modelsParams = renderParams.model;
-  if (!modelsParams || modelsParams.length === 0) return false;
-  for (let i = 0; i < modelsParams.length; i++) {
-    const modelParams = modelsParams[i];
-    const volumesParams = modelParams.volume;
-    if (!volumesParams || volumesParams.length === 0) return false;
-    for (let j = 0; j < volumesParams.length; j++) {
-      const volumeParams = volumesParams[i];
-      if (!verifyVolume(volumeParams)) return false;
-    }
+  const volumesParams = renderParams.volumes;
+  if (!volumesParams || volumesParams.length === 0) return false;
+  for (let i = 0; i < volumesParams.length; i++) {
+    const volumeParams = volumesParams[i];
+    if (!volumeParams) return false;
+    if (!verifyVolume(volumeParams)) return false;
   }
   return true;
 }
 
-export default class extends Component {
+class Display extends Component {
   constructor(props) {
     super(props)
     this.state = {
@@ -45,31 +43,11 @@ export default class extends Component {
       interacting: false
     };
     this.ws = null;
-    // this.server =  window.location.hostname + ':3000/'
-    this.server = '127.0.0.1:3000/'
-    // this.server =  '34.213.39.15:3000/';
     this.timeoutId = null;
   }
 
   componentDidMount() {
-    this.ws = new WebSocket('ws://' + this.server)
-    this.ws.binaryType = 'arraybuffer'
-    this.ws.onmessage = msg => {
-      const bytes = new Uint8Array(msg.data)
-      if (typeof msg.data === 'object') {
-        const blob = new Blob([bytes.buffer], { type: 'image/jpeg' })
-        this.setState({ data: URL.createObjectURL(blob) })
-      } else {
-        const data = JSON.parse(msg.data)
-        if (data.type === 'config') {
-          this.setState({ url: this.server + data.value })
-        } else if (data.type === 'error') {
-          window.alert(data.value)
-        }
-      }
-    }
-    this.loopId = window.requestAnimationFrame(this.loop)
-    this.ws.onopen = this.renderImage
+    this.connect();
     this.image.addEventListener('mousedown', this.setInteracting)
     this.image.addEventListener('mouseup', this.unsetInteracting)
     window.addEventListener('mouseup', this.unsetInteracting)
@@ -78,7 +56,7 @@ export default class extends Component {
   componentDidUpdate() {
     const imageSize = this.image.getBoundingClientRect()
     const { data } = this.state
-    if (!data || this.controls || imageSize.height === 0 ) return
+    if (!data || this.controls || imageSize.height === 0) return
     const camera = new PerspectiveCamera(60, 1, 0.01, 10000)
     const links = this.props.model.ports.image.links
     const linkKeys = Object.keys(links)
@@ -96,6 +74,12 @@ export default class extends Component {
     this.controls.addEventListener('change', this.updateCamera)
   }
 
+  componentWillReceiveProps(nextProps) {
+    if ('server' in nextProps) {
+      this.connect();
+    }
+  }
+
   componentWillUnmount() {
     this.ws.close()
     this.controls && this.controls.removeEventListener('change', this.renderImage)
@@ -103,6 +87,30 @@ export default class extends Component {
     this.image.removeEventListener('mouseup', this.unsetInteracting)
     window.removeEventListener('mouseup', this.unsetInteracting)
     window.cancelAnimationFrame(this.loopId)
+  }
+
+  connect = () => {
+    const { server } = this.props;
+    if (this.ws) this.ws.close();
+    if (this.loopId) window.cancelAnimationFrame(this.loopId);
+    this.ws = new WebSocket('ws://' + server)
+    this.ws.binaryType = 'arraybuffer'
+    this.ws.onmessage = msg => {
+      const bytes = new Uint8Array(msg.data)
+      if (typeof msg.data === 'object') {
+        const blob = new Blob([bytes.buffer], { type: 'image/jpeg' })
+        this.setState({ data: URL.createObjectURL(blob) })
+      } else {
+        const data = JSON.parse(msg.data)
+        if (data.type === 'config') {
+          this.setState({ url: `http://${server}/${data.value}` })
+        } else if (data.type === 'error') {
+          message.error(data.value)
+        }
+      }
+    }
+    this.loopId = window.requestAnimationFrame(this.loop)
+    this.ws.onopen = this.renderImage
   }
 
   setInteracting = () => {
@@ -134,12 +142,12 @@ export default class extends Component {
     const pos = camera.position
     const up = camera.up
     renderer.extras.values.pos = [
-      parseFloat(pos.x.toFixed(2)), 
+      parseFloat(pos.x.toFixed(2)),
       parseFloat(pos.y.toFixed(2)),
       parseFloat(pos.z.toFixed(2))
     ];
     renderer.extras.values.up = [
-      parseFloat(up.x.toFixed(2)), 
+      parseFloat(up.x.toFixed(2)),
       parseFloat(up.y.toFixed(2)),
       parseFloat(up.z.toFixed(2))
     ]
@@ -170,15 +178,18 @@ export default class extends Component {
       this.controls = null
       return
     }
+    return
     if (url.length) {
       this.setState({ url: '' })
     }
     if (interacting) {
       clearTimeout(this.timeoutId)
-      this.ws.send(JSON.stringify({ operation, params: {
-        ...params,
-        width: 64, height: Math.ceil(64 / params.width * params.height)
-      } }))
+      this.ws.send(JSON.stringify({
+        operation, params: {
+          ...params,
+          width: 64, height: Math.ceil(64 / params.width * params.height)
+        }
+      }))
       this.timeoutId = setTimeout(this.sendRequestForHighQuality, 100);
     } else {
       this.ws.send(JSON.stringify({ operation, params }))
@@ -201,5 +212,25 @@ export default class extends Component {
         {url.length > 0 && <div className="center image-url" onMouseDown={e => e.stopPropagation()}>{url}</div>}
       </div>
     )
+  }
+}
+
+export default class extends React.Component {
+  renderImage = () => {
+    this.ref.renderImage();
+  }
+
+  render() {
+    return (
+      <ConfigContext.Consumer>
+        {({ server }) => (
+          <Display
+            {...this.props}
+            server={server}
+            ref={ref => this.ref = ref}
+          />
+        )}
+      </ConfigContext.Consumer>
+    );
   }
 }

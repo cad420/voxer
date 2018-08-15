@@ -87,15 +87,13 @@ export default class VovisDiagramWidget extends DiagramWidget {
 						const target = link.getTargetPort()
 						if (target.repeatable) {
 							const values = target.parent.extras.values
-							if (!values[source.name]) values[source.name] = []
-							if (values[source.name].indexOf(source.parent.extras.values) === -1) {
-								values[source.name].push(source.parent.extras.values)
+							if (!values[target.name]) values[target.name] = []
+							if (values[target.name].indexOf(source.parent.extras.values) === -1) {
+								values[target.name].push(source.parent.extras.values)
 							}
 						} else {
-							// const name = target.name === 'volume1' || target.name === 'volume2' ? target.name : source.name
 							target.parent.extras.values[target.name] = source.parent.extras.values
 						}
-						// const name = target.name === 'volume1' || target.name === 'volume2' ? target.name : source.name
 						target.parent.extras.children[target.name] = true
 						if (target.parent.extras.category === 'Display') {
 							target.parent.el.renderImage()

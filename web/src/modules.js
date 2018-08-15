@@ -84,27 +84,6 @@ export default {
           { label: 'gridSpacing', type: 'Vec3f' },
         ],
       },
-      // {
-      //   name: 'AMR Volume',
-      //   type: 'AMR',
-      //   params: [
-      //     { label: 'gridOrigin', type: 'Vec3f' },
-      //     { label: 'gridSpacing', type: 'Vec3f' },
-      //     { label: 'amrMethod', type: 'select' },
-      //     { label: 'voxelType', type: 'select' },
-      //     { label: 'brickInfo', type: '_data' },
-      //     { label: 'brickData', type: '_data' },
-      //   ],
-      // },
-      // {
-      //   name: 'Unstructured Volume',
-      //   type: 'unstructured',
-      //   params: [
-      //     { label: 'vertices', type: 'vec3if[]' },
-      //     { label: 'field', type: 'intices' },
-      //     { label: 'hexMethod', type: 'select' },
-      //   ]
-      // },
     ]
   },
   'Volume Processing': {
@@ -188,7 +167,7 @@ export default {
         name: 'Isosurface',
         type: 'isosurface',
         params: [
-          { label: 'isovalues', type: 'Slider', max: 255, min: 0, default: 0.3 },
+          { label: 'isovalues', type: 'Float', max: 255, min: 0, default: 0.3 },
         ]
       },
       {
@@ -236,12 +215,36 @@ export default {
       { name: 'Ambient Light' },
     ]
   },
+  Plotting: {
+    common: {
+      ports: {
+        inputs: [
+        ],
+        outputs: []
+      },
+      params: []
+    },
+    type: [
+      {
+        name: 'Scatter plots',
+        type: 'plotting'
+      },
+      {
+        name: 'Scatter plot matrices',
+        type: 'plotting'
+      },
+      {
+        name: 'Parallel coordinate plots',
+        type: 'plotting'
+      }
+    ]
+  },
   Rendering: {
     common: {
       ports: {
         inputs: [
           { name: 'lights', accepts: ['light'], repeatable: true, required: false },
-          { name: 'volume', accepts: ['volume'], repeatable: true },
+          { name: 'volumes', accepts: ['volume'], repeatable: true },
           { name: 'geometries', accepts: ['geometry'], repeatable: true, required: false },
         ],
         outputs: [
@@ -249,6 +252,8 @@ export default {
         ]
       },
       params: [
+        { label: 'width', type: 'Int', max: 1024, min: 64, default: 256 },
+        { label: 'height', type: 'Int', max: 1024, min: 64, default: 256 },
         { label: 'epsilon', type: 'Float' },
         { label: 'spp', type: 'Int' },
         { label: 'maxDepth', type: 'Int' },
@@ -308,10 +313,6 @@ export default {
           { name: 'image', accepts: ['image'] },
         ]
       },
-      params: [
-        { label: 'width', type: 'Int', max: 1024, min: 64, default: 256 },
-        { label: 'height', type: 'Int', max: 1024, min: 64, default: 256 },
-      ]
     },
     type: [
       {
