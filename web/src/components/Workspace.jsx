@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import VovisDiagramWidget from '../components/diagram/Widget'
 import DisplayNodeModel from '../components/diagram/displayNode/Model'
+import PlotNodeModel from '../components/diagram/plotNode/Model'
 import VovisNodeModel from '../components/diagram/node/Model'
 import VovisPortModel from '../components/diagram/port/Model'
 
@@ -24,6 +25,9 @@ export default class Workspace extends Component {
       app.displays.push(node)
     } else if (data.node && data.node === 'animation') {
       node = new DisplayNodeModel(data.name, '#333', 'animation');
+      app.displays.push(node)
+    } else if (data.node && data.node === 'plotting') {
+      node = new PlotNodeModel(data.name, '#333', 'scatter');
       app.displays.push(node)
     } else {
       node = new VovisNodeModel(data.name, '#333');

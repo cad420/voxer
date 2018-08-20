@@ -114,7 +114,7 @@ export default {
         type: 'diff',
         ports: {
           inputs: [
-            { name: 'first', accepts: ['raw_dataset'] },
+            { name: 'scalar', accepts: ['raw_dataset'] },
             { name: 'second', accepts: ['raw_dataset'] }
           ]
         }
@@ -219,6 +219,7 @@ export default {
     common: {
       ports: {
         inputs: [
+          { name: 'scalar', accepts: ['scalar'] },
         ],
         outputs: []
       },
@@ -226,7 +227,8 @@ export default {
     },
     type: [
       {
-        name: 'Scatter plots',
+        name: 'Scatter plot',
+        node: 'plotting',
         type: 'plotting'
       },
       {

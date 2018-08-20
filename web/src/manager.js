@@ -4,6 +4,7 @@ import VovisNodeFactory from './components/diagram/node/Factory'
 import VovisPortFactory from './components/diagram/port/Factory'
 import VovisLinkFactory from './components/diagram/link/Factory'
 import DisplayNodeFactory from './components/diagram/displayNode/Factory'
+import PlotNodeFactory from './components/diagram/plotNode/Factory'
 import Emitter from './components/emitter'
 import save from './save'
 
@@ -20,6 +21,7 @@ export default class Manager extends Emitter {
 		this.activeModel = new VovisDiagramModel();
 		this.diagramEngine.setDiagramModel(this.activeModel);
 		this.diagramEngine.registerNodeFactory(new DisplayNodeFactory());
+		this.diagramEngine.registerNodeFactory(new PlotNodeFactory());
 		this.diagramEngine.registerNodeFactory(new VovisNodeFactory());
 		this.diagramEngine.registerLinkFactory(new VovisLinkFactory());
 		this.diagramEngine.registerPortFactory(new VovisPortFactory());
