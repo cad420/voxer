@@ -232,13 +232,15 @@ export default {
         type: 'plotting'
       },
       {
-        name: 'Scatter plot matrices',
+        name: 'Histogram',
+        node: 'plotting',
         type: 'plotting'
       },
       {
-        name: 'Parallel coordinate plots',
+        name: 'Parallel Coordinate',
+        node: 'plotting',
         type: 'plotting'
-      }
+      },
     ]
   },
   Rendering: {
