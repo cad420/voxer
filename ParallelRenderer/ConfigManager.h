@@ -4,6 +4,7 @@
 #include "config/TransferFunctionConfig.h"
 #include "config/VolumeConfig.h"
 #include "config/SliceConfig.h"
+#include "config/IsosurfaceConfig.h"
 #include "ospray/ospray_cpp.h"
 #include "third_party/rapidjson/document.h"
 #include "third_party/rapidjson/istreamwrapper.h"
@@ -18,6 +19,7 @@ struct Config {
   std::vector<VolumeConfig> volumeConfigs;
   CameraConfig cameraConfig;
   std::vector<SliceConfig> sliceConfigs;
+  std::vector<IsosurfaceConfig> isosurfaceConfigs;
   std::vector<std::string> volumesToRender;
   // std::vector<LightConfig> lightConfigs;
   Config() {};

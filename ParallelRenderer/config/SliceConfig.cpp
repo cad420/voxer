@@ -20,8 +20,4 @@ SliceConfig::SliceConfig(const rapidjson::Value &params) {
     throw "Invalid parameters, should have attribute id for slice";
   }
   this->volumeId = params["id"].GetString();
-
-  if (!params.HasMember("id") || !params["id"].IsString()) {
-    throw "Invalid parameters, should have attribute id for slice";
-  }
 }

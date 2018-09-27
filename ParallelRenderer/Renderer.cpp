@@ -17,7 +17,8 @@ static Debugger debug("renderer");
 Image Renderer::renderImage(const CameraConfig &cameraConfig,
                             const vector<VolumeConfig> &volumeConfigs,
                             const vector<SliceConfig> &sliceConfigs,
-                            const vector<string> volumesToRender,
+                            const vector<IsosurfaceConfig> &isosurfaceConfigs,
+                            const vector<string> &volumesToRender,
                             const vec2i &size) {
   auto start = chrono::steady_clock::now();
 
@@ -70,7 +71,6 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
     // model.set("regions", regionData);
   }
 
-  cout << sliceConfigs.size() << endl;
   if (sliceConfigs.size() > 0) {
     vector<string> ids;
     vector<vector<vec4f>> planesForAll;
@@ -95,6 +95,32 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
       slice.set("planes", planesData);
       slice.set("volume", volumes[i].volume);
       model.addGeometry(slice);
+    }
+  }
+
+  if (isosurfaceConfigs.size() > 0) {
+    vector<string> ids;
+    vector<vector<float>> valuesForAll;
+    for (auto &isosurfaceConfig : isosurfaceConfigs) {
+      auto pos = find(ids.begin(), ids.end(), isosurfaceConfig.volumeId);
+      auto value = isosurfaceConfig.value;
+      if (pos == ids.end()) {
+        vector<float> values = {value};
+        valuesForAll.push_back(values);
+        ids.push_back(isosurfaceConfig.volumeId);
+      } else {
+        auto values = valuesForAll[pos - ids.begin()];
+        values.push_back(value);
+      }
+    }
+    for (auto i = 0; i < valuesForAll.size(); i++) {
+      o::Geometry isosurface("isosurfaces");
+      o::Data valuesData(valuesForAll[i].size(), OSP_FLOAT,
+                         valuesForAll[i].data());
+      auto pos = find(volumeIds.begin(), volumeIds.end(), ids[i]);
+      isosurface.set("isovalues", valuesData);
+      isosurface.set("volume", volumes[i].volume);
+      model.addGeometry(isosurface);
     }
   }
 
@@ -143,13 +169,14 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
 
 Image Renderer::render(const Config &config) {
   return this->renderImage(config.cameraConfig, config.volumeConfigs,
-                           config.sliceConfigs, config.volumesToRender,
-                           config.size);
+                           config.sliceConfigs, config.isosurfaceConfigs,
+                           config.volumesToRender, config.size);
 }
 
 // for http get
 Image Renderer::render(const Config &config, const vec2i &size,
                        const CameraConfig &cameraConfig) {
   return this->renderImage(cameraConfig, config.volumeConfigs,
-                           config.sliceConfigs, config.volumesToRender, size);
+                           config.sliceConfigs, config.isosurfaceConfigs,
+                           config.volumesToRender, size);
 }

@@ -1,6 +1,5 @@
 #pragma once
 #include "ospray/ospray_cpp.h"
-#include "VolumeConfig.h"
 #include "third_party/rapidjson/document.h"
 #include <string>
 

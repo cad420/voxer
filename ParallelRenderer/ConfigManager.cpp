@@ -90,6 +90,8 @@ Config ConfigManager::create(rapidjson::Value &params) {
     auto &type = geometryParams["type"];
     if (type.GetString() == string("slice")) {
       config.sliceConfigs.push_back(SliceConfig(geometryParams));
+    } else if (type.GetString() == string("isosurface")) {
+      config.isosurfaceConfigs.push_back(IsosurfaceConfig(geometryParams));
     }
   }
 

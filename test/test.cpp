@@ -44,6 +44,8 @@ int main(int argc, const char **argv) {
       render();
   } catch (string err) {
     cout << "error: " << err << endl;
+  } catch (const char* err) {
+    cout << "error: " << err << endl;
   }
   return 1;
 }
