@@ -64,6 +64,13 @@ string ConfigManager::save(rapidjson::Value &params) {
 
 Config ConfigManager::create(rapidjson::Value &params) {
   Config config;
+
+  auto &volumesParams = params["volumes"];
+
+  for (auto &volumeParams : volumesParams.GetArray()) {
+    config.volumeConfigs.push_back(VolumeConfig(volumeParams));
+  }
+
   auto &rendererParams = params["renderer"];
 
   config.size = vec2i(rendererParams["width"].GetInt(),
@@ -72,20 +79,19 @@ Config ConfigManager::create(rapidjson::Value &params) {
   auto &cameraParams = rendererParams["camera"];
   config.cameraConfig = CameraConfig(cameraParams);
 
-  vector<VolumeConfig> volumeConfigs;
-  auto &volumesParams = rendererParams["volumes"];
-  for (auto &volumeParams : volumesParams.GetArray()) {
-    config.volumeConfigs.push_back(VolumeConfig(volumeParams));
+  auto &volumesToRenderParams = rendererParams["volumes"];
+
+  for (auto &volumeId : volumesToRenderParams.GetArray()) {
+    config.volumesToRender.push_back(volumeId.GetString());
   }
 
-  /*
-  vector<GeometryConfig> geometryConfigs;
   auto &geometiesParams = rendererParams["geometries"];
   for (auto &geometryParams : geometiesParams.GetArray()) {
-    GeometryConfig config(geometryParams);
-    geometryConfigs.push_back(config);
+    auto &type = geometryParams["type"];
+    if (type.GetString() == string("slice")) {
+      config.sliceConfigs.push_back(SliceConfig(geometryParams));
+    }
   }
-  */
 
   /*
   vector<LightConfig> lightConfigs;

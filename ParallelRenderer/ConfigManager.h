@@ -3,6 +3,7 @@
 #include "config/CameraConfig.h"
 #include "config/TransferFunctionConfig.h"
 #include "config/VolumeConfig.h"
+#include "config/SliceConfig.h"
 #include "ospray/ospray_cpp.h"
 #include "third_party/rapidjson/document.h"
 #include "third_party/rapidjson/istreamwrapper.h"
@@ -16,7 +17,8 @@ struct Config {
   ospcommon::vec2i size;
   std::vector<VolumeConfig> volumeConfigs;
   CameraConfig cameraConfig;
-  // std::vector<GeometryConfig> geometryConfigs;
+  std::vector<SliceConfig> sliceConfigs;
+  std::vector<std::string> volumesToRender;
   // std::vector<LightConfig> lightConfigs;
   Config() {};
 };

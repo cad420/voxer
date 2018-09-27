@@ -20,7 +20,7 @@ string nameOfDataset(rapidjson::Value &params) {
 }
 
 VolumeConfig::VolumeConfig(rapidjson::Value &params) {
-  this->name = params["name"].GetString();
+  this->id = params["id"].GetString();
   auto &datasetParams = params["dataset"];
 
   auto &tfcnParams = params["tfcn"];

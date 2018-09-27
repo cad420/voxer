@@ -1,8 +1,9 @@
 #include "Renderer.h"
-#include "config/CameraConfig.h"
 #include "ParallelRenderer/UserManager.h"
+#include "config/CameraConfig.h"
 #include "config/TransferFunctionConfig.h"
 #include "util/Debugger.h"
+#include <algorithm>
 #include <cstdlib>
 
 using namespace std;
@@ -15,6 +16,8 @@ static Debugger debug("renderer");
 
 Image Renderer::renderImage(const CameraConfig &cameraConfig,
                             const vector<VolumeConfig> &volumeConfigs,
+                            const vector<SliceConfig> &sliceConfigs,
+                            const vector<string> volumesToRender,
                             const vec2i &size) {
   auto start = chrono::steady_clock::now();
 
@@ -26,16 +29,18 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
   camera.commit();
 
   o::Model model;
-  for (auto volumeConfig : volumeConfigs) {
+  vector<gensv::LoadedVolume> volumes;
+  vector<string> volumeIds;
+  for (auto &volumeConfig : volumeConfigs) {
     const auto &tfcnConfig = volumeConfig.tfcnConfig;
     o::Data colorsData(tfcnConfig.colors.size(), OSP_FLOAT3,
-                                 tfcnConfig.colors.data());
+                       tfcnConfig.colors.data());
     o::Data opacityData(tfcnConfig.opacities.size(), OSP_FLOAT,
-                                  tfcnConfig.opacities.data());
+                        tfcnConfig.opacities.data());
     colorsData.commit();
     opacityData.commit();
     vec2f valueRange{0, 255};
-    if (volumeConfig.name == "magnetic") {
+    if (volumeConfig.datasetConfig.name == "magnetic") {
       valueRange.x = 0.44;
       valueRange.y = 0.77;
     }
@@ -45,7 +50,7 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
     tfcn.set("opacities", opacityData);
     tfcn.set("valueRange", valueRange);
     tfcn.commit();
- 
+
     auto &datasetConfig = volumeConfig.datasetConfig;
     auto &dataset = datasets.get(datasetConfig.name);
 
@@ -53,11 +58,44 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
     auto &volume = user.get(datasetConfig.name);
     volume.volume.set("transferFunction", tfcn);
     volume.volume.commit();
+    volumes.push_back(volume);
+    volumeIds.push_back(volumeConfig.id);
+  }
 
-    vector<box3f> regions{volume.bounds};
-    o::Data regionData(regions.size() * 2, OSP_FLOAT3, regions.data());
-    model.addVolume(volume.volume);
-    model.set("regions", regionData);
+  for (auto id : volumesToRender) {
+    auto pos = find(volumeIds.begin(), volumeIds.end(), id);
+    // vector<box3f> regions{volume.bounds};
+    // o::Data regionData(regions.size() * 2, OSP_FLOAT3, regions.data());
+    model.addVolume(volumes[pos - volumeIds.begin()].volume);
+    // model.set("regions", regionData);
+  }
+
+  cout << sliceConfigs.size() << endl;
+  if (sliceConfigs.size() > 0) {
+    vector<string> ids;
+    vector<vector<vec4f>> planesForAll;
+    for (auto &sliceConfig : sliceConfigs) {
+      auto pos = find(ids.begin(), ids.end(), sliceConfig.volumeId);
+      vec4f coeff = {sliceConfig.a, sliceConfig.b, sliceConfig.c,
+                     sliceConfig.d};
+      if (pos == ids.end()) {
+        vector<vec4f> planes = {coeff};
+        planesForAll.push_back(planes);
+        ids.push_back(sliceConfig.volumeId);
+      } else {
+        auto planes = planesForAll[pos - ids.begin()];
+        planes.push_back(coeff);
+      }
+    }
+    for (auto i = 0; i < planesForAll.size(); i++) {
+      o::Geometry slice("slices");
+      o::Data planesData(planesForAll[i].size(), OSP_FLOAT4,
+                         planesForAll[i].data());
+      auto pos = find(volumeIds.begin(), volumeIds.end(), ids[i]);
+      slice.set("planes", planesData);
+      slice.set("volume", volumes[i].volume);
+      model.addGeometry(slice);
+    }
   }
 
   model.commit();
@@ -105,11 +143,13 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
 
 Image Renderer::render(const Config &config) {
   return this->renderImage(config.cameraConfig, config.volumeConfigs,
+                           config.sliceConfigs, config.volumesToRender,
                            config.size);
 }
 
 // for http get
 Image Renderer::render(const Config &config, const vec2i &size,
                        const CameraConfig &cameraConfig) {
-  return this->renderImage(cameraConfig, config.volumeConfigs, size);
+  return this->renderImage(cameraConfig, config.volumeConfigs,
+                           config.sliceConfigs, config.volumesToRender, size);
 }

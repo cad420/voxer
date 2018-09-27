@@ -24,5 +24,7 @@ public:
 private:
   Image renderImage(const CameraConfig &cameraConfig,
                     const std::vector<VolumeConfig> &volumeConfigs,
+                    const std::vector<SliceConfig> &sliceConfigs,
+                    const std::vector<std::string> volumesToRender,
                     const ospcommon::vec2i &size);
 };

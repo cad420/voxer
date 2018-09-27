@@ -6,7 +6,7 @@
 #include <string>
 
 struct VolumeConfig {
-  std::string name;
+  std::string id;
   TransferFunctionConfig tfcnConfig;
   DatasetConfig datasetConfig;
   VolumeConfig(rapidjson::Value &);
