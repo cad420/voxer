@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import LinearPieceWise from './LinearPiesewise'
 import Color from './Color';
 import equals from 'mout/src/lang/deepEquals';
+import { Button, InputNumber } from 'antd';
 
 export default class PieceWiseFunctionEditorWidget extends Component {
   constructor(props) {
@@ -77,27 +78,26 @@ export default class PieceWiseFunctionEditorWidget extends Component {
     }
   }
 
-  updateActivePointDataValue = (e) => {
+  updateActivePointDataValue = (value) => {
     if (this.state.activePoint === -1) {
       return;
     }
-    const value = parseFloat(e.target.value);
     const points = this.props.value.map((pt) => ({
       x: pt.x,
       y: pt.y,
       color: pt.color
     }));
+    value = parseFloat(value);
     points[this.state.activePoint].x =
       (value - this.props.rangeMin) /
       (this.props.rangeMax - this.props.rangeMin);
     this.editor.setControlPoints(points, this.state.activePoint);
   }
 
-  updateActivePointOpacity = (e) => {
+  updateActivePointOpacity = (value) => {
     if (this.state.activePoint === -1) {
       return;
     }
-    const value = parseFloat(e.target.value);
     const points = this.props.value.map((pt) => ({
       x: pt.x,
       y: pt.y,
@@ -159,27 +159,27 @@ export default class PieceWiseFunctionEditorWidget extends Component {
           <div>
             <div>
               <Color value={point.color} onChange={this.updateActivePointColor} />
-              <br/>
-              <button onClick={this.removePoint}>Delete</button>
+              &nbsp;&nbsp;
+              <Button type="danger" onClick={this.removePoint}>Delete</Button>
             </div>
             <br />
             <div>
               <div>
-                <label>Data</label>&nbsp;&nbsp;
-                <input
-                  type="number"
+                <div>Data</div>&nbsp;&nbsp;
+                <InputNumber
                   step="any"
-                  min={this.props.rangeMin}
-                  max={this.props.rangeMax}
+                  style={{ width: '80%' }}
+                  min={parseFloat(this.props.rangeMin)}
+                  max={parseFloat(this.props.rangeMax)}
                   value={activePointDataValue.toFixed(2)}
                   onChange={this.updateActivePointDataValue}
                 />
               </div>
               <br />
               <div>
-                <label>Opacity</label>&nbsp;&nbsp;
-                <input
-                  type="number"
+                <div>Opacity</div>&nbsp;&nbsp;
+                <InputNumber
+                  style={{ width: '80%' }}
                   step={0.01}
                   min={0}
                   max={1}

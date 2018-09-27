@@ -4,7 +4,9 @@ export default {
       params: [],
       ports: {
         outputs: [
-          { name:'dataset', type: 'raw_dataset' }
+          { name:'variable1', type: 'raw_dataset' },
+          { name:'variable2', type: 'raw_dataset' },
+          { name:'variable3', type: 'raw_dataset' },
         ]
       }
     },
@@ -13,7 +15,7 @@ export default {
         name: 'Default Dataset',
         type: 'default',
         params: [
-          { label: 'source', type: 'Select', options: ['tooth', 'bucky', 'heptane', 'magnetic', 'diff'], default: 'heptane' }
+          { label: 'source', type: 'Select', options: ['tooth', 'bucky', 'heptane', 'magnetic'], default: 'heptane' }
         ]
       },
       {
@@ -219,7 +221,7 @@ export default {
     common: {
       ports: {
         inputs: [
-          { name: 'scalar', accepts: ['scalar'] },
+          { name: 'scalar', accepts: ['raw_dataset'], repeatable: true },
         ],
         outputs: []
       },

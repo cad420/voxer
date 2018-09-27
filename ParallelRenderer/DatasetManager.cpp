@@ -1,5 +1,6 @@
 #include "DatasetManager.h"
 #include "ospray/ospcommon/vec.h"
+#include "data/Histogram.h"
 #include "third_party/RawReader/RawReader.h"
 #include "third_party/rapidjson/document.h"
 #include "third_party/rapidjson/istreamwrapper.h"
@@ -73,6 +74,8 @@ void DatasetManager::load(string filepath) {
       Dataset dataset(ospcommon::vec3i(dimensions), dtype);
       auto size =
           reader.readRegion(vec3sz(0, 0, 0), dimensions, dataset.buffer.data());
+      if (_name == "tooth")
+        createHistogram(dataset.buffer);
       datasets.emplace(_name, dataset);
     }
   }

@@ -45,7 +45,7 @@ export default class extends Component {
   render() {
     const { label, value } = this.props
     return (
-      <div>
+      <div style={{ display: 'inline-block', verticalAlign: 'top' }}>
         {label && <div>{label}</div>}
         <div ref={ref => this.ref = ref}></div>
       </div>

@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "config/CameraConfig.h"
+#include "ParallelRenderer/UserManager.h"
 #include "config/TransferFunctionConfig.h"
 #include "util/Debugger.h"
 #include <cstdlib>
@@ -9,6 +10,7 @@ using namespace ospcommon;
 namespace o = ospray::cpp;
 
 extern DatasetManager datasets;
+extern UserManager users;
 static Debugger debug("renderer");
 
 Image Renderer::renderImage(const CameraConfig &cameraConfig,
@@ -25,12 +27,10 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
 
   o::Model model;
   for (auto volumeConfig : volumeConfigs) {
-    gensv::LoadedVolume volume;
-
     const auto &tfcnConfig = volumeConfig.tfcnConfig;
-    ospray::cpp::Data colorsData(tfcnConfig.colors.size(), OSP_FLOAT3,
+    o::Data colorsData(tfcnConfig.colors.size(), OSP_FLOAT3,
                                  tfcnConfig.colors.data());
-    ospray::cpp::Data opacityData(tfcnConfig.opacities.size(), OSP_FLOAT,
+    o::Data opacityData(tfcnConfig.opacities.size(), OSP_FLOAT,
                                   tfcnConfig.opacities.data());
     colorsData.commit();
     opacityData.commit();
@@ -40,21 +40,18 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
       valueRange.y = 0.77;
     }
 
-    volume.tfcn.set("colors", colorsData);
-    volume.tfcn.set("opacities", opacityData);
-    volume.tfcn.set("valueRange", valueRange);
-    volume.tfcn.commit();
-
+    o::TransferFunction tfcn("piecewise_linear");
+    tfcn.set("colors", colorsData);
+    tfcn.set("opacities", opacityData);
+    tfcn.set("valueRange", valueRange);
+    tfcn.commit();
+ 
     auto &datasetConfig = volumeConfig.datasetConfig;
     auto &dataset = datasets.get(datasetConfig.name);
-    gensv::loadVolume(volume, dataset.buffer, dataset.dimensions, dataset.dtype,
-                      dataset.sizeForDType);
-    const auto halfLength = dataset.dimensions / 2;
-    volume.bounds.lower -= ospcommon::vec3f(halfLength);
-    volume.bounds.upper -= ospcommon::vec3f(halfLength);
-    volume.volume.set("gridOrigin",
-                      volume.ghostGridOrigin - ospcommon::vec3f(halfLength));
-    volume.volume.set("transferFunction", volume.tfcn);
+
+    auto &user = users.get("tester");
+    auto &volume = user.get(datasetConfig.name);
+    volume.volume.set("transferFunction", tfcn);
     volume.volume.commit();
 
     vector<box3f> regions{volume.bounds};

@@ -39,7 +39,7 @@ vec3i computeGrid(int num) {
   return grid;
 }
 
-LoadedVolume::LoadedVolume() : volume(nullptr), tfcn("piecewise_linear") {}
+LoadedVolume::LoadedVolume() : volume(nullptr) {}
 
 enum GhostFace {
   NEITHER_FACE = 0,
@@ -124,21 +124,19 @@ void loadVolume(struct LoadedVolume &vol, std::vector<unsigned char> &buffer,
   vol.buffer = &buffer;
   vol.isNewBuffer = false;
   vol.dimensions = &dimensions;
-  const bool sharedVolume = false;
+  const bool sharedVolume = true;
   if (sharedVolume) {
     vol.volume = ospray::cpp::Volume("shared_structured_volume");
     vol.volume.set("voxelType", dtype.c_str());
     vol.volume.set("dimensions", vec3i(fullDims));
-    vol.volume.set("transferFunction", vol.tfcn);
     const OSPDataType ospVoxelType = typeForString(dtype);
-    OSPData data = ospNewData(buffer.size(), ospVoxelType, buffer.data(),
+    OSPData data = ospNewData(buffer.size(), ospVoxelType, buffer.data(), 
                               OSP_DATA_SHARED_BUFFER);
     vol.volume.set("voxelData", data);
   } else {
     vol.volume = ospray::cpp::Volume("block_bricked_volume");
     vol.volume.set("voxelType", dtype.c_str());
     vol.volume.set("dimensions", vec3i(fullDims));
-    vol.volume.set("transferFunction", vol.tfcn);
     vol.volume.setRegion(buffer.data(), vec3i(0), vec3i(fullDims));
   }
 

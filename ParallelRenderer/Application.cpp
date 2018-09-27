@@ -1,5 +1,6 @@
 #include "ConfigManager.h"
 #include "DatasetManager.h"
+#include "UserManager.h"
 #include "ParallelRenderer/Encoder.h"
 #include "Poco/Buffer.h"
 #include "Poco/Format.h"
@@ -44,6 +45,7 @@ using ospcommon::vec2i;
 
 DatasetManager datasets;
 ConfigManager configs;
+UserManager users;
 Renderer renderer;
 Encoder encoder;
 

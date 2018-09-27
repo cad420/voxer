@@ -18,7 +18,6 @@ vec3i computeGrid(int num);
 
 struct LoadedVolume {
   ospray::cpp::Volume volume;
-  ospray::cpp::TransferFunction tfcn;
   vec3i *dimensions;
   box3f bounds;
   vec3f ghostGridOrigin;

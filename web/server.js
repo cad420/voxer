@@ -15,38 +15,38 @@ fastify.register(require('fastify-static'), {
 });
 
 fastify.use(webpackDevMiddleware(compiler, {
-  publicPath: config.output.publicPath
+  publicPath: config.output.publicPath,
 }));
 
 fastify.use(require("webpack-hot-middleware")(compiler));
 
-const indexTemplate = Handlebars.compile(fs.readFileSync(abs('./templates/index.handlebars'), 'utf8'))
 fastify.get('/', (req, res) => {
+  const indexTemplate = Handlebars.compile(fs.readFileSync(abs('./templates/index.handlebars'), 'utf8'));
   res.type('html');
   res.send(indexTemplate({
     CSSPATH: isProduction ? '/build/main.css' : false,
-    JSPATH: '/build/main.js'
+    JSPATH: '/build/main.js',
   }));
 });
 
-const viewerTemplate = Handlebars.compile(fs.readFileSync(abs('./templates/viewer.handlebars'), 'utf8'))
 fastify.get('/viewer/:id', (req, res) => {
+  const viewerTemplate = Handlebars.compile(fs.readFileSync(abs('./templates/viewer.handlebars'), 'utf8'));
   res.type('html');
   res.send(viewerTemplate({
     CSSPATH: '/build/viewer.css',
-    JSPATH: '/build/viewer.js'
+    JSPATH: '/build/viewer.js',
   }));
 });
 
 // Run the server!
 const start = async () => {
   try {
-    await fastify.listen(3005)
-    fastify.log.info(`server listening on ${fastify.server.address().port}`)
+    await fastify.listen(3005, '0.0.0.0');
+    fastify.log.info(`server listening on ${fastify.server.address().port}`);
   } catch (err) {
-    console.log(err)
-    fastify.log.error(err)
-    process.exit(1)
+    console.log(err);
+    fastify.log.error(err);
+    process.exit(1);
   }
-}
-start()
+};
+start();
