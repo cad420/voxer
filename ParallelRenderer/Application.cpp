@@ -1,172 +1,43 @@
-#include "ConfigManager.h"
-#include "DatasetManager.h"
-#include "UserManager.h"
+#include "ParallelRenderer/ConfigManager.h"
+#include "ParallelRenderer/DatasetManager.h"
 #include "ParallelRenderer/Encoder.h"
-#include "Poco/Buffer.h"
+#include "ParallelRenderer/Renderer.h"
+#include "ParallelRenderer/UserManager.h"
+#include "ParallelRenderer/http/RequestHandler.h"
 #include "Poco/Format.h"
-#include "Poco/Net/HTTPRequestHandler.h"
 #include "Poco/Net/HTTPRequestHandlerFactory.h"
 #include "Poco/Net/HTTPServer.h"
 #include "Poco/Net/HTTPServerParams.h"
-#include "Poco/Net/HTTPServerRequest.h"
-#include "Poco/Net/HTTPServerResponse.h"
-#include "Poco/Net/NetException.h"
-#include "Poco/Net/ServerSocket.h"
-#include "Poco/Net/WebSocket.h"
 #include "Poco/URI.h"
 #include "Poco/Util/HelpFormatter.h"
 #include "Poco/Util/Option.h"
 #include "Poco/Util/OptionSet.h"
 #include "Poco/Util/ServerApplication.h"
-#include "Renderer.h"
 #include "third_party/rapidjson/document.h"
 #include <iostream>
 #include <map>
 #include <string>
 
 using namespace std;
+using ospcommon::vec2i;
 using Poco::format;
 using Poco::Net::HTTPRequestHandler;
 using Poco::Net::HTTPRequestHandlerFactory;
-using Poco::Net::HTTPResponse;
 using Poco::Net::HTTPServer;
 using Poco::Net::HTTPServerParams;
 using Poco::Net::HTTPServerRequest;
-using Poco::Net::HTTPServerResponse;
 using Poco::Net::ServerSocket;
-using Poco::Net::WebSocket;
-using Poco::Net::WebSocketException;
 using Poco::Util::Application;
 using Poco::Util::HelpFormatter;
 using Poco::Util::Option;
 using Poco::Util::OptionSet;
 using Poco::Util::ServerApplication;
-using ospcommon::vec2i;
 
 DatasetManager datasets;
 ConfigManager configs;
 UserManager users;
 Renderer renderer;
 Encoder encoder;
-
-class PageRequestHandler : public HTTPRequestHandler {
-public:
-  void handleRequest(HTTPServerRequest &request, HTTPServerResponse &response) {
-    response.setChunkedTransferEncoding(true);
-    response.add("Access-Control-Allow-Origin", "*");
-    response.add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-    response.add("Access-Control-Allow-Headers", "content-type");
-
-    Poco::URI uri(request.getURI().c_str());
-    vector<string> segments;
-    uri.getPathSegments(segments);
-
-    if (segments.size() == 0) {
-      response.setContentType("text/html");
-      auto &ostr = response.send();
-      ostr << "Websocket Server has been started!";
-      return;
-    }
-
-    response.setContentType("image/jpeg");
-    auto id = segments[segments.size() - 1];
-    try {
-      auto &config = configs.get(id);
-      map<string, string> params;
-      for (auto &param : uri.getQueryParameters()) {
-        params[param.first] = param.second;
-      }
-      CameraConfig cameraConfig(config.cameraConfig, params);
-      vec2i size = config.size;
-      if (params.find("width") != params.end()) {
-        size.x = stoi(params["width"]);
-      }
-      if (params.find("height") != params.end()) {
-        size.y = stoi(params["height"]);
-      }
-      auto data = renderer.render(config, size, cameraConfig);
-      auto img = encoder.encode(data, size, "JPEG");
-      response.sendBuffer(img.data(), img.size());
-    } catch (string &exc) {
-      response.setContentType("text/html");
-      response.setStatus(HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
-      response.setReason("Not Found");
-      auto &ostr = response.send();
-      ostr << "404, Not Found";
-    }
-  }
-};
-
-class WebSocketRequestHandler : public HTTPRequestHandler {
-public:
-  rapidjson::Document d;
-  char buffer[1024 * 1024];
-  void handleRequest(HTTPServerRequest &request, HTTPServerResponse &response) {
-    Application &app = Application::instance();
-    try {
-      WebSocket ws(request, response);
-      ws.setReceiveTimeout(Poco::Timespan(0, 2, 0, 0, 0));
-      app.logger().information("WebSocket connection established.");
-      int flags;
-      int n;
-      do {
-        n = ws.receiveFrame(buffer, sizeof(buffer), flags);
-        if ((flags & WebSocket::FRAME_OP_BITMASK) == WebSocket::FRAME_OP_PING) {
-          ws.sendFrame(buffer, n, WebSocket::FRAME_OP_PONG);
-        }
-        d.Parse(buffer, n);
-        if (!d.HasMember("operation") || !d["operation"].IsString()) {
-          auto msg = "Invalid operation";
-          ws.sendFrame(msg, sizeof(msg));
-        } else {
-          auto operation = string(d["operation"].GetString());
-          if (operation == "render") {
-            try {
-              if (!d.HasMember("params") || !d["params"].IsObject()) {
-                auto msg = "Invalid params";
-                ws.sendFrame(msg, sizeof(msg));
-              }
-              auto params = d["params"].GetObject();
-              auto config = configs.create(d["params"]);
-              auto data = renderer.render(config);
-              auto img = encoder.encode(data, config.size, "JPEG");
-              ws.sendFrame(img.data(), img.size(), WebSocket::FRAME_BINARY);
-            } catch (string &exc) {
-              auto msg = "{\"type\": \"error\" , \"value\": \"" + exc + "\"}";
-              ws.sendFrame(msg.c_str(), msg.size());
-            }
-          } else if (operation == "generate") {
-            if (!d.HasMember("params") || !d["params"].IsObject()) {
-              auto msg =
-                  "{\"type\": \"error\" , \"value\": \"Invalid params\"}";
-              ws.sendFrame(msg, sizeof(msg));
-            }
-            auto id = configs.save(d["params"]);
-            auto msg = "{\"type\": \"config\" , \"value\":\"" + id + "\"}";
-            ws.sendFrame(msg.c_str(), msg.size());
-          }
-        }
-      } while (n > 0 && (flags & WebSocket::FRAME_OP_BITMASK) !=
-                            WebSocket::FRAME_OP_CLOSE);
-      app.logger().information("WebSocket connection closed.");
-    } catch (WebSocketException &exc) {
-      app.logger().log(exc);
-      switch (exc.code()) {
-      case WebSocket::WS_ERR_HANDSHAKE_UNSUPPORTED_VERSION:
-        response.set("Sec-WebSocket-Version", WebSocket::WEBSOCKET_VERSION);
-      case WebSocket::WS_ERR_NO_HANDSHAKE:
-      case WebSocket::WS_ERR_HANDSHAKE_NO_VERSION:
-      case WebSocket::WS_ERR_HANDSHAKE_NO_KEY:
-        response.setStatusAndReason(HTTPResponse::HTTP_BAD_REQUEST);
-        response.setContentLength(0);
-        response.send();
-        break;
-      }
-    } catch (const exception &exc) {
-      app.logger().warning(exc.what());
-    }
-  }
-};
 
 class RequestHandlerFactory : public HTTPRequestHandlerFactory {
 public:
@@ -177,10 +48,19 @@ public:
                              request.getMethod() + " " + request.getURI() +
                              " " + request.getVersion());
     if (request.find("Upgrade") != request.end() &&
-        Poco::icompare(request["Upgrade"], "websocket") == 0)
-      return new WebSocketRequestHandler;
-    else
-      return new PageRequestHandler;
+        Poco::icompare(request["Upgrade"], "websocket") == 0) {
+      return new WebSocketRequestHandler();
+    } else {
+      Poco::URI uri(request.getURI().c_str());
+      vector<string> segments;
+      uri.getPathSegments(segments);
+
+      if (segments.size() == 0) {
+        return new ImageRequestHandler(uri);
+      } else {
+        return new JSONRequestHandler(uri);
+      }
+    }
   }
 };
 
@@ -216,8 +96,6 @@ protected:
     }
     ServerApplication::initialize(self);
   }
-
-  void uninitialize() { ServerApplication::uninitialize(); }
 
   void defineOptions(OptionSet &options) {
     ServerApplication::defineOptions(options);
