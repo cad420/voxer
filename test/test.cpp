@@ -39,8 +39,10 @@ int main(int argc, const char **argv) {
     configs.load(configureFile);
     auto& user = users.get("tester");
     user.load("heptane");
+    user.load("lsabel-TCf-05");
+    user.load("lsabel-Pf-05");
     debug.log("loaded");
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 2; i++)
       render();
   } catch (string err) {
     cout << "error: " << err << endl;

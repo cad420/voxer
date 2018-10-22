@@ -1,6 +1,6 @@
 #include "DatasetManager.h"
-#include "ospray/ospcommon/vec.h"
 #include "data/Histogram.h"
+#include "ospray/ospcommon/vec.h"
 #include "third_party/RawReader/RawReader.h"
 #include "third_party/rapidjson/document.h"
 #include "third_party/rapidjson/istreamwrapper.h"
@@ -47,6 +47,8 @@ void DatasetManager::load(string filepath) {
     auto name = string(info["name"].GetString());
     auto filepath = string(info["path"].GetString());
     auto dimsData = info["dimensions"].GetArray();
+    string variable =
+        info.HasMember("variable") ? info["variable"].GetString() : "";
     auto timesteps =
         info.HasMember("timesteps") ? info["timesteps"].GetInt() : 1;
 
@@ -65,17 +67,22 @@ void DatasetManager::load(string filepath) {
     for (auto step = 1; step <= timesteps; step++) {
       auto _filepath = filepath;
       auto _name = name;
+      if (variable.size() > 0) {
+        _name += "-" + variable;
+      }
       if (timesteps > 1) {
-        _filepath.replace(_filepath.end() - 10, _filepath.end() - 4,
-                          to_string(step));
-        _name += to_string(step);
+        auto str = to_string(step);
+        if (str.size() == 1) {
+          str = "0" + str;
+        }
+        _filepath.replace(_filepath.end() - 10, _filepath.end() - 4, str);
+        _name += "-" + str;
       }
       gensv::RawReader reader(_filepath, dimensions, sizeForType);
       Dataset dataset(ospcommon::vec3i(dimensions), dtype);
       auto size =
           reader.readRegion(vec3sz(0, 0, 0), dimensions, dataset.buffer.data());
-      if (_name == "tooth")
-        createHistogram(dataset.buffer);
+      dataset.histogram = createHistogram(dataset.buffer);
       datasets.emplace(_name, dataset);
     }
   }
@@ -84,7 +91,7 @@ void DatasetManager::load(string filepath) {
 Dataset &DatasetManager::get(const string name) {
   auto search = datasets.find(name);
   if (search == datasets.end()) {
-    throw string("Volume ") + name + " not found";
+    throw "Volume " + name + " not found";
   }
   return search->second;
 }

@@ -9,12 +9,18 @@ using namespace ospcommon;
 extern DatasetManager datasets;
 
 string nameOfDataset(rapidjson::Value &params) {
-  string name;
+  string name = params["name"].GetString();
+  if (params.HasMember("variable")) {
+    name += "-";
+    name += params["variable"].GetString();
+  }
   if (params.HasMember("timestep")) {
     auto timestep = params["timestep"].GetInt();
-    name = params["name"].GetString() + to_string(timestep);
-  } else {
-    name = params["name"].GetString();
+    name += "-";
+    if (timestep < 10) {
+      name += "0";
+    }
+    name += to_string(timestep);
   }
   return name;
 }
@@ -25,6 +31,8 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
 
   auto &tfcnParams = params["tfcn"];
   this->tfcnConfig = TransferFunctionConfig(tfcnParams);
+
+  this->translate = vec3f(0, 0, 0);
 
   // DFS, handle dataset
   vector<rapidjson::Value *> stack;
@@ -69,7 +77,7 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
       vec3f translate{translateParams[0].GetFloat(),
                       translateParams[1].GetFloat(),
                       translateParams[2].GetFloat()};
-      dataset.translate += translate;
+      this->translate += translate;
     } else {
       throw "Unsupported dataset";
     }

@@ -12,6 +12,7 @@ struct Dataset {
   ospray::cpp::Data *data;
   std::string dtype;
   size_t sizeForDType;
+  std::vector<unsigned int> histogram;
   Dataset() = default;
   Dataset(ospcommon::vec3i _d, std::string dtype)
       : dimensions(_d), dtype(dtype) {
