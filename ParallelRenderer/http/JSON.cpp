@@ -2,6 +2,7 @@
 #include "ParallelRenderer/Encoder.h"
 #include "ParallelRenderer/Renderer.h"
 #include "RequestHandler.h"
+#include "third_party/rapidjson/document.h"
 #include <map>
 
 using namespace std;
@@ -11,7 +12,7 @@ using Poco::Net::HTTPResponse;
 using Poco::Net::HTTPServerRequest;
 using Poco::Net::HTTPServerResponse;
 
-extern ConfigManager configs;
+extern DatasetManager datasets;
 extern Renderer renderer;
 extern Encoder encoder;
 
@@ -23,10 +24,22 @@ void JSONRequestHandler::handleRequest(HTTPServerRequest &request,
   response.add("Access-Control-Allow-Headers", "content-type");
 
   auto id = segments[0];
-  auto &config = configs.get(id);
-  response.setContentType("text/html");
-  response.setStatus(HTTPResponse::HTTPStatus::HTTP_NOT_FOUND);
-  response.setReason("Not Found");
+  auto &dataset = datasets.get(id);
+  auto &histogram = dataset.histogram;
+
+  rapidjson::Document d;
+  rapidjson::Value a(rapidjson::kArrayType);
+  rapidjson::Document::AllocatorType &allocator = d.GetAllocator();
+  for (int i = 0; i <= 255; i++)
+    a.PushBack(histogram[i], allocator);
+
+  rapidjson::StringBuffer buffer;
+  buffer.Clear();
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  a.Accept(writer);
+
+  auto res = string(buffer.GetString());
+  response.setContentType("application/json");
   auto &ostr = response.send();
-  ostr << "404, Not Found";
+  ostr << res;
 };
