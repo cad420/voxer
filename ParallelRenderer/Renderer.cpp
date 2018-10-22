@@ -29,7 +29,7 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
   camera.set("up", cameraConfig.up);
   camera.commit();
 
-  o::Model model;
+  o::Model world;
   vector<gensv::LoadedVolume> volumes;
   vector<string> volumeIds;
   for (auto &volumeConfig : volumeConfigs) {
@@ -51,7 +51,6 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
     tfcn.set("opacities", opacityData);
     tfcn.set("valueRange", valueRange);
     tfcn.commit();
-
     auto &datasetConfig = volumeConfig.datasetConfig;
     auto &dataset = datasets.get(datasetConfig.name);
 
@@ -65,10 +64,26 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
 
   for (auto id : volumesToRender) {
     auto pos = find(volumeIds.begin(), volumeIds.end(), id);
+    auto volume = volumes[pos - volumeIds.begin()].volume;
+    auto &config = volumeConfigs[pos - volumeIds.begin()];
     // vector<box3f> regions{volume.bounds};
     // o::Data regionData(regions.size() * 2, OSP_FLOAT3, regions.data());
-    model.addVolume(volumes[pos - volumeIds.begin()].volume);
-    // model.set("regions", regionData);
+
+    // o::Model model;
+    // affine3f transform(one);
+    // transform =
+    //     transform.lookat(cameraConfig.pos, vec3f(0, 0, 0), cameraConfig.up);
+    // transform.translate(config.translate);
+    // model.addVolume(volume);
+    // model.commit();
+    // auto geo = model.createInstance(transform);
+    // geo.commit();
+    // world.addGeometry(geo);
+
+    world.addVolume(volume);
+
+    world.commit();
+    // world.set("regions", regionData);
   }
 
   if (sliceConfigs.size() > 0) {
@@ -94,7 +109,7 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
       auto pos = find(volumeIds.begin(), volumeIds.end(), ids[i]);
       slice.set("planes", planesData);
       slice.set("volume", volumes[i].volume);
-      model.addGeometry(slice);
+      world.addGeometry(slice);
     }
   }
 
@@ -120,11 +135,11 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
       auto pos = find(volumeIds.begin(), volumeIds.end(), ids[i]);
       isosurface.set("isovalues", valuesData);
       isosurface.set("volume", volumes[i].volume);
-      model.addGeometry(isosurface);
+      world.addGeometry(isosurface);
     }
   }
 
-  model.commit();
+  world.commit();
 
   vector<OSPLight> lights;
   o::Light light("scivis", "ambient");
@@ -137,7 +152,7 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
   renderer.set("aoSamples", 0);
   renderer.set("bgColor", 1.0f);
   renderer.set("camera", camera);
-  renderer.set("model", model);
+  renderer.set("model", world);
   renderer.commit();
 
   // render frame
@@ -158,7 +173,7 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
   camera.release();
   light.release();
   framebuffer.release();
-  model.release();
+  world.release();
 
   const auto delta = chrono::duration_cast<chrono::milliseconds>(
       chrono::steady_clock::now() - start);

@@ -9,6 +9,7 @@ struct VolumeConfig {
   std::string id;
   TransferFunctionConfig tfcnConfig;
   DatasetConfig datasetConfig;
+  ospcommon::vec3f translate;
   VolumeConfig(rapidjson::Value &);
 };
 typedef struct VolumeConfig VolumeConfig;
