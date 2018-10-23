@@ -34,10 +34,19 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
   vector<string> volumeIds;
   for (auto &volumeConfig : volumeConfigs) {
     const auto &tfcnConfig = volumeConfig.tfcnConfig;
+    vector<float> opacities(255, 0);
+    if (volumeConfig.ranges.size() != 0) {
+      for (auto range : volumeConfig.ranges) {
+        for (auto i = range.start; i < range.end && i <= 255; i++) {
+          opacities[i] = tfcnConfig.opacities[i];
+        }
+      }
+    } else {
+      opacities = tfcnConfig.opacities;
+    }
     o::Data colorsData(tfcnConfig.colors.size(), OSP_FLOAT3,
                        tfcnConfig.colors.data());
-    o::Data opacityData(tfcnConfig.opacities.size(), OSP_FLOAT,
-                        tfcnConfig.opacities.data());
+    o::Data opacityData(opacities.size(), OSP_FLOAT, opacities.data());
     colorsData.commit();
     opacityData.commit();
     vec2f valueRange{0, 255};

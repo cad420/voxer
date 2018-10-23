@@ -30,7 +30,8 @@ TransferFunctionConfig::TransferFunctionConfig(const rapidjson::Value &params) {
     auto endB = strtol(endHex.substr(5, 2).c_str(), nullptr, 16) * 1.0f / 255;
     auto startOpa = startParams["y"].GetFloat();
     auto endOpa = endParams["y"].GetFloat();
-    auto period = 100 * (end - start);
+
+    auto period = 255 * (end - start);
     auto step = 1.0f / period;
     auto rDiff = (endR - startR) * step;
     auto gDiff = (endG - startG) * step;

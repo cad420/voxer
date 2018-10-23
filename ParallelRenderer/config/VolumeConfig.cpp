@@ -34,6 +34,18 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
 
   this->translate = vec3f(0, 0, 0);
 
+  if (params.HasMember("ranges")) {
+    auto &ranges = params["ranges"];
+    for (auto &range : ranges.GetArray()) {
+      if (range.HasMember("start") && range.HasMember("end")) {
+        this->ranges.push_back(Range{
+          start: range["start"].GetInt(),
+          end: range["end"].GetInt(),
+        });
+      }
+    }
+  }
+
   // DFS, handle dataset
   vector<rapidjson::Value *> stack;
   stack.push_back(&datasetParams);
