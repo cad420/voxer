@@ -1,5 +1,4 @@
 #pragma once
-#include "GenerateSciVis.h"
 #include "ospray/ospcommon/box.h"
 #include "ospray/ospcommon/vec.h"
 #include "ospray/ospray_cpp.h"

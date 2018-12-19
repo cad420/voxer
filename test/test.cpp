@@ -32,8 +32,13 @@ void render() {
 
 int main(int argc, const char **argv) {
   string datasetFile = "/home/ukabuer/workspace/vovis/configs/datasets.json";
-  string configureFile = "/home/ukabuer/workspace/vovis/test/configs/1.json";
   OSPError init_error = ospInit(&argc, argv);
+  if (argc < 2) {
+    cout << "Usage: Test /path/to/config.json" << endl;
+    return 1;
+  }
+
+  string configureFile = argv[1];
   try {
     datasets.load(datasetFile);
     configs.load(configureFile);
@@ -49,6 +54,6 @@ int main(int argc, const char **argv) {
   } catch (const char* err) {
     cout << "error: " << err << endl;
   }
-  return 1;
+  return 0;
 }
 

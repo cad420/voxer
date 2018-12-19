@@ -4,6 +4,7 @@
 
 using namespace std;
 using namespace ospray::cpp;
+using namespace ospcommon;
 
 extern DatasetManager datasets;
 
@@ -24,20 +25,20 @@ User &UserManager::get(string id) {
 
 void User::load(string id) {
   auto &dataset = datasets.get(id);
-  gensv::LoadedVolume volume;
 
-  const auto halfLength = dataset.dimensions / 2;
-  volume.bounds.lower -= ospcommon::vec3f(halfLength);
-  volume.bounds.upper -= ospcommon::vec3f(halfLength);
-  gensv::loadVolume(volume, dataset.buffer, dataset.dimensions, dataset.dtype,
-                    dataset.sizeForDType);
-  volume.volume.set("gridOrigin",
-                    volume.ghostGridOrigin - ospcommon::vec3f(halfLength));
-  volume.volume.commit();
+  Volume volume("shared_structured_volume");
+  volume.set("voxelType", dataset.dtype.c_str());
+  volume.set("dimensions", dataset.dimensions);
+  Data data(dataset.buffer.size(), OSP_UCHAR, dataset.buffer.data(),
+            OSP_DATA_SHARED_BUFFER);
+  data.commit();
+  volume.set("voxelData", data);
+  volume.set("gridOrigin", vec3f(-dataset.dimensions / 2));
+
   this->volumes.emplace(id, volume);
 }
 
-gensv::LoadedVolume &User::get(string volume) {
+Volume &User::get(string volume) {
   auto search = this->volumes.find(volume);
   if (search == this->volumes.end()) {
     throw string("Volume ") + volume + " not found";

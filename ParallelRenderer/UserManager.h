@@ -1,15 +1,15 @@
 #pragma once
-#include "ParallelRenderer/GenerateSciVis.h"
+#include "ospray/ospray_cpp.h"
 #include <map>
 #include <string>
 #include <vector>
 
 struct User {
   std::string id;
-  std::map<std::string, gensv::LoadedVolume> volumes;
+  std::map<std::string, ospray::cpp::Volume> volumes;
   User(std::string id) : id(id){};
   void load(std::string volume);
-  gensv::LoadedVolume& get(std::string volume);
+  ospray::cpp::Volume &get(std::string volume);
 };
 typedef struct User User;
 

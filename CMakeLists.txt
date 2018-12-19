@@ -113,7 +113,7 @@ endif()
 set(POCO_INCLUDE_PATH "" CACHE PATH "Path of poco header files.")
 find_path(
   POCO_INCLUDE_PATH
-  NAMES Poco.h Poco/Poco.h
+  NAMES Poco/Poco.h
   HINTS ${POCO_INCLUDE_DIR} "${CMAKE_PREFIX_PATH}/include"
 )
 if (POCO_INCLUDE_PATH-NOTFOUND)
@@ -124,19 +124,11 @@ endif()
 
 file(GLOB_RECURSE VOVIS_FILES ${PROJECT_SOURCE_DIR}/ParallelRenderer/*.cpp)
 list(REMOVE_ITEM VOVIS_FILES ${PROJECT_SOURCE_DIR}/ParallelRenderer/Application.cpp)
-file(GLOB_RECURSE VOVIS_CONFIG_FILES ${PROJECT_SOURCE_DIR}/ParallelRenderer/config/*.cpp)
-file(GLOB_RECURSE VOVIS_DATA_FILES ${PROJECT_SOURCE_DIR}/ParallelRenderer/data/*.cpp)
-file(GLOB_RECURSE VOVIS_UTIL_FILES ${PROJECT_SOURCE_DIR}/ParallelRenderer/util/*.cpp)
-file(GLOB_RECURSE RAWREADER_FILES ${PROJECT_SOURCE_DIR}/third_party/RawReader/*.cpp)
 
 add_executable(
   VovisRenderer
   ${PROJECT_SOURCE_DIR}/ParallelRenderer/Application.cpp
   ${VOVIS_FILES}
-  ${VOVIS_CONFIG_FILES}
-  ${VOVIS_DATA_FILES}
-  ${VOVIS_UTIL_FILES}
-  ${RAWREADER_FILES}
 )
 target_include_directories(
   VovisRenderer
@@ -165,10 +157,6 @@ add_executable(
   Test
   ${PROJECT_SOURCE_DIR}/test/test.cpp
   ${VOVIS_FILES}
-  ${VOVIS_CONFIG_FILES}
-  ${VOVIS_DATA_FILES}
-  ${VOVIS_UTIL_FILES}
-  ${RAWREADER_FILES}
 )
 target_include_directories(
   Test

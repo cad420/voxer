@@ -22,15 +22,9 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
                             const vec2i &size) {
   auto start = chrono::steady_clock::now();
 
-  o::Camera camera("perspective");
-  camera.set("aspect", size.x / (float)size.y);
-  camera.set("pos", cameraConfig.pos);
-  camera.set("dir", cameraConfig.dir);
-  camera.set("up", cameraConfig.up);
-  camera.commit();
-
   o::Model world;
-  vector<gensv::LoadedVolume> volumes;
+
+  vector<o::Volume> volumes;
   vector<string> volumeIds;
   for (auto &volumeConfig : volumeConfigs) {
     const auto &tfcnConfig = volumeConfig.tfcnConfig;
@@ -50,6 +44,7 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
     colorsData.commit();
     opacityData.commit();
     vec2f valueRange{0, 255};
+
     if (volumeConfig.datasetConfig.name == "magnetic") {
       valueRange.x = 0.44;
       valueRange.y = 0.77;
@@ -60,34 +55,35 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
     tfcn.set("opacities", opacityData);
     tfcn.set("valueRange", valueRange);
     tfcn.commit();
+
     auto &datasetConfig = volumeConfig.datasetConfig;
     auto &dataset = datasets.get(datasetConfig.name);
 
     auto &user = users.get("tester");
     auto &volume = user.get(datasetConfig.name);
-    volume.volume.set("transferFunction", tfcn);
-    volume.volume.commit();
+
+    volume.set("transferFunction", tfcn);
+    volume.commit();
     volumes.push_back(volume);
     volumeIds.push_back(volumeConfig.id);
   }
 
+  o::Model model;
   for (auto id : volumesToRender) {
     auto pos = find(volumeIds.begin(), volumeIds.end(), id);
-    auto volume = volumes[pos - volumeIds.begin()].volume;
+    auto volume = volumes[pos - volumeIds.begin()];
     auto &config = volumeConfigs[pos - volumeIds.begin()];
-    // vector<box3f> regions{volume.bounds};
-    // o::Data regionData(regions.size() * 2, OSP_FLOAT3, regions.data());
 
-    // o::Model model;
-    // affine3f transform(one);
-    // transform =
-    //     transform.lookat(cameraConfig.pos, vec3f(0, 0, 0), cameraConfig.up);
-    // transform.translate(config.translate);
     // model.addVolume(volume);
     // model.commit();
-    // auto geo = model.createInstance(transform);
-    // geo.commit();
-    // world.addGeometry(geo);
+
+    // affine3f transform(affine3f::scale(config.translate));
+    // auto instance = model.createInstance(transform);
+    // model.release();
+    // instance.commit();
+    // world.addGeometry(instance);
+    // instance.release();
+    // cout << transform << endl;
 
     world.addVolume(volume);
 
@@ -117,7 +113,7 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
                          planesForAll[i].data());
       auto pos = find(volumeIds.begin(), volumeIds.end(), ids[i]);
       slice.set("planes", planesData);
-      slice.set("volume", volumes[i].volume);
+      slice.set("volume", volumes[i]);
       world.addGeometry(slice);
     }
   }
@@ -143,7 +139,7 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
                          valuesForAll[i].data());
       auto pos = find(volumeIds.begin(), volumeIds.end(), ids[i]);
       isosurface.set("isovalues", valuesData);
-      isosurface.set("volume", volumes[i].volume);
+      isosurface.set("volume", volumes[i]);
       world.addGeometry(isosurface);
     }
   }
@@ -151,9 +147,16 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
   world.commit();
 
   vector<OSPLight> lights;
-  o::Light light("scivis", "ambient");
+  o::Light light("ambient");
   light.commit();
   lights.push_back(light.handle());
+
+  o::Camera camera(cameraConfig.type);
+  camera.set("aspect", size.x / (float)size.y);
+  camera.set("pos", cameraConfig.pos);
+  camera.set("dir", cameraConfig.dir);
+  camera.set("up", cameraConfig.up);
+  camera.commit();
 
   // create renderer
   o::Renderer renderer("scivis");

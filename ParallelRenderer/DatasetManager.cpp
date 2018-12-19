@@ -1,7 +1,6 @@
 #include "DatasetManager.h"
 #include "data/Histogram.h"
 #include "ospray/ospcommon/vec.h"
-#include "third_party/RawReader/RawReader.h"
 #include "third_party/rapidjson/document.h"
 #include "third_party/rapidjson/istreamwrapper.h"
 #include <utility>
@@ -78,10 +77,14 @@ void DatasetManager::load(string filepath) {
         _filepath.replace(_filepath.end() - 10, _filepath.end() - 4, str);
         _name += "-" + str;
       }
-      gensv::RawReader reader(_filepath, dimensions, sizeForType);
       Dataset dataset(ospcommon::vec3i(dimensions), dtype);
-      auto size =
-          reader.readRegion(vec3sz(0, 0, 0), dimensions, dataset.buffer.data());
+      auto total = dimensions.x * dimensions.y * dimensions.z;
+      auto file = fopen(_filepath.c_str(), "rb");
+      int voxelSize = sizeof(unsigned char);
+      size_t read = fread(dataset.buffer.data(), sizeForType, total, file);
+      if (read != total) {
+        throw "Read volume data " + _name + " failed\n";
+      }
       dataset.histogram = createHistogram(dataset.buffer);
       datasets.emplace(_name, dataset);
     }

@@ -1,7 +1,6 @@
 #pragma once
 #include "ParallelRenderer/ConfigManager.h"
 #include "ParallelRenderer/DatasetManager.h"
-#include "ParallelRenderer/GenerateSciVis.h"
 #include "Poco/URI.h"
 #include "config/CameraConfig.h"
 #include "ospray/ospray_cpp.h"
