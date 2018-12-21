@@ -125,10 +125,24 @@ endif()
 file(GLOB_RECURSE VOVIS_FILES ${PROJECT_SOURCE_DIR}/ParallelRenderer/*.cpp)
 list(REMOVE_ITEM VOVIS_FILES ${PROJECT_SOURCE_DIR}/ParallelRenderer/Application.cpp)
 
+add_library(
+  VOVIS_LIB
+  SHARED
+  ${VOVIS_FILES}
+)
+target_include_directories(
+  VOVIS_LIB
+  PUBLIC
+  ${OSPRAY_INCLUDE_PATH}
+  ${OSPRAY_INCLUDE_PATH}/ospray
+  ${MPI_CXX_INCLUDE_PATH}
+  ${POCO_INCLUDE_PATH}
+  ${PROJECT_SOURCE_DIR}
+)
+
 add_executable(
   VovisRenderer
   ${PROJECT_SOURCE_DIR}/ParallelRenderer/Application.cpp
-  ${VOVIS_FILES}
 )
 target_include_directories(
   VovisRenderer
@@ -141,6 +155,7 @@ target_include_directories(
 )
 target_link_libraries(
   VovisRenderer
+  VOVIS_LIB
   ${OSPRAY_LIB}
   ${OSPRAY_LIB_COMMON}
   ${OSPRAY_LIB_MPI}
@@ -156,7 +171,6 @@ target_link_libraries(
 add_executable(
   Test
   ${PROJECT_SOURCE_DIR}/test/test.cpp
-  ${VOVIS_FILES}
 )
 target_include_directories(
   Test
@@ -169,6 +183,7 @@ target_include_directories(
 )
 target_link_libraries(
   Test
+  VOVIS_LIB
   ${OSPRAY_LIB}
   ${OSPRAY_LIB_COMMON}
   ${OSPRAY_LIB_MPI}
