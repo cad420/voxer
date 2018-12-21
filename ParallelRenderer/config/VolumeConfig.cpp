@@ -33,14 +33,15 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
   this->tfcnConfig = TransferFunctionConfig(tfcnParams);
 
   this->translate = vec3f(0, 0, 0);
+  this->scale = 1.0;
 
   if (params.HasMember("ranges")) {
     auto &ranges = params["ranges"];
     for (auto &range : ranges.GetArray()) {
       if (range.HasMember("start") && range.HasMember("end")) {
         this->ranges.push_back(Range{
-          start: range["start"].GetInt(),
-          end: range["end"].GetInt(),
+          start : range["start"].GetInt(),
+          end : range["end"].GetInt(),
         });
       }
     }
@@ -57,6 +58,8 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
     if (type == "dataset") {
       end = true;
       dataset.name = nameOfDataset((*current));
+      const auto &d = datasets.get(dataset.name);
+      dataset.dimensions = d.dimensions;
     } else if (type == "differ") {
       end = true;
       string firstDatasetName = nameOfDataset((*current)["first"]);
@@ -80,16 +83,22 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
       vec3f upper{upperParams[0].GetFloat(), upperParams[1].GetFloat(),
                   upperParams[2].GetFloat()};
       dataset.clipingBoxUpper += upper;
-    } else if (type == "translate") {
+    } else if (type == "transform") {
       if (!end) {
         stack.push_back(&(*current)["dataset"]);
         continue;
       }
-      auto &translateParams = (*current)["translate"];
-      vec3f translate{translateParams[0].GetFloat(),
-                      translateParams[1].GetFloat(),
-                      translateParams[2].GetFloat()};
-      this->translate += translate;
+      if ((*current).HasMember("translate")) {
+        auto &translateParams = (*current)["translate"];
+        vec3f translate{translateParams[0].GetFloat(),
+                        translateParams[1].GetFloat(),
+                        translateParams[2].GetFloat()};
+        this->translate += translate;
+      }
+      if ((*current).HasMember("scale")) {
+        auto scale = (*current)["scale"].GetFloat();
+        this->scale *= scale;
+      }
     } else {
       throw "Unsupported dataset";
     }

@@ -73,22 +73,26 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
     auto pos = find(volumeIds.begin(), volumeIds.end(), id);
     auto volume = volumes[pos - volumeIds.begin()];
     auto &config = volumeConfigs[pos - volumeIds.begin()];
+    auto &datasetConfig = config.datasetConfig;
 
-    // model.addVolume(volume);
-    // model.commit();
+    // https://github.com/ospray/ospray/issues/159#issuecomment-444155750
+    volume.set("gridOrigin", vec3f(-datasetConfig.dimensions / 2) + config.translate);
+    volume.set("gridSpacing", vec3f(config.scale));
 
-    // affine3f transform(affine3f::scale(config.translate));
-    // auto instance = model.createInstance(transform);
-    // model.release();
-    // instance.commit();
-    // world.addGeometry(instance);
-    // instance.release();
-    // cout << transform << endl;
+    // https://github.com/ospray/ospray/pull/165
+    // https://github.com/ospray/ospray/issues/159#issuecomment-443847715
+    // volume.set("xfm.l.vx", vec3f{0.01, 0.0, 0.0});
+    // volume.set("xfm.l.vy", vec3f{0.0, 1.0, 0.0});
+    // volume.set("xfm.l.vz", vec3f{0.0, 0.0, 1.0});
+    // volume.set("xfm.p", vec3f{0.0, 0.0, 0.0});
+    // volume.commit();
+
+    // volume.set("gridOrigin", vec3f(-dataset.dimensions / 2));
+
 
     world.addVolume(volume);
 
     world.commit();
-    // world.set("regions", regionData);
   }
 
   if (sliceConfigs.size() > 0) {

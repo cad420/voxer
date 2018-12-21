@@ -16,6 +16,7 @@ struct VolumeConfig {
   TransferFunctionConfig tfcnConfig;
   DatasetConfig datasetConfig;
   ospcommon::vec3f translate;
+  float scale;
   std::vector<Range> ranges;
   VolumeConfig(rapidjson::Value &);
 };

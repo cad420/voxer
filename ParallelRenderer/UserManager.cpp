@@ -33,7 +33,6 @@ void User::load(string id) {
             OSP_DATA_SHARED_BUFFER);
   data.commit();
   volume.set("voxelData", data);
-  volume.set("gridOrigin", vec3f(-dataset.dimensions / 2));
 
   this->volumes.emplace(id, volume);
 }
