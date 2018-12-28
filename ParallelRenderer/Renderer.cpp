@@ -87,9 +87,6 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
     // volume.set("xfm.p", vec3f{0.0, 0.0, 0.0});
     // volume.commit();
 
-    // volume.set("gridOrigin", vec3f(-dataset.dimensions / 2));
-
-
     world.addVolume(volume);
 
     world.commit();

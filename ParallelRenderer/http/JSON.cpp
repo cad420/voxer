@@ -1,8 +1,10 @@
 #include "ParallelRenderer/ConfigManager.h"
 #include "ParallelRenderer/Encoder.h"
 #include "ParallelRenderer/Renderer.h"
+#include "ParallelRenderer/data/Scatter.h"
 #include "RequestHandler.h"
 #include "third_party/rapidjson/document.h"
+#include <iomanip>
 #include <map>
 
 using namespace std;
@@ -23,15 +25,58 @@ void JSONRequestHandler::handleRequest(HTTPServerRequest &request,
   response.add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
   response.add("Access-Control-Allow-Headers", "content-type");
 
-  auto id = segments[0];
-  auto &dataset = datasets.get(id);
-  auto &histogram = dataset.histogram;
-
   rapidjson::Document d;
-  rapidjson::Value a(rapidjson::kArrayType);
-  rapidjson::Document::AllocatorType &allocator = d.GetAllocator();
-  for (int i = 0; i <= 255; i++)
-    a.PushBack(histogram[i], allocator);
+  rapidjson::Value a;
+  auto &allocator = d.GetAllocator();
+  auto type = segments[0];
+
+  if (type == "histogram") {
+    if (segments.size() != 2) {
+      // TODO
+    }
+    auto id = segments[1];
+    auto &dataset = datasets.get(id);
+    auto &histogram = dataset.histogram;
+
+    a.SetArray();
+    for (int i = 0; i <= 255; i++) {
+      a.PushBack(histogram[i], allocator);
+    }
+  } else if (type == "scatter") {
+    if (segments.size() != 3) {
+      // TODO
+    }
+
+    auto id = segments[1];
+    auto &datasetA = datasets.get(id);
+    id = segments[2];
+    auto &datasetB = datasets.get(id);
+
+    if (datasetA.dimensions != datasetB.dimensions) {
+    }
+
+    auto scatter =
+        createScatter(datasetA.buffer, datasetB.buffer, datasetA.dimensions);
+    a.SetArray();
+    auto max = scatter.max;
+    
+    for (int i = 0; i <= 255; i++) {
+      for (int j = 0; j <= 255; j++) {
+        auto &count = scatter.points[i][j];
+        if (count > 0) {
+          rapidjson::Value v(rapidjson::kObjectType);
+          stringstream ss;
+          ss.precision(5);
+          ss << (float)count / max;
+          rapidjson::Value sv(ss.str().c_str(), allocator);
+          v.AddMember("x", i, allocator);
+          v.AddMember("y", j, allocator);
+          v.AddMember("v", sv, allocator);
+          a.PushBack(v, allocator);
+        }
+      }
+    }
+  }
 
   rapidjson::StringBuffer buffer;
   buffer.Clear();
