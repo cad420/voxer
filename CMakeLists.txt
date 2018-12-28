@@ -13,6 +13,8 @@ set(POCO_LIB_PATH "" CACHE PATH "Path of poco library.")
 set(MPI_LIB_PATH "" CACHE PATH "Path of mpi library.")
 set(EMBREE_LIB_PATH "" CACHE PATH "Path of embree library.")
 set(TBB_LIB_PATH "" CACHE PATH "Path of tbb library.")
+set(OSPRAY_INCLUDE_DIR "" CACHE PATH "Path of ospray header files.")
+set(POCO_INCLUDE_PATH "" CACHE PATH "Path of poco header files.")
 
 # find ospray
 find_library(
@@ -37,7 +39,6 @@ find_library(
   HINTS ${OSPRAY_LIB_PATH} "${CMAKE_PREFIX_PATH}/lib"
 )
 
-set(OSPRAY_INCLUDE_DIR "" CACHE PATH "Path of ospray header files.")
 find_path(
   OSPRAY_INCLUDE_PATH
   NAMES ospray.h ospray/ospray.h
@@ -110,7 +111,6 @@ else()
   unset(POCO_LIB_PATH CACHE)
 endif()
 
-set(POCO_INCLUDE_PATH "" CACHE PATH "Path of poco header files.")
 find_path(
   POCO_INCLUDE_PATH
   NAMES Poco/Poco.h
@@ -140,58 +140,7 @@ target_include_directories(
   ${PROJECT_SOURCE_DIR}
 )
 
-add_executable(
-  VovisRenderer
-  ${PROJECT_SOURCE_DIR}/ParallelRenderer/Application.cpp
-)
-target_include_directories(
-  VovisRenderer
-  PUBLIC
-  ${OSPRAY_INCLUDE_PATH}
-  ${OSPRAY_INCLUDE_PATH}/ospray
-  ${MPI_CXX_INCLUDE_PATH}
-  ${POCO_INCLUDE_PATH}
-  ${PROJECT_SOURCE_DIR}
-)
-target_link_libraries(
-  VovisRenderer
-  VOVIS_LIB
-  ${OSPRAY_LIB}
-  ${OSPRAY_LIB_COMMON}
-  ${OSPRAY_LIB_MPI}
-  ${EMBREE_LIB}
-  ${TBB_LIB}
-  ${TBB_MALLOC_LIB}
-  ${MPI_CXX_LIBRARIES}
-  ${POCO_FOUNDATION_LIB}
-  ${POCO_NET_LIB}
-  ${POCO_UTIL_LIB}
-)
-
-add_executable(
-  Test
-  ${PROJECT_SOURCE_DIR}/test/test.cpp
-)
-target_include_directories(
-  Test
-  PUBLIC
-  ${OSPRAY_INCLUDE_PATH}
-  ${OSPRAY_INCLUDE_PATH}/ospray
-  ${MPI_CXX_INCLUDE_PATH}
-  ${POCO_INCLUDE_PATH}
-  ${PROJECT_SOURCE_DIR}
-)
-target_link_libraries(
-  Test
-  VOVIS_LIB
-  ${OSPRAY_LIB}
-  ${OSPRAY_LIB_COMMON}
-  ${OSPRAY_LIB_MPI}
-  ${EMBREE_LIB}
-  ${TBB_LIB}
-  ${TBB_MALLOC_LIB}
-  ${MPI_CXX_LIBRARIES}
-  ${POCO_FOUNDATION_LIB}
-  ${POCO_NET_LIB}
-  ${POCO_UTIL_LIB}
-)
+add_subdirectory(ParallelRenderer)
+add_subdirectory(test)
+enable_testing()
+add_test(NAME TestVolumeRendering COMMAND Test ${PROJECT_SOURCE_DIR}/test/configs/volume.json)
