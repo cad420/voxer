@@ -28,6 +28,9 @@ else()
   unset(OSPRAY_LIB_PATH CACHE)
 endif()
 
+find_package(VTK REQUIRED)
+include(${VTK_USE_FILE})
+
 find_library(
   OSPRAY_LIB_COMMON
   NAMES ospray_common

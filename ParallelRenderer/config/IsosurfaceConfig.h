@@ -4,7 +4,7 @@
 #include <string>
 
 struct IsosurfaceConfig {
-  float value;
+  unsigned char value;
   std::string volumeId;
   IsosurfaceConfig(const rapidjson::Value &params);
 };

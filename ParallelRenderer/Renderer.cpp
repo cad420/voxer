@@ -121,12 +121,12 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
 
   if (isosurfaceConfigs.size() > 0) {
     vector<string> ids;
-    vector<vector<float>> valuesForAll;
+    vector<vector<unsigned char>> valuesForAll;
     for (auto &isosurfaceConfig : isosurfaceConfigs) {
       auto pos = find(ids.begin(), ids.end(), isosurfaceConfig.volumeId);
       auto value = isosurfaceConfig.value;
       if (pos == ids.end()) {
-        vector<float> values = {value};
+        vector<unsigned char> values = {value};
         valuesForAll.push_back(values);
         ids.push_back(isosurfaceConfig.volumeId);
       } else {
@@ -136,11 +136,12 @@ Image Renderer::renderImage(const CameraConfig &cameraConfig,
     }
     for (auto i = 0; i < valuesForAll.size(); i++) {
       o::Geometry isosurface("isosurfaces");
-      o::Data valuesData(valuesForAll[i].size(), OSP_FLOAT,
+      o::Data valuesData(valuesForAll[i].size(), OSP_UCHAR,
                          valuesForAll[i].data());
       auto pos = find(volumeIds.begin(), volumeIds.end(), ids[i]);
       isosurface.set("isovalues", valuesData);
       isosurface.set("volume", volumes[i]);
+      isosurface.commit();
       world.addGeometry(isosurface);
     }
   }

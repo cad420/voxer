@@ -8,7 +8,7 @@ IsosurfaceConfig::IsosurfaceConfig(const rapidjson::Value &params) {
     throw "Invalid parameters, should have attribute value for isosurface";
   }
 
-  this->value = params["value"].GetFloat();
+  this->value = params["value"].GetUint();
 
   if (!params.HasMember("id") || !params["id"].IsString()) {
     throw "Invalid parameters, should have attribute id for slice";

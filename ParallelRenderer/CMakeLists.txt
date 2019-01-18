@@ -17,6 +17,7 @@ target_link_libraries(
   ${OSPRAY_LIB}
   ${OSPRAY_LIB_COMMON}
   ${OSPRAY_LIB_MPI}
+  ${VTK_LIBRARIES}
   ${EMBREE_LIB}
   ${TBB_LIB}
   ${TBB_MALLOC_LIB}

@@ -25,3 +25,26 @@ target_link_libraries(
   ${POCO_NET_LIB}
   ${POCO_UTIL_LIB}
 )
+
+add_executable(
+  TestSimple
+  ${PROJECT_SOURCE_DIR}/test/1.cpp
+)
+target_include_directories(
+  TestSimple
+  PUBLIC
+  ${OSPRAY_INCLUDE_PATH}
+  ${OSPRAY_INCLUDE_PATH}/ospray
+  ${MPI_CXX_INCLUDE_PATH}
+  ${PROJECT_SOURCE_DIR}
+)
+target_link_libraries(
+  TestSimple
+  ${OSPRAY_LIB}
+  ${OSPRAY_LIB_COMMON}
+  ${OSPRAY_LIB_MPI}
+  ${EMBREE_LIB}
+  ${TBB_LIB}
+  ${TBB_MALLOC_LIB}
+  ${MPI_CXX_LIBRARIES}
+)
