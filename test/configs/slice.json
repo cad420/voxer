@@ -1,0 +1,42 @@
+{
+  "fake-id-1": {
+    "volumes": [
+      {
+        "id": "volume-1",
+        "tfcn": [
+          { "x": 0, "y": 0, "color": "#00008e" },
+          { "x": 0.167, "y": 0.167, "color": "#0000ff" },
+          { "x": 0.333, "y": 0.333, "color": "#00ffff" },
+          { "x": 0.5, "y": 0.5, "color": "#80ff80" },
+          { "x": 0.667, "y": 0.667, "color": "#ffff00" },
+          { "x": 0.833, "y": 0.833, "color": "#ff00ff" },
+          { "x": 1, "y": 1, "color": "#800000" }
+        ],
+        "dataset": {
+          "type": "dataset",
+          "name": "heptane"
+        }
+      }
+    ],
+    "renderer": {
+      "type": "scvis",
+      "width": 512,
+      "height": 512,
+      "camera": {
+        "type": "perspective",
+        "pos": [0, 0, 300],
+        "dir": [0, 0, -1.0],
+        "up": [0, 1, 0]
+      },
+      "volumes": ["volume-1"],
+      "geometries": [
+        {
+          "type": "slice",
+          "coeff": [0, 0, 1, 0],
+          "id": "volume-1"
+        }
+      ],
+      "lights": []
+    }
+  }
+}
