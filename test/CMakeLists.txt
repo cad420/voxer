@@ -1,50 +1,34 @@
 add_executable(
   Test
-  ${PROJECT_SOURCE_DIR}/test/test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test.cpp
 )
-target_include_directories(
-  Test
-  PUBLIC
-  ${OSPRAY_INCLUDE_PATH}
-  ${OSPRAY_INCLUDE_PATH}/ospray
-  ${MPI_CXX_INCLUDE_PATH}
-  ${POCO_INCLUDE_PATH}
-  ${PROJECT_SOURCE_DIR}
+target_include_directories(Test
+  PRIVATE
+    ${OSPRAY_INCLUDE_DIRS}
+    ${MPI_CXX_INCLUDE_PATH}
+    ${POCO_INCLUDE_PATH}
+    ${PROJECT_SOURCE_DIR}
 )
-target_link_libraries(
-  Test
-  VOVIS_LIB
-  ${OSPRAY_LIB}
-  ${OSPRAY_LIB_COMMON}
-  ${OSPRAY_LIB_MPI}
-  ${EMBREE_LIB}
-  ${TBB_LIB}
-  ${TBB_MALLOC_LIB}
-  ${MPI_CXX_LIBRARIES}
-  ${POCO_FOUNDATION_LIB}
-  ${POCO_NET_LIB}
-  ${POCO_UTIL_LIB}
+target_link_libraries(Test
+  PRIVATE
+    VOVIS_LIB
 )
+target_compile_features(Test PRIVATE cxx_std_11)
 
 add_executable(
   TestSimple
-  ${PROJECT_SOURCE_DIR}/test/1.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/1.cpp
 )
-target_include_directories(
-  TestSimple
-  PUBLIC
-  ${OSPRAY_INCLUDE_PATH}
-  ${OSPRAY_INCLUDE_PATH}/ospray
-  ${MPI_CXX_INCLUDE_PATH}
-  ${PROJECT_SOURCE_DIR}
+target_include_directories(TestSimple
+  PRIVATE
+    ${OSPRAY_INCLUDE_DIRS}
+    ${MPI_CXX_INCLUDE_PATH}
+    ${PROJECT_SOURCE_DIR}
 )
-target_link_libraries(
-  TestSimple
-  ${OSPRAY_LIB}
-  ${OSPRAY_LIB_COMMON}
-  ${OSPRAY_LIB_MPI}
-  ${EMBREE_LIB}
-  ${TBB_LIB}
-  ${TBB_MALLOC_LIB}
-  ${MPI_CXX_LIBRARIES}
+target_link_libraries(TestSimple
+  PRIVATE
+    ${OSPRAY_LIBRARY}
+    ${TBB_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
 )
+target_compile_features(TestSimple PRIVATE cxx_std_11)

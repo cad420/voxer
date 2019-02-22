@@ -1,28 +1,18 @@
-add_executable(
-  VovisRenderer
-  ${PROJECT_SOURCE_DIR}/ParallelRenderer/Application.cpp
-)
-target_include_directories(
-  VovisRenderer
+file(GLOB_RECURSE VOVIS_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+
+add_library(VOVIS_LIB SHARED ${VOVIS_FILES})
+target_include_directories(VOVIS_LIB
   PUBLIC
-  ${OSPRAY_INCLUDE_PATH}
-  ${OSPRAY_INCLUDE_PATH}/ospray
-  ${MPI_CXX_INCLUDE_PATH}
-  ${POCO_INCLUDE_PATH}
-  ${PROJECT_SOURCE_DIR}
+    ${OSPRAY_INCLUDE_DIRS}
+    ${MPI_CXX_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}
 )
-target_link_libraries(
-  VovisRenderer
-  VOVIS_LIB
-  ${OSPRAY_LIB}
-  ${OSPRAY_LIB_COMMON}
-  ${OSPRAY_LIB_MPI}
-  ${VTK_LIBRARIES}
-  ${EMBREE_LIB}
-  ${TBB_LIB}
-  ${TBB_MALLOC_LIB}
-  ${MPI_CXX_LIBRARIES}
-  ${POCO_FOUNDATION_LIB}
-  ${POCO_NET_LIB}
-  ${POCO_UTIL_LIB}
+target_link_libraries(VOVIS_LIB
+  PUBLIC
+    ${OSPRAY_LIBRARY}
+    ${VTK_LIBRARIES}
+    ${TBB_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
+    ${Poco_LIBRARIES}
 )
+target_compile_features(VOVIS_LIB PRIVATE cxx_std_11)
