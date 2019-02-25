@@ -34,13 +34,14 @@ void WebSocketRequestHandler::handleRequest(HTTPServerRequest &request,
     int n;
     do {
       n = ws.receiveFrame(buffer, sizeof(buffer), flags);
+      if (n <= 0) continue;
       if ((flags & WebSocket::FRAME_OP_BITMASK) == WebSocket::FRAME_OP_PING) {
         ws.sendFrame(buffer, n, WebSocket::FRAME_OP_PONG);
       }
       d.Parse(buffer, n);
       if (!d.HasMember("operation") || !d["operation"].IsString()) {
-        auto msg = "Invalid operation";
-        ws.sendFrame(msg, sizeof(msg));
+        string msg = "Invalid operation";
+        ws.sendFrame(msg.c_str(), msg.size());
       } else {
         auto operation = string(d["operation"].GetString());
         if (operation == "render") {
