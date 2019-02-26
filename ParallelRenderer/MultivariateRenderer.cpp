@@ -1,7 +1,7 @@
 #include <vtk/vtkArray.h>
 #include "MultivariateRenderer.h"
 
-int main(int argc, char *argv[]) {
+int tmp(int argc, char *argv[]) {
   vtkNew<vtkOpenGLRenderer> ren1;
 
   vtkNew<vtkRenderWindow> renderWindow;
@@ -80,11 +80,12 @@ int main(int argc, char *argv[]) {
   vtkNew<vtkMultiVolume> volumes;
   volumes->SetMapper(mappergl);
 
-  auto *volData1 = vtkArray::CreateArray()
-  mapper->SetInputData(0, reader->GetOutputPort());
+  // auto *volData1 = vtkArray::CreateArray();
+  // mapper->SetInputData(0, );
+  mapper->SetInputConnection(0, reader->GetOutputPort());
   volumes->SetVolume(vol, 0);
 
-  mapper->SetInputData(3, reader2->GetOutputPort());
+  mapper->SetInputConnection(3, reader2->GetOutputPort());
   volumes->SetVolume(vol2, 3);
 
   ren1->AddVolume(volumes);

@@ -151,6 +151,10 @@ protected:
       try {
         datasets.load(datasetFile);
         configs.load(configureFile);
+        auto& user = users.get("tester");
+        for (auto &dataset : datasets.datasets) {
+          user.load(dataset.first);
+        }
       } catch (string &exc) {
         logger().error(exc);
         exit(1);

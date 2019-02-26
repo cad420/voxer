@@ -10,18 +10,18 @@ extern DatasetManager datasets;
 
 string nameOfDataset(rapidjson::Value &params) {
   string name = params["name"].GetString();
-  if (params.HasMember("variable")) {
-    name += "-";
-    name += params["variable"].GetString();
-  }
-  if (params.HasMember("timestep")) {
-    auto timestep = params["timestep"].GetInt();
-    name += "-";
-    if (timestep < 10) {
-      name += "0";
-    }
-    name += to_string(timestep);
-  }
+  // if (params.HasMember("variable")) {
+  //   name += "-";
+  //   name += params["variable"].GetString();
+  // }
+  // if (params.HasMember("timestep")) {
+  //   auto timestep = params["timestep"].GetInt();
+  //   name += "-";
+  //   if (timestep < 10) {
+  //     name += "0";
+  //   }
+  //   name += to_string(timestep);
+  // }
   return name;
 }
 
@@ -69,7 +69,7 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
         createDatasetByDiff(firstDatasetName, secondDatasetName);
       }
       dataset.name = nameOfDifferedDataset;
-    } else if (type == "clip") {
+    } else if (type == "clipping") {
       if (!end) {
         stack.push_back(&(*current)["dataset"]);
         continue;
@@ -83,7 +83,7 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
       vec3f upper{upperParams[0].GetFloat(), upperParams[1].GetFloat(),
                   upperParams[2].GetFloat()};
       dataset.clipingBoxUpper += upper;
-    } else if (type == "transform") {
+    } else if (type == "transformation") {
       if (!end) {
         stack.push_back(&(*current)["dataset"]);
         continue;

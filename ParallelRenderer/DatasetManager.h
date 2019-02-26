@@ -37,7 +37,5 @@ public:
   inline bool has(std::string name) {
     return datasets.find(name) != datasets.end();
   }
-
-private:
   Datasets datasets;
 };
