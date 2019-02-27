@@ -36,7 +36,6 @@ using Poco::Util::ServerApplication;
 DatasetManager datasets;
 ConfigManager configs;
 UserManager users;
-Renderer renderer;
 Encoder encoder;
 
 class RequestHandlerFactory : public HTTPRequestHandlerFactory {

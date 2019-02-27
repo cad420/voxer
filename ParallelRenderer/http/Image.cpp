@@ -3,6 +3,7 @@
 #include "ParallelRenderer/Renderer.h"
 #include "RequestHandler.h"
 #include <map>
+#include <memory>
 
 using namespace std;
 using ospcommon::vec2i;
@@ -12,7 +13,6 @@ using Poco::Net::HTTPServerRequest;
 using Poco::Net::HTTPServerResponse;
 
 extern ConfigManager configs;
-extern Renderer renderer;
 extern Encoder encoder;
 
 void ImageRequestHandler::handleRequest(HTTPServerRequest &request,
@@ -47,7 +47,14 @@ void ImageRequestHandler::handleRequest(HTTPServerRequest &request,
         if (params.find("height") != params.end()) {
           size.y = stoi(params["height"]);
         }
-        auto data = renderer.render(config, size, cameraConfig);
+
+        unique_ptr<Renderer> renderer;
+        if (config.volumesToRender.size() > 1) {
+          renderer.reset(new VTKRenderer());
+        } else {
+          renderer.reset(new OSPRayRenderer());
+        }
+        auto data = renderer->render(config, size, cameraConfig);
         auto img = encoder.encode(data, size, "JPEG");
         response.sendBuffer(img.data(), img.size());
       } catch (string &exc) {

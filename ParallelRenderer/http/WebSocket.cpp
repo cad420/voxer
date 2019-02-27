@@ -7,6 +7,7 @@
 #include "Poco/Util/ServerApplication.h"
 #include "RequestHandler.h"
 #include <map>
+#include <memory>
 
 using namespace std;
 using ospcommon::vec2i;
@@ -34,7 +35,8 @@ void WebSocketRequestHandler::handleRequest(HTTPServerRequest &request,
     int n;
     do {
       n = ws.receiveFrame(buffer, sizeof(buffer), flags);
-      if (n <= 0) continue;
+      if (n <= 0)
+        continue;
       if ((flags & WebSocket::FRAME_OP_BITMASK) == WebSocket::FRAME_OP_PING) {
         ws.sendFrame(buffer, n, WebSocket::FRAME_OP_PONG);
       }
@@ -52,7 +54,14 @@ void WebSocketRequestHandler::handleRequest(HTTPServerRequest &request,
             }
             auto params = d["params"].GetObject();
             auto config = configs.create(d["params"]);
-            auto data = renderer.render(config);
+
+            unique_ptr<Renderer> renderer;
+            if (config.volumesToRender.size() > 1) {
+              renderer.reset(new VTKRenderer());
+            } else {
+              renderer.reset(new OSPRayRenderer());
+            }
+            auto data = renderer->render(config);
             auto img = encoder.encode(data, config.size, "JPEG");
             ws.sendFrame(img.data(), img.size(), WebSocket::FRAME_BINARY);
           } catch (string &exc) {
