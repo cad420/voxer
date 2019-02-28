@@ -21,7 +21,6 @@ using Poco::Util::Application;
 
 extern ConfigManager configs;
 extern ConfigManager configs;
-extern Renderer renderer;
 extern Encoder encoder;
 
 void WebSocketRequestHandler::handleRequest(HTTPServerRequest &request,
@@ -56,13 +55,15 @@ void WebSocketRequestHandler::handleRequest(HTTPServerRequest &request,
             auto config = configs.create(d["params"]);
 
             unique_ptr<Renderer> renderer;
+            auto isRGBA = true;
             if (config.volumesToRender.size() > 1) {
               renderer.reset(new VTKRenderer());
+              isRGBA = false;
             } else {
               renderer.reset(new OSPRayRenderer());
             }
             auto data = renderer->render(config);
-            auto img = encoder.encode(data, config.size, "JPEG");
+            auto img = encoder.encode(data, config.size, "JPEG", isRGBA);
             ws.sendFrame(img.data(), img.size(), WebSocket::FRAME_BINARY);
           } catch (string &exc) {
             auto msg = "{\"type\": \"error\" , \"value\": \"" + exc + "\"}";

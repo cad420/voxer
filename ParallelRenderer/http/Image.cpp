@@ -49,13 +49,15 @@ void ImageRequestHandler::handleRequest(HTTPServerRequest &request,
         }
 
         unique_ptr<Renderer> renderer;
+        bool isRGBA = true;
         if (config.volumesToRender.size() > 1) {
           renderer.reset(new VTKRenderer());
+          isRGBA = false;
         } else {
           renderer.reset(new OSPRayRenderer());
         }
         auto data = renderer->render(config, size, cameraConfig);
-        auto img = encoder.encode(data, size, "JPEG");
+        auto img = encoder.encode(data, size, "JPEG", isRGBA);
         response.sendBuffer(img.data(), img.size());
       } catch (string &exc) {
         response.setContentType("text/html");

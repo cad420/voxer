@@ -35,10 +35,12 @@ Image VTKRenderer::renderImage(
     const vector<string> &volumesToRender, const vec2i &size) {
   auto start = chrono::steady_clock::now();
 
-  vector<vtkNew<vtkVolume>> volumes;
+  vector<vtkNew<vtkVolume>> volumes(volumeConfigs.size());
   vector<string> volumeIds;
-  for (auto &volumeConfig : volumeConfigs) {
-    vtkNew<vtkVolume> volume;
+  for (size_t i = 0; i < volumeConfigs.size(); i++) {
+    auto &volumeConfig = volumeConfigs[i];
+    auto &volume = volumes[i];
+
     vtkNew<vtkVolumeProperty> volumeProperty;
     vtkNew<vtkPiecewiseFunction> opacities;
     vtkNew<vtkColorTransferFunction> colors;
@@ -57,7 +59,7 @@ Image VTKRenderer::renderImage(
     }
 
     for (int i = 0; i < tfcnConfig.colors.size(); i++) {
-      auto &color = tfcnConfig.colors;
+      auto &color = tfcnConfig.colors[i];
       colors->AddRGBPoint(i, color[0], color[1], color[2]);
     }
 
@@ -69,9 +71,8 @@ Image VTKRenderer::renderImage(
     volume->SetProperty(volumeProperty);
     volume->SetPosition(volumeConfig.translate[0], volumeConfig.translate[1],
                         volumeConfig.translate[2]);
-    volume->SetScale(volumeConfig.scale[0], volumeConfig.scale[1], volumeConfig.scale[2]);
+    volume->SetScale(volumeConfig.scale, volumeConfig.scale, volumeConfig.scale);
 
-    volumes.push_back(volume);
     volumeIds.push_back(volumeConfig.id);
   }
 
@@ -93,24 +94,34 @@ Image VTKRenderer::renderImage(
       vtkOpenGLGPUVolumeRayCastMapper::SafeDownCast(mapper);
   mappergl->SetUseJittering(1);
 
-  vtkNew<vtkMultiVolume> volumes;
+  vtkNew<vtkMultiVolume> multiVolumes;
 
   for (int i = 0; i < volumesToRender.size(); i++) {
     auto &id = volumesToRender[i];
-    auto pos = find(volumeIds.begin(), volumeIds.end(), id);
-    auto volume = volumes[pos - volumeIds.begin()];
+    auto pos = std::find(volumeIds.begin(), volumeIds.end(), id);
+    auto &volume = volumes[pos - volumeIds.begin()];
     auto &config = volumeConfigs[pos - volumeIds.begin()];
     auto &datasetConfig = config.datasetConfig;
     auto &dataset = datasets.get(datasetConfig.name);
 
-    // mapper->SetInputData(i, ???);
-    volumes->SetVolume(volume, i);
-  }
-  volumes->SetMapper(mappergl);
+    vtkNew<vtkImageReader2> reader;
+    reader->SetMemoryBuffer((void *)dataset.buffer.data());
+    reader->SetDataSpacing(1, 1, 1);
+    reader->SetDataOrigin(0.0, 0.0, 0.0);
+    reader->SetDataScalarType(VTK_UNSIGNED_CHAR);
+    reader->SetDataExtent(0, dataset.dimensions.x - 1, 0, dataset.dimensions.y - 1, 0, dataset.dimensions.z - 1);
+    reader->SetDataByteOrderToLittleEndian();
+    reader->UpdateWholeExtent();
+    reader->Update();
 
-  renderer->AddVolume(volumes);
+    mapper->SetInputConnection(i, reader->GetOutputPort()); 
+    multiVolumes->SetVolume(volume, i);
+  }
+  multiVolumes->SetMapper(mappergl);
+
+  // renderer->AddVolume(multiVolumes);
   renderer->SetBackground(255.0, 255.0, 255.0);
-  auto &camera = renderer->GetActiveCamera();
+  auto camera = renderer->GetActiveCamera();
 
   camera->SetPosition(cameraConfig.pos[0], cameraConfig.pos[1],
                       cameraConfig.pos[2]);
@@ -123,18 +134,9 @@ Image VTKRenderer::renderImage(
   window->SetSize(size[0], size[1]);
   window->Render();
 
-  vtkNew<vtkImageData> image;
-  image->SetDimensions(size[0], size[1], 1);
-  image->AllocateScalars(VTK_UNSIGNED_CHAR, 3);
-  window->GetPixelData(0, 0, size[0] - 1, size[1] - 1, 0,
-                       vtkArrayDownCast<vtkUnsignedCharArray>(
-                           image->GetPointData()->GetScalars()),
-                       0);
+  auto data = window->GetPixelData(0, 0, size[0] - 1, size[1] - 1, 0, 0);
 
-  vtkNew<vtkJPEGWriter> writer;
-  writer->SetFileName("result.jpg");
-  writer->SetInputData(image);
-  writer->Write();
+  Image image(data, data + size[0] * size[1] * 3);
 
   const auto delta = chrono::duration_cast<chrono::milliseconds>(
       chrono::steady_clock::now() - start);

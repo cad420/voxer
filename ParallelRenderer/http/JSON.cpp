@@ -15,7 +15,6 @@ using Poco::Net::HTTPServerRequest;
 using Poco::Net::HTTPServerResponse;
 
 extern DatasetManager datasets;
-extern Renderer renderer;
 extern Encoder encoder;
 
 void JSONRequestHandler::handleRequest(HTTPServerRequest &request,

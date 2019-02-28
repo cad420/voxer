@@ -12,16 +12,23 @@ using namespace std;
 DatasetManager datasets;
 UserManager users;
 ConfigManager configs;
-Renderer renderer;
 Encoder encoder;
 Debugger debug("main");
 
 void render() {
   auto &config = configs.get("fake-id-1");
   debug.log("get config");
-  auto data = renderer.render(config);
+  unique_ptr<Renderer> renderer;
+  bool isRGBA = true;
+  if (config.volumesToRender.size() > 1) {
+    renderer.reset(new VTKRenderer());
+    isRGBA = false;
+  } else {
+    renderer.reset(new OSPRayRenderer());
+  }
+  auto data = renderer->render(config);
   debug.log("rendered");
-  auto img = encoder.encode(data, config.size, "JPEG");
+  auto img = encoder.encode(data, config.size, "JPEG", isRGBA);
   debug.log("encoded");
   ofstream imageFile;
   imageFile.open("result.jpg", ios::out | ios::binary);
