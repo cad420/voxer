@@ -6,16 +6,12 @@
 #include <algorithm>
 #include <vtk/vtkCamera.h>
 #include <vtk/vtkColorTransferFunction.h>
-#include <vtk/vtkImageData.h>
-#include <vtk/vtkImageReader.h>
-#include <vtk/vtkJPEGWriter.h>
+#include <vtk/vtkImageImport.h>
 #include <vtk/vtkMultiVolume.h>
 #include <vtk/vtkOpenGLGPUVolumeRayCastMapper.h>
 #include <vtk/vtkOpenGLRenderWindow.h>
 #include <vtk/vtkOpenGLRenderer.h>
 #include <vtk/vtkPiecewiseFunction.h>
-#include <vtk/vtkPointData.h>
-#include <vtk/vtkUnsignedCharArray.h>
 #include <vtk/vtkVolume.h>
 #include <vtk/vtkVolumeProperty.h>
 
@@ -71,7 +67,8 @@ Image VTKRenderer::renderImage(
     volume->SetProperty(volumeProperty);
     volume->SetPosition(volumeConfig.translate[0], volumeConfig.translate[1],
                         volumeConfig.translate[2]);
-    volume->SetScale(volumeConfig.scale, volumeConfig.scale, volumeConfig.scale);
+    volume->SetScale(volumeConfig.scale, volumeConfig.scale,
+                     volumeConfig.scale);
 
     volumeIds.push_back(volumeConfig.id);
   }
@@ -104,25 +101,26 @@ Image VTKRenderer::renderImage(
     auto &datasetConfig = config.datasetConfig;
     auto &dataset = datasets.get(datasetConfig.name);
 
-    vtkNew<vtkImageReader2> reader;
-    reader->SetMemoryBuffer((void *)dataset.buffer.data());
-    reader->SetDataSpacing(1, 1, 1);
-    reader->SetDataOrigin(0.0, 0.0, 0.0);
-    reader->SetDataScalarType(VTK_UNSIGNED_CHAR);
-    reader->SetDataExtent(0, dataset.dimensions.x - 1, 0, dataset.dimensions.y - 1, 0, dataset.dimensions.z - 1);
-    reader->SetDataByteOrderToLittleEndian();
-    reader->UpdateWholeExtent();
-    reader->Update();
+    vtkNew<vtkImageImport> importer;
+    importer->CopyImportVoidPointer((void *)dataset.buffer.data(),
+                                    dataset.buffer.size());
+    importer->SetDataScalarTypeToUnsignedChar();
+    importer->SetNumberOfScalarComponents(1);
+    importer->SetWholeExtent(0, dataset.dimensions.x - 1, 0,
+                             dataset.dimensions.y - 1, 0,
+                             dataset.dimensions.z - 1);
+    importer->SetDataExtentToWholeExtent();
+    importer->Update();
 
-    mapper->SetInputConnection(i, reader->GetOutputPort()); 
+    mapper->SetInputConnection(i, importer->GetOutputPort());
     multiVolumes->SetVolume(volume, i);
   }
   multiVolumes->SetMapper(mappergl);
 
-  // renderer->AddVolume(multiVolumes);
+  renderer->AddVolume(multiVolumes);
   renderer->SetBackground(255.0, 255.0, 255.0);
-  auto camera = renderer->GetActiveCamera();
 
+  auto camera = renderer->GetActiveCamera();
   camera->SetPosition(cameraConfig.pos[0], cameraConfig.pos[1],
                       cameraConfig.pos[2]);
   camera->SetViewUp(cameraConfig.up[0], cameraConfig.up[1], cameraConfig.up[2]);
