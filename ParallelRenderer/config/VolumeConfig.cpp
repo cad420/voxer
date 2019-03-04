@@ -84,19 +84,19 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
                   upperParams[2].GetFloat()};
       dataset.clipingBoxUpper += upper;
     } else if (type == "transformation") {
+      auto &target = *current;
       if (!end) {
-        stack.push_back(&(*current)["dataset"]);
+        stack.push_back(&target["dataset"]);
         continue;
       }
-      if ((*current).HasMember("translate")) {
-        auto &translateParams = (*current)["translate"];
-        vec3f translate{translateParams[0].GetFloat(),
-                        translateParams[1].GetFloat(),
-                        translateParams[2].GetFloat()};
+      if (target.HasMember("x") || target.HasMember("y") ||
+          target.HasMember("z")) {
+        vec3f translate{target["x"].GetFloat(), target["y"].GetFloat(),
+                        target["z"].GetFloat()};
         this->translate += translate;
       }
-      if ((*current).HasMember("scale")) {
-        auto scale = (*current)["scale"].GetFloat();
+      if (target.HasMember("scale")) {
+        auto scale = target["scale"].GetFloat();
         this->scale *= scale;
       }
     } else {

@@ -77,6 +77,7 @@ Image OSPRayRenderer::renderImage(const CameraConfig &cameraConfig,
     auto &datasetConfig = config.datasetConfig;
 
     // https://github.com/ospray/ospray/issues/159#issuecomment-444155750
+    cout << config.translate << endl;
     volume.set("gridOrigin", vec3f(-datasetConfig.dimensions / 2) + config.translate);
     volume.set("gridSpacing", vec3f(config.scale));
 
@@ -87,6 +88,9 @@ Image OSPRayRenderer::renderImage(const CameraConfig &cameraConfig,
     // volume.set("xfm.l.vz", vec3f{0.0, 0.0, 1.0});
     // volume.set("xfm.p", vec3f{0.0, 0.0, 0.0});
     // volume.commit();
+
+    volume.set("volumeClippingBoxLower", vec3f(datasetConfig.clipingBoxLower));
+    volume.set("volumeClippingBoxUpper", vec3f(datasetConfig.clipingBoxUpper));
 
     world.addVolume(volume);
 
