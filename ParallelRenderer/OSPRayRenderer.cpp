@@ -77,7 +77,6 @@ Image OSPRayRenderer::renderImage(const CameraConfig &cameraConfig,
     auto &datasetConfig = config.datasetConfig;
 
     // https://github.com/ospray/ospray/issues/159#issuecomment-444155750
-    cout << config.translate << endl;
     volume.set("gridOrigin", vec3f(-datasetConfig.dimensions / 2) + config.translate);
     volume.set("gridSpacing", vec3f(config.scale));
 
@@ -126,12 +125,12 @@ Image OSPRayRenderer::renderImage(const CameraConfig &cameraConfig,
 
   if (isosurfaceConfigs.size() > 0) {
     vector<string> ids;
-    vector<vector<unsigned char>> valuesForAll;
+    vector<vector<float>> valuesForAll;
     for (auto &isosurfaceConfig : isosurfaceConfigs) {
       auto pos = find(ids.begin(), ids.end(), isosurfaceConfig.volumeId);
       auto value = isosurfaceConfig.value;
       if (pos == ids.end()) {
-        vector<unsigned char> values = {value};
+        vector<float> values = {value};
         valuesForAll.push_back(values);
         ids.push_back(isosurfaceConfig.volumeId);
       } else {
@@ -141,11 +140,11 @@ Image OSPRayRenderer::renderImage(const CameraConfig &cameraConfig,
     }
     for (auto i = 0; i < valuesForAll.size(); i++) {
       o::Geometry isosurface("isosurfaces");
-      o::Data valuesData(valuesForAll[i].size(), OSP_UCHAR,
+      o::Data valuesData(valuesForAll[i].size(), OSP_FLOAT,
                          valuesForAll[i].data());
       auto pos = find(volumeIds.begin(), volumeIds.end(), ids[i]);
       isosurface.set("isovalues", valuesData);
-      isosurface.set("volume", volumes[i]);
+      isosurface.set("volume", volumes[pos - volumeIds.begin()]);
       isosurface.commit();
       world.addGeometry(isosurface);
     }
