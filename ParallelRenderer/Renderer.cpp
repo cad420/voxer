@@ -8,7 +8,6 @@
 
 using namespace std;
 using namespace ospcommon;
-namespace o = ospray::cpp;
 
 Image Renderer::render(const Config &config) {
   return this->renderImage(config.cameraConfig, config.volumeConfigs,

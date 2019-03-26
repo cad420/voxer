@@ -19,7 +19,7 @@ void _encode(void *context, void *data, int size) {
 }
 
 vector<unsigned char> Encoder::encode(vector<unsigned char> &data, vec2ui dim,
-                                      string format, bool isRGBA) {
+                                      string format, bool isRGBA, bool isGray) {
   if (format != "JPEG") {
     throw string("format not suppported!");
   }
@@ -28,7 +28,7 @@ vector<unsigned char> Encoder::encode(vector<unsigned char> &data, vec2ui dim,
 
   vector<unsigned char> img;
   img.reserve(dim.x * dim.y);
-  tje_encode_with_func(_encode, &img, 1, dim.x, dim.y, isRGBA ? 4 : 3, data.data());
+  tje_encode_with_func(_encode, &img, 1, dim.x, dim.y, isRGBA ? 4 : (isGray ? 1 : 3), data.data());
 
   const auto delta = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start);
   debug.log(to_string(delta.count()) + " ms");

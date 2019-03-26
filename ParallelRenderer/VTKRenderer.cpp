@@ -4,16 +4,16 @@
 #include "config/TransferFunctionConfig.h"
 #include "util/Debugger.h"
 #include <algorithm>
-#include <vtk/vtkCamera.h>
-#include <vtk/vtkColorTransferFunction.h>
-#include <vtk/vtkImageImport.h>
-#include <vtk/vtkMultiVolume.h>
-#include <vtk/vtkOpenGLGPUVolumeRayCastMapper.h>
-#include <vtk/vtkOpenGLRenderWindow.h>
-#include <vtk/vtkOpenGLRenderer.h>
-#include <vtk/vtkPiecewiseFunction.h>
-#include <vtk/vtkVolume.h>
-#include <vtk/vtkVolumeProperty.h>
+#include <vtkCamera.h>
+#include <vtkColorTransferFunction.h>
+#include <vtkImageImport.h>
+#include <vtkMultiVolume.h>
+#include <vtkOpenGLGPUVolumeRayCastMapper.h>
+#include <vtkOpenGLRenderWindow.h>
+#include <vtkOpenGLRenderer.h>
+#include <vtkPiecewiseFunction.h>
+#include <vtkVolume.h>
+#include <vtkVolumeProperty.h>
 
 using namespace std;
 using namespace ospcommon;

@@ -5,6 +5,7 @@ target_include_directories(VOVIS_LIB
   PUBLIC
     ${OSPRAY_INCLUDE_DIRS}
     ${MPI_CXX_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}
 )
 target_link_libraries(VOVIS_LIB

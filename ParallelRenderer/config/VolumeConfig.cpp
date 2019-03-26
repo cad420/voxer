@@ -1,6 +1,7 @@
 #include "VolumeConfig.h"
 #include "../DatasetManager.h"
 #include "../data/Differ.h"
+#include "../data/Mask.h"
 #include <vector>
 
 using namespace std;
@@ -99,6 +100,17 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
         auto scale = target["scale"].GetFloat();
         this->scale *= scale;
       }
+    } else if (type == "scatter") {
+      end = true;
+      string firstDatasetName = nameOfDataset((*current)["first"]);
+      string secondDatasetName = nameOfDataset((*current)["second"]);
+      vec2f rangeFirst, rangeSecond;
+
+      string nameOfDifferedDataset = firstDatasetName + "-" + secondDatasetName;
+      if (!datasets.has(nameOfDifferedDataset)) {
+        createDatasetByMask(firstDatasetName, secondDatasetName, rangeFirst, rangeSecond);
+      }
+      dataset.name = nameOfDifferedDataset;
     } else {
       throw "Unsupported dataset";
     }

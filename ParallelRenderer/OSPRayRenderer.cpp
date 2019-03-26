@@ -46,11 +46,6 @@ Image OSPRayRenderer::renderImage(const CameraConfig &cameraConfig,
     opacityData.commit();
     vec2f valueRange{0, 255};
 
-    if (volumeConfig.datasetConfig.name == "magnetic") {
-      valueRange.x = 0.44;
-      valueRange.y = 0.77;
-    }
-
     o::TransferFunction tfcn("piecewise_linear");
     tfcn.set("colors", colorsData);
     tfcn.set("opacities", opacityData);
