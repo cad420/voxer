@@ -27,9 +27,8 @@ void JSONRequestHandler::handleRequest(HTTPServerRequest &request,
   rapidjson::Document d;
   rapidjson::Value a;
   auto &allocator = d.GetAllocator();
-  auto type = segments[0];
 
-  if (type == "histogram") {
+  if (type == DataType::histogram) {
     if (segments.size() != 2) {
       // TODO
     }
@@ -41,7 +40,7 @@ void JSONRequestHandler::handleRequest(HTTPServerRequest &request,
     for (int i = 0; i <= 255; i++) {
       a.PushBack(histogram[i], allocator);
     }
-  } else if (type == "scatter") {
+  } else if (type == DataType::scatter) {
     if (segments.size() != 3) {
       // TODO
     }

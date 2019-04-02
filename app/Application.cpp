@@ -49,17 +49,36 @@ public:
     if (request.find("Upgrade") != request.end() &&
         Poco::icompare(request["Upgrade"], "websocket") == 0) {
       return new WebSocketRequestHandler();
-    } else {
-      Poco::URI uri(request.getURI().c_str());
-      vector<string> segments;
-      uri.getPathSegments(segments);
-
-      if (segments.size() == 0) {
-        return new ImageRequestHandler(uri);
-      } else {
-        return new JSONRequestHandler(uri);
-      }
     }
+
+    Poco::URI uri(request.getURI().c_str());
+    vector<string> segments;
+    uri.getPathSegments(segments);
+
+    if (segments.size() == 0) {
+      return new DefaultRequestHandler();
+    }
+
+    auto &type = segments[0];
+
+    if (type == "slice") {
+      return new ImageRequestHandler(uri, DataType::slice);
+    }
+
+    if (type == "rendering") {
+      return new ImageRequestHandler(uri, DataType::rendering);
+    }
+
+    if (type == "histogram") {
+      return new JSONRequestHandler(uri, DataType::histogram);
+    }
+
+    if (type == "scatter") {
+      return new JSONRequestHandler(uri, DataType::scatter);
+    }
+
+    // histogram, scatter, parallel coordinate
+    return new ImageRequestHandler(uri, DataType::unsupported);
   }
 };
 
@@ -150,7 +169,7 @@ protected:
       try {
         datasets.load(datasetFile);
         configs.load(configureFile);
-        auto& user = users.get("tester");
+        auto &user = users.get("tester");
         for (auto &dataset : datasets.datasets) {
           user.load(dataset.first);
         }

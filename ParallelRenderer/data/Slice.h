@@ -2,4 +2,8 @@
 
 typedef std::vector<unsigned char> Image;
 
-Image createSlice(Dataset dataset, int axis, int index);
+enum class Axis {
+  x, y, z
+};
+
+Image createSlice(const Dataset &dataset, const Axis axis, int index);
