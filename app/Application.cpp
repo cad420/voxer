@@ -77,8 +77,7 @@ public:
       return new JSONRequestHandler(uri, DataType::scatter);
     }
 
-    // histogram, scatter, parallel coordinate
-    return new ImageRequestHandler(uri, DataType::unsupported);
+    return new DefaultRequestHandler(DataType::unsupported);
   }
 };
 

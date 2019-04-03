@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-enum class DataType { rendering, histogram, scatter, slice, unsupported };
+enum class DataType { rendering, histogram, scatter, slice, unsupported, text };
 
 class WebSocketRequestHandler : public Poco::Net::HTTPRequestHandler {
 public:
@@ -41,6 +41,9 @@ public:
 
 class DefaultRequestHandler : public Poco::Net::HTTPRequestHandler {
 public:
+  DataType type;
+  DefaultRequestHandler(): type(DataType::text) {}
+  DefaultRequestHandler(DataType t): type(t) {}
   void handleRequest(Poco::Net::HTTPServerRequest &request,
                      Poco::Net::HTTPServerResponse &response) {
     response.setChunkedTransferEncoding(true);
@@ -50,7 +53,11 @@ public:
 
     response.setContentType("text/html");
     auto &ostr = response.send();
-    ostr << "Websocket Server has been started!";
+    if (type == DataType::unsupported) {
+      ostr << "Unsupported data type!";
+    } else {
+      ostr << "Websocket Server has been started!";
+    }
     return;
   }
 };

@@ -65,8 +65,11 @@ string ConfigManager::save(rapidjson::Value &params) {
 Config ConfigManager::create(rapidjson::Value &params) {
   Config config;
 
-  auto &volumesParams = params["volumes"];
+  if (!params.HasMember("volumes") || !params["volumes"].IsArray()) {
+    throw "config should have propery `volumes` with arrary type!";
+  }
 
+  auto &volumesParams = params["volumes"];
   for (auto &volumeParams : volumesParams.GetArray()) {
     config.volumeConfigs.push_back(VolumeConfig(volumeParams));
   }
