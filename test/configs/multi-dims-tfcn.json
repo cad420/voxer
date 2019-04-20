@@ -1,0 +1,56 @@
+{
+  "fake-id-1": {
+    "volumes": [
+      {
+        "id": "volume-1",
+        "tfcn": [
+          { "x": 0, "y": 0, "color": "#00008e" },
+          { "x": 0.167, "y": 0.1, "color": "#0000ff" },
+          { "x": 0.333, "y": 0.1, "color": "#00ffff" },
+          { "x": 0.5, "y": 0.1, "color": "#80ff80" },
+          { "x": 0.667, "y": 0.1, "color": "#ffff00" },
+          { "x": 0.833, "y": 0.1, "color": "#ff00ff" },
+          { "x": 1, "y": 0.1, "color": "#800000" }
+        ],
+        "dataset": {
+          "type": "scatter",
+          "ranges": [
+            {
+              "start": 0,
+              "end": 10
+            },
+            {
+              "start": 100,
+              "end": 150
+            }
+          ],
+          "first": {
+            "type": "dataset",
+            "name": "lsabel",
+            "variable": "Pf",
+            "timestep": 5
+          },
+          "second": {
+            "type": "dataset",
+            "name": "lsabel",
+            "variable": "TCf",
+            "timestep": 5
+          }
+        }
+      }
+    ],
+    "renderer": {
+      "type": "scvis-animation",
+      "width": 512,
+      "height": 512,
+      "camera": {
+        "type": "perspective",
+        "pos": [0, 0, 300],
+        "dir": [0, 0, -1.0],
+        "up": [0, 1, 0]
+      },
+      "volumes": ["volume-1", "volume-2"],
+      "lights": []
+    }
+  }
+}

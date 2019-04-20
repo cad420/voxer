@@ -97,7 +97,6 @@ int main(int argc, const char **argv) {
   volume.set("voxelData", data);
   volume.set("transferFunction", tfcn);
   volume.set("gridOrigin", vec3f(-dimensions / 2));
-  cout << -dimensions / 2 << endl;
   volume.commit();
 
   Model world, model;

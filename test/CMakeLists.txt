@@ -32,3 +32,20 @@ target_link_libraries(TestSimple
     ${MPI_CXX_LIBRARIES}
 )
 target_compile_features(TestSimple PRIVATE cxx_std_11)
+
+# add_executable(
+#   test_slice
+#   ${CMAKE_CURRENT_SOURCE_DIR}/1.cpp
+# )
+# target_include_directories(test_slice
+#   PRIVATE
+#     ${OSPRAY_INCLUDE_DIRS}
+#     ${MPI_CXX_INCLUDE_PATH}
+#     ${PROJECT_SOURCE_DIR}
+# )
+# target_link_libraries(test_slice
+#   PRIVATE
+#     Catch2::Catch
+#     VOVIS_LIB
+# )
+# target_compile_features(TestSimple PRIVATE cxx_std_11)
