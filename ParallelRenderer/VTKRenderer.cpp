@@ -101,9 +101,13 @@ Image VTKRenderer::renderImage(
     auto &datasetConfig = config.datasetConfig;
     auto &dataset = datasets.get(datasetConfig.name);
 
+    volume->SetPosition(config.translate[0] - dataset.dimensions.x / 2,
+                        config.translate[1] - dataset.dimensions.y / 2,
+                        config.translate[2] - dataset.dimensions.z);
+
     vtkNew<vtkImageImport> importer;
-    importer->CopyImportVoidPointer((void *)dataset.buffer.data(),
-                                    dataset.buffer.size());
+    importer->SetImportVoidPointer((void *)dataset.buffer.data(),
+                                   dataset.buffer.size());
     importer->SetDataScalarTypeToUnsignedChar();
     importer->SetNumberOfScalarComponents(1);
     importer->SetWholeExtent(0, dataset.dimensions.x - 1, 0,
@@ -123,7 +127,7 @@ Image VTKRenderer::renderImage(
   auto camera = renderer->GetActiveCamera();
   camera->SetPosition(cameraConfig.pos[0], cameraConfig.pos[1],
                       cameraConfig.pos[2]);
-  camera->SetViewUp(cameraConfig.up[0], cameraConfig.up[1], cameraConfig.up[2]);
+  camera->SetViewUp(cameraConfig.up[0], -cameraConfig.up[1], cameraConfig.up[2]);
   camera->SetFocalPoint(cameraConfig.dir[0], cameraConfig.dir[1],
                         cameraConfig.dir[2]);
   renderer->ResetCameraClippingRange();

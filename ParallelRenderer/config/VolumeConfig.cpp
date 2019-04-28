@@ -1,5 +1,6 @@
 #include "VolumeConfig.h"
 #include "../DatasetManager.h"
+#include "../UserManager.h"
 #include "../data/Differ.h"
 #include "../data/Mask.h"
 #include <vector>
@@ -8,6 +9,7 @@ using namespace std;
 using namespace ospcommon;
 
 extern DatasetManager datasets;
+extern UserManager users; 
 
 string nameOfDataset(rapidjson::Value &params) {
   if (!params.HasMember("name") || !params["name"].IsString()) {
@@ -80,6 +82,8 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
       string nameOfDifferedDataset = firstDatasetName + "-" + secondDatasetName;
       if (!datasets.has(nameOfDifferedDataset)) {
         createDatasetByDiff(firstDatasetName, secondDatasetName);
+        auto &user = users.get("tester");
+        user.load(nameOfDifferedDataset);
       }
       dataset.name = nameOfDifferedDataset;
     } else if (type == "clipping") {

@@ -1,3 +1,4 @@
+#pragma once
 #include <string>
 #include <ospray/ospray_cpp.h>
 

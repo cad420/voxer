@@ -1,5 +1,6 @@
 #include "Differ.h"
 #include "../DatasetManager.h"
+#include "./Histogram.h"
 
 using namespace std;
 
@@ -22,6 +23,7 @@ string createDatasetByDiff(string first, string second) {
         (firstDataset.buffer[i] - secondDataset.buffer[i] + 255) / 2;
   }
   auto name = first + "-" + second;
+  dataset.histogram = createHistogram(dataset.buffer);
   datasets.add(name, move(dataset));
   return name;
 }

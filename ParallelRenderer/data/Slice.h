@@ -1,3 +1,4 @@
+#pragma once
 #include "DatasetManager.h"
 
 typedef std::vector<unsigned char> Image;

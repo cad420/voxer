@@ -50,7 +50,7 @@ void JSONRequestHandler::handleRequest(HTTPServerRequest &request,
     id = segments[2];
     auto &datasetB = datasets.get(id);
 
-    auto scale = segments[3];
+    // auto scale = segments[3];
 
     if (datasetA.dimensions != datasetB.dimensions) {
     }
