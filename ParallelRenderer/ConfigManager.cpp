@@ -38,19 +38,19 @@ Config &ConfigManager::get(const string id) {
 string ConfigManager::save(rapidjson::Value &params) {
   auto id = UUID.createRandom().toString();
   auto &rendererParams = params["renderer"];
-  auto &posParams = rendererParams["pos"];
-  auto &dirParams = rendererParams["dir"];
-  auto &upParams = rendererParams["up"];
+  // auto &posParams = rendererParams["pos"];
+  // auto &dirParams = rendererParams["dir"];
+  // auto &upParams = rendererParams["up"];
   auto &d = this->document;
-  posParams.AddMember("x", 100, d.GetAllocator());
-  posParams.AddMember("y", 100, d.GetAllocator());
-  posParams.AddMember("z", 100, d.GetAllocator());
-  dirParams.AddMember("x", -1, d.GetAllocator());
-  dirParams.AddMember("y", -1, d.GetAllocator());
-  dirParams.AddMember("z", -1, d.GetAllocator());
-  upParams.AddMember("x", 0, d.GetAllocator());
-  upParams.AddMember("y", -1, d.GetAllocator());
-  upParams.AddMember("z", 0, d.GetAllocator());
+  // posParams.AddMember("x", 100, d.GetAllocator());
+  // posParams.AddMember("y", 100, d.GetAllocator());
+  // posParams.AddMember("z", 100, d.GetAllocator());
+  // dirParams.AddMember("x", -1, d.GetAllocator());
+  // dirParams.AddMember("y", -1, d.GetAllocator());
+  // dirParams.AddMember("z", -1, d.GetAllocator());
+  // upParams.AddMember("x", 0, d.GetAllocator());
+  // upParams.AddMember("y", -1, d.GetAllocator());
+  // upParams.AddMember("z", 0, d.GetAllocator());
 
   configs[id] = this->create(params);
   d.GetObject().AddMember(rapidjson::Value(id.c_str(), d.GetAllocator()).Move(),

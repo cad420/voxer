@@ -18,6 +18,7 @@ struct VolumeConfig {
   ospcommon::vec3f translate;
   float scale;
   std::vector<Range> ranges;
+  ospcommon::vec3f gridSpacing;
   VolumeConfig(rapidjson::Value &);
 };
 typedef struct VolumeConfig VolumeConfig;

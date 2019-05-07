@@ -9,7 +9,7 @@ using namespace std;
 using namespace ospcommon;
 
 extern DatasetManager datasets;
-extern UserManager users; 
+extern UserManager users;
 
 string nameOfDataset(rapidjson::Value &params) {
   if (!params.HasMember("name") || !params["name"].IsString()) {
@@ -24,10 +24,18 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
   }
   this->id = params["id"].GetString();
 
-  if (!params.HasMember("tfcn")) {
-    throw "volume config should have propery `tfcn`";
+  this->gridSpacing = vec3f(1.0f, 1.0f, 1.0f);
+  if (params.HasMember("spacing")) {
+    auto &spacingParams = params["spacing"];
+    this->gridSpacing =
+        vec3f(spacingParams[0].GetFloat(), spacingParams[1].GetFloat(),
+              spacingParams[2].GetFloat());
   }
-  auto &tfcnParams = params["tfcn"];
+
+  if (!params.HasMember("tf")) {
+    throw "volume config should have propery `tf`";
+  }
+  auto &tfcnParams = params["tf"];
   this->tfcnConfig = TransferFunctionConfig(tfcnParams);
 
   this->translate = vec3f(0, 0, 0);
@@ -114,7 +122,8 @@ VolumeConfig::VolumeConfig(rapidjson::Value &params) {
     } else if (type == "transformation") {
       if (!end) {
         if (!target.HasMember("dataset") || !target["dataset"].IsObject()) {
-          throw "transformation dataset config should have propery `dataset` of type "
+          throw "transformation dataset config should have propery `dataset` "
+                "of type "
                 "dataset";
         }
         stack.push_back(&target["dataset"]);

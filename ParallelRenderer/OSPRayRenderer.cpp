@@ -1,5 +1,5 @@
-#include "Renderer.h"
 #include "ParallelRenderer/UserManager.h"
+#include "Renderer.h"
 #include "config/CameraConfig.h"
 #include "config/TransferFunctionConfig.h"
 #include "util/Debugger.h"
@@ -15,12 +15,11 @@ extern UserManager users;
 
 static Debugger debug("renderer");
 
-Image OSPRayRenderer::renderImage(const CameraConfig &cameraConfig,
-                            const vector<VolumeConfig> &volumeConfigs,
-                            const vector<SliceConfig> &sliceConfigs,
-                            const vector<IsosurfaceConfig> &isosurfaceConfigs,
-                            const vector<string> &volumesToRender,
-                            const vec2i &size) {
+Image OSPRayRenderer::renderImage(
+    const CameraConfig &cameraConfig, const vector<VolumeConfig> &volumeConfigs,
+    const vector<SliceConfig> &sliceConfigs,
+    const vector<IsosurfaceConfig> &isosurfaceConfigs,
+    const vector<string> &volumesToRender, const vec2i &size) {
   auto start = chrono::steady_clock::now();
 
   o::Model world;
@@ -72,8 +71,9 @@ Image OSPRayRenderer::renderImage(const CameraConfig &cameraConfig,
     auto &datasetConfig = config.datasetConfig;
 
     // https://github.com/ospray/ospray/issues/159#issuecomment-444155750
-    volume.set("gridOrigin", vec3f(-datasetConfig.dimensions / 2) + config.translate);
-    volume.set("gridSpacing", vec3f(config.scale));
+    volume.set("gridOrigin",
+               vec3f(-datasetConfig.dimensions / 2) + config.translate);
+    volume.set("gridSpacing", config.gridSpacing);
 
     // https://github.com/ospray/ospray/pull/165
     // https://github.com/ospray/ospray/issues/159#issuecomment-443847715

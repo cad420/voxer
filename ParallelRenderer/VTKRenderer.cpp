@@ -127,7 +127,7 @@ Image VTKRenderer::renderImage(
   auto camera = renderer->GetActiveCamera();
   camera->SetPosition(cameraConfig.pos[0], cameraConfig.pos[1],
                       cameraConfig.pos[2]);
-  camera->SetViewUp(cameraConfig.up[0], -cameraConfig.up[1], cameraConfig.up[2]);
+  camera->SetViewUp(cameraConfig.up[0], cameraConfig.up[1], cameraConfig.up[2]);
   camera->SetFocalPoint(cameraConfig.dir[0], cameraConfig.dir[1],
                         cameraConfig.dir[2]);
   renderer->ResetCameraClippingRange();

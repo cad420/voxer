@@ -10,7 +10,7 @@ enum class DataType { rendering, histogram, scatter, slice, unsupported, text };
 class WebSocketRequestHandler : public Poco::Net::HTTPRequestHandler {
 public:
   rapidjson::Document d;
-  char buffer[1024 * 1024];
+  char buffer[1024 * 1024 * 1024];
   void handleRequest(Poco::Net::HTTPServerRequest &request,
                      Poco::Net::HTTPServerResponse &response);
 };
