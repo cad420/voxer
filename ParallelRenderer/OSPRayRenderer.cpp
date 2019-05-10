@@ -74,6 +74,9 @@ Image OSPRayRenderer::renderImage(
     volume.set("gridOrigin",
                vec3f(-datasetConfig.dimensions / 2) + config.translate);
     volume.set("gridSpacing", config.gridSpacing);
+    volume.set("voxelRange", vec2f(0, 255));
+    // volume.set("gradientShadingEnabled", true);
+    volume.set("singleShade", false);
 
     // https://github.com/ospray/ospray/pull/165
     // https://github.com/ospray/ospray/issues/159#issuecomment-443847715
@@ -149,6 +152,8 @@ Image OSPRayRenderer::renderImage(
 
   vector<OSPLight> lights;
   o::Light light("ambient");
+  light.set("intensity", 1.25);
+  light.set("color", vec3f(1, 1, 1));
   light.commit();
   lights.push_back(light.handle());
 
@@ -162,14 +167,16 @@ Image OSPRayRenderer::renderImage(
   // create renderer
   o::Renderer renderer("scivis");
   renderer.set("lights", o::Data(lights.size(), OSP_LIGHT, lights.data()));
-  renderer.set("aoSamples", 0);
+  // renderer.set("aoSamples", 1);
+  renderer.set("spp", size.x == 64 ? 1 : 2); 
+  renderer.set("aoDistance", 10000.f);
   renderer.set("bgColor", 1.0f);
   renderer.set("camera", camera);
   renderer.set("model", world);
   renderer.commit();
 
   // render frame
-  const size_t iterationTimes = 5;
+  const size_t iterationTimes = size.x == 64 ? 5 : 10;
   o::FrameBuffer framebuffer(size, OSP_FB_SRGBA, OSP_FB_COLOR | OSP_FB_ACCUM);
   framebuffer.clear(OSP_FB_COLOR | OSP_FB_ACCUM);
   for (int frames = 0; frames < iterationTimes; frames++) {

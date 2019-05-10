@@ -21,15 +21,16 @@ public:
   //              std::map<std::string, TransferFunctionConfig> &tfcnConfigs);
 
 protected:
-  virtual Image renderImage(const CameraConfig &cameraConfig,
-                    const std::vector<VolumeConfig> &volumeConfigs,
-                    const std::vector<SliceConfig> &sliceConfigs,
-                    const std::vector<IsosurfaceConfig> &isosurfaceConfigs,
-                    const std::vector<std::string> &volumesToRender,
-                    const ospcommon::vec2i &size) = 0;
+  virtual Image
+  renderImage(const CameraConfig &cameraConfig,
+              const std::vector<VolumeConfig> &volumeConfigs,
+              const std::vector<SliceConfig> &sliceConfigs,
+              const std::vector<IsosurfaceConfig> &isosurfaceConfigs,
+              const std::vector<std::string> &volumesToRender,
+              const ospcommon::vec2i &size) = 0;
 };
 
-class OSPRayRenderer: public Renderer {
+class OSPRayRenderer : public Renderer {
 protected:
   Image renderImage(const CameraConfig &cameraConfig,
                     const std::vector<VolumeConfig> &volumeConfigs,
@@ -39,7 +40,7 @@ protected:
                     const ospcommon::vec2i &size) override;
 };
 
-class VTKRenderer: public Renderer {
+class VTKRenderer : public Renderer {
 protected:
   Image renderImage(const CameraConfig &cameraConfig,
                     const std::vector<VolumeConfig> &volumeConfigs,

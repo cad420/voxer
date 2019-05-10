@@ -65,8 +65,6 @@ Image VTKRenderer::renderImage(
     volumeProperty->SetInterpolationTypeToLinear();
 
     volume->SetProperty(volumeProperty);
-    volume->SetPosition(volumeConfig.translate[0], volumeConfig.translate[1],
-                        volumeConfig.translate[2]);
     volume->SetScale(volumeConfig.scale, volumeConfig.scale,
                      volumeConfig.scale);
 
@@ -103,7 +101,7 @@ Image VTKRenderer::renderImage(
 
     volume->SetPosition(config.translate[0] - dataset.dimensions.x / 2,
                         config.translate[1] - dataset.dimensions.y / 2,
-                        config.translate[2] - dataset.dimensions.z);
+                        config.translate[2] - dataset.dimensions.z / 2);
 
     vtkNew<vtkImageImport> importer;
     importer->SetImportVoidPointer((void *)dataset.buffer.data(),
@@ -130,7 +128,7 @@ Image VTKRenderer::renderImage(
   camera->SetViewUp(cameraConfig.up[0], cameraConfig.up[1], cameraConfig.up[2]);
   camera->SetFocalPoint(cameraConfig.dir[0], cameraConfig.dir[1],
                         cameraConfig.dir[2]);
-  renderer->ResetCameraClippingRange();
+  // renderer->ResetCameraClippingRange();
   // renderer->ResetCamera();
 
   window->SetSize(size[0], size[1]);

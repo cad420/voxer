@@ -29,7 +29,8 @@ vector<unsigned char> Encoder::encode(vector<unsigned char> &data, vec2ui dim,
   vector<unsigned char> img;
   auto numComponents = isRGBA ? 4 : 3;
   img.reserve(dim.x * dim.y * numComponents);
-  tje_encode_with_func(_encode, &img, 1, dim.x, dim.y, numComponents, data.data());
+  auto quality = dim.x == 64 ? 1 : 3;
+  tje_encode_with_func(_encode, &img, quality, dim.x, dim.y, numComponents, data.data());
 
   const auto delta = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start);
   debug.log(to_string(delta.count()) + " ms");

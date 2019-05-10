@@ -67,7 +67,7 @@ void JSONRequestHandler::handleRequest(HTTPServerRequest &request,
           rapidjson::Value v(rapidjson::kObjectType);
           stringstream ss;
           ss.precision(5);
-          ss << (float)count / max;
+          ss << (float)count;
           rapidjson::Value sv(ss.str().c_str(), allocator);
           v.AddMember("x", i, allocator);
           v.AddMember("y", j, allocator);
