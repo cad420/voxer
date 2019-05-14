@@ -37,8 +37,8 @@ RUN mv /tmp/vtk-v8.2.0 /tmp/vtk && \
     make install && \
     rm -rf /tmp/vtk
 
-COPY ParallelRenderer /tmp/vovis/ParallelRenderer
-COPY app /tmp/vovis/app
+COPY voxer /tmp/vovis/voxer
+COPY server /tmp/vovis/server
 COPY test /tmp/vovis/test
 COPY third_party /tmp/vovis/third_party
 COPY CMakeLists.txt /tmp/vovis
@@ -47,4 +47,4 @@ RUN cmake .. && cmake --build . -- -j4
 
 USER mpi
 
-CMD ["/bin/bash"]
+CMD ["./server/VovisRenderer", "--datasets", "/home/mpi/configs/datasets-for-docker.json", "--configures", "/home/mpi/configs/configures.json"]

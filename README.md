@@ -12,7 +12,7 @@ To build and bundle the frontend files, you need
 # Build
 Build server renderer
 ``` shell
-cd ParallelRenderer
+cd voxer
 mkdir build
 cd build
 cmake ..
