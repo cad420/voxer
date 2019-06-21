@@ -1,13 +1,15 @@
+cmake_minimum_required(VERSION 3.12)
+
 find_package(ospray REQUIRED)
 find_package(Poco REQUIRED COMPONENTS Net Util)
 find_package(MPI REQUIRED)
 find_package(VTK REQUIRED COMPONENTS vtkRenderingVolumeOpenGL2 vtkIOImage)
-find_package(TBB REQUIRED)
 include(${VTK_USE_FILE})
 
 file(GLOB_RECURSE VOXER_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
-add_library(voxer STATIC ${VOXER_SRCS})
+add_library(voxer STATIC)
+target_sources(voxer PRIVATE ${VOXER_SRCS})
 target_include_directories(voxer
   PUBLIC
     ${OSPRAY_INCLUDE_DIRS}
@@ -21,7 +23,6 @@ target_link_libraries(voxer
     ${OSPRAY_LIBRARY}
   PRIVATE
     ${VTK_LIBRARIES}
-    ${TBB_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
     ${Poco_LIBRARIES}
 )

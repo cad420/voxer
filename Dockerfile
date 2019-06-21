@@ -4,7 +4,7 @@ ARG build_parallel
 
 USER root
 
-RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list && apt-get update
+RUN sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list && apt-get update
 RUN apt-get install -y \
             libgl1-mesa-dev \
             libglew-dev \
@@ -45,6 +45,4 @@ COPY CMakeLists.txt /tmp/vovis
 WORKDIR /tmp/vovis/build
 RUN cmake .. && cmake --build . -- -j4
 
-USER mpi
-
-CMD ["./server/VovisRenderer", "--datasets", "/home/mpi/configs/datasets-for-docker.json", "--configures", "/home/mpi/configs/configures.json"]
+CMD ["./server/VovisRenderer", "--datasets", "/home/mpi/configs/datasets-for-docker.json"]

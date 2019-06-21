@@ -1,5 +1,9 @@
-cmake_minimum_required(VERSION 3.1)
-project(voxer_service CXX)
+cmake_minimum_required(VERSION 3.12)
+
+project(VoxerSevice
+  LANGUAGES CXX
+  VERSION 0.0.1
+)
 
 set(default_build_type "Release")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -10,7 +14,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
+# list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
 
 add_subdirectory(voxer)
 add_subdirectory(server)

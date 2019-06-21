@@ -1,6 +1,7 @@
-add_executable(
-  Test
-  ${CMAKE_CURRENT_SOURCE_DIR}/test.cpp
+add_executable(Test)
+target_sources(Test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/test.cpp
 )
 target_include_directories(Test
   PRIVATE
@@ -10,42 +11,6 @@ target_include_directories(Test
     ${PROJECT_SOURCE_DIR}
 )
 target_link_libraries(Test
-  PRIVATE
-    VOVIS_LIB
+  PRIVATE voxer
 )
 target_compile_features(Test PRIVATE cxx_std_11)
-
-add_executable(
-  TestSimple
-  ${CMAKE_CURRENT_SOURCE_DIR}/1.cpp
-)
-target_include_directories(TestSimple
-  PRIVATE
-    ${OSPRAY_INCLUDE_DIRS}
-    ${MPI_CXX_INCLUDE_PATH}
-    ${PROJECT_SOURCE_DIR}
-)
-target_link_libraries(TestSimple
-  PRIVATE
-    ${OSPRAY_LIBRARY}
-    ${TBB_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-)
-target_compile_features(TestSimple PRIVATE cxx_std_11)
-
-# add_executable(
-#   test_slice
-#   ${CMAKE_CURRENT_SOURCE_DIR}/1.cpp
-# )
-# target_include_directories(test_slice
-#   PRIVATE
-#     ${OSPRAY_INCLUDE_DIRS}
-#     ${MPI_CXX_INCLUDE_PATH}
-#     ${PROJECT_SOURCE_DIR}
-# )
-# target_link_libraries(test_slice
-#   PRIVATE
-#     Catch2::Catch
-#     VOVIS_LIB
-# )
-# target_compile_features(TestSimple PRIVATE cxx_std_11)

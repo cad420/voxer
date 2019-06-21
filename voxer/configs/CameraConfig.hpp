@@ -7,7 +7,7 @@
 struct CameraConfig {
   std::string type;
   ospcommon::vec3f pos, up, dir;
-  CameraConfig(){};
+  CameraConfig() = default;
   CameraConfig(const rapidjson::Value &params);
   CameraConfig(const CameraConfig &exist,
                const std::map<std::string, std::string> &params);

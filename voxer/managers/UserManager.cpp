@@ -33,6 +33,7 @@ void User::load(string id) {
             OSP_DATA_SHARED_BUFFER);
   data.commit();
   volume.set("voxelData", data);
+  volume.commit();
 
   this->volumes.emplace(id, volume);
 }
