@@ -17,11 +17,40 @@ using Poco::Net::HTTPServerRequest;
 using Poco::Net::HTTPServerResponse;
 using Poco::Net::WebSocket;
 using Poco::Net::WebSocketException;
+using Poco::Net::NetException;
 using Poco::Util::Application;
 
 extern ConfigManager configs;
 extern ConfigManager configs;
 extern Encoder encoder;
+
+void handleRequestFromEmbeddedView(WebSocket &ws, rapidjson::Document &d) {
+  if (!d.HasMember("params") || !d["params"].IsObject()) {
+    string msg = "Invalid params";
+    ws.sendFrame(msg.data(), msg.size());
+    return;
+  }
+
+  auto params = d["params"].GetObject();
+  auto savedParams = configs.get(d["id"].GetString());
+  auto config = configs.create(d["params"]);
+
+  unique_ptr<Renderer> renderer;
+  auto isRGBA = true;
+  if (config.volumesToRender.size() > 1) {
+    renderer.reset(new VTKRenderer());
+    isRGBA = false;
+  } else {
+    renderer.reset(new OSPRayRenderer());
+  }
+  auto data = renderer->render(config);
+  auto img = encoder.encode(data, config.size, "JPEG", isRGBA);
+  ws.sendFrame(img.data(), img.size(), WebSocket::FRAME_BINARY);
+}
+
+void handleRequestFromConfigView() {
+
+}
 
 void WebSocketRequestHandler::handleRequest(HTTPServerRequest &request,
                                             HTTPServerResponse &response) {
@@ -34,8 +63,9 @@ void WebSocketRequestHandler::handleRequest(HTTPServerRequest &request,
     int n;
     do {
       n = ws.receiveFrame(buffer, sizeof(buffer), flags);
-      if (n <= 0)
+      if (n <= 0) {
         continue;
+      }
       if ((flags & WebSocket::FRAME_OP_BITMASK) == WebSocket::FRAME_OP_PING) {
         ws.sendFrame(buffer, n, WebSocket::FRAME_OP_PONG);
       }

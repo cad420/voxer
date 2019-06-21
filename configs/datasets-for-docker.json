@@ -1,0 +1,28 @@
+[
+  {
+    "name": "heptane",
+    "path": "/home/mpi/datasets/csafe-heptane-302-volume/csafe-heptane-302-volume.raw",
+    "dimensions": [302, 302, 302],
+    "dtype": "uchar"
+  },
+  {
+    "name": "tooth",
+    "path": "/home/mpi/datasets/TOOTH_8bit_128_128_160/TOOTH_8bit_128_128_160.raw",
+    "dimensions": [128, 128, 160],
+    "dtype": "uchar"
+  },
+  {
+    "name": "lsabel",
+    "path": "/home/mpi/datasets/lsabel_8bit_500_500_100/Pf/Pf[step].bin",
+    "dimensions": [500, 500, 100],
+    "dtype": "uchar",
+    "variable": "Pf",
+    "timesteps": 5
+  },
+  {
+    "name": "vismale",
+    "path": "/home/mpi/datasets/vismale/vismale.raw",
+    "dimensions": [128, 256, 256],
+    "dtype": "uchar"
+  }
+]

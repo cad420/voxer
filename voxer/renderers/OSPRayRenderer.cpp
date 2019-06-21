@@ -1,4 +1,4 @@
-#include "voxer//utils/Debugger.hpp"
+#include "voxer/utils/Debugger.hpp"
 #include "voxer/configs/CameraConfig.hpp"
 #include "voxer/configs/TransferFunctionConfig.hpp"
 #include "voxer/managers/UserManager.hpp"

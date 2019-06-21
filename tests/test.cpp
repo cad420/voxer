@@ -1,10 +1,12 @@
-#include "voxer/ConfigManager.h"
-#include "voxer/DatasetManager.h"
-#include "voxer/Encoder.h"
-#include "voxer/Renderer.h"
-#include "voxer/UserManager.h"
-#include "voxer/util/Debugger.h"
 #include "third_party/rapidjson/document.h"
+#include "voxer/encoders/Encoder.hpp"
+#include "voxer/managers/ConfigManager.hpp"
+#include "voxer/managers/DatasetManager.hpp"
+#include "voxer/managers/UserManager.hpp"
+#include "voxer/renderers/Renderer.hpp"
+#include "voxer/utils/Debugger.hpp"
+#define CATCH_CONFIG_RUNNER
+#include "third_party/catch.hpp"
 #include <fstream>
 
 using namespace std;
@@ -37,28 +39,56 @@ void render() {
   debug.log("saved");
 }
 
+unsigned int Factorial( unsigned int number ) {
+    return number <= 1 ? number : Factorial(number-1)*number;
+}
+
+
+TEST_CASE( "Factorials are computed", "[factorial]" ) {
+    REQUIRE( Factorial(1) == 1 );
+    REQUIRE( Factorial(2) == 2 );
+    REQUIRE( Factorial(3) == 6 );
+    REQUIRE( Factorial(10) == 3628800 );
+}
+// TEST_CASE("Test basic rendering", "[rendering]") {
+//   render();
+//   cout << 1 << endl;
+//   REQUIRE(1 == 1);
+// }
+
 int main(int argc, const char **argv) {
-  string datasetFile = "/home/ukabuer/workspace/vovis/configs/datasets.json";
   OSPError init_error = ospInit(&argc, argv);
+
   if (argc < 2) {
-    cout << "Usage: Test /path/to/config.json" << endl;
+    cout << "Usage: " << argv[0]
+         << " /path/to/dataset.json /path/to/config.json" << endl;
     return 1;
   }
 
-  string configureFile = argv[1];
+  if (argc < 3) {
+    cout << "Usage: " << argv[0]
+         << " /path/to/dataset.json /path/to/config.json" << endl;
+    return 1;
+  }
+
+  string datasetFile = argv[1];
+  string configureFile = argv[2];
+  Catch::Session session;
+  auto ret = session.applyCommandLine( argc, argv );
+    if (ret) {
+        return ret;
+    }
   try {
     datasets.load(datasetFile);
     configs.load(configureFile);
-    auto& user = users.get("tester");
+    auto &user = users.get("tester");
     user.load("heptane");
-    user.load("lsabel-TCf-05");
-    user.load("lsabel-Pf-05");
     debug.log("loaded");
-    for (int i = 0; i < 2; i++)
-      render();
+
+    int result = session.run();
   } catch (string err) {
     cout << "error: " << err << endl;
-  } catch (const char* err) {
+  } catch (const char *err) {
     cout << "error: " << err << endl;
   }
   return 0;

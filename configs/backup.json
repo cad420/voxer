@@ -1,0 +1,70 @@
+[
+  {
+    "name": "heptane",
+    "path": "/run/media/ukabuer/B6A8919FA8915F25/csafe-heptane-302-volume/csafe-heptane-302-volume.raw",
+    "dimensions": [302, 302, 302],
+    "dtype": "uchar"
+  },
+  {
+    "name": "tooth",
+    "path": "/run/media/ukabuer/B6A8919FA8915F25/TOOTH_8bit_128_128_160/TOOTH_8bit_128_128_160.raw",
+    "dimensions": [128, 128, 160],
+    "dtype": "uchar"
+  },
+  {
+    "name": "lsabel",
+    "path": "/run/media/ukabuer/B6A8919FA8915F25/lsabel_8bit_500_500_100/Pf/Pf[step].bin",
+    "dimensions": [500, 500, 100],
+    "dtype": "uchar",
+    "variable": "Pf",
+    "timesteps": 5
+  },
+  {
+    "name": "lsabel",
+    "path": "/run/media/ukabuer/B6A8919FA8915F25/lsabel_8bit_500_500_100/TCf/TCf[step].bin",
+    "dimensions": [500, 500, 100],
+    "dtype": "uchar",
+    "variable": "TCf",
+    "timesteps": 5
+  },
+  {
+    "name": "pv_insitu",
+    "path": "/run/media/ukabuer/B6A8919FA8915F25/pv_insitu_300x300x300_27262/v02.raw",
+    "dimensions": [300, 300, 300],
+    "dtype": "uchar",
+    "variable": "v02"
+  },
+  {
+    "name": "pv_insitu",
+    "path": "/run/media/ukabuer/B6A8919FA8915F25/pv_insitu_300x300x300_27262/snd.raw",
+    "dimensions": [300, 300, 300],
+    "dtype": "uchar",
+    "variable": "snd"
+  },
+  {
+    "name": "pv_insitu",
+    "path": "/run/media/ukabuer/B6A8919FA8915F25/pv_insitu_300x300x300_27262/tev.raw",
+    "dimensions": [300, 300, 300],
+    "dtype": "uchar",
+    "variable": "tev"
+  },
+  {
+    "name": "pv_insitu",
+    "path": "/run/media/ukabuer/B6A8919FA8915F25/pv_insitu_300x300x300_27262/prs.raw",
+    "dimensions": [300, 300, 300],
+    "dtype": "uchar",
+    "variable": "prs"
+  },
+  {
+    "name": "vismale",
+    "path": "/run/media/ukabuer/B6A8919FA8915F25/vismale/vismale.raw",
+    "dimensions": [128, 256, 256],
+    "dtype": "uchar"
+  },
+  {
+    "name": "marmoset_neurons",
+    "path": "/run/media/ukabuer/B6A8919FA8915F25/marmoset_neurons_1024x1024x314_uint8/marmoset_neurons_1024x1024x314_uint8.raw",
+    "dimensions": [1024, 1024, 314],
+    "dtype": "uchar"
+  }
+]

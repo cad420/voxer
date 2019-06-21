@@ -12,6 +12,6 @@ target_include_directories(VoxerServer
     ${PROJECT_SOURCE_DIR}/third_party/
 )
 target_link_libraries(VoxerServer
-  PRIVATE voxer
+  PRIVATE voxer ${VTK_LIBRARIES}
 )
 target_compile_features(VoxerServer PRIVATE cxx_std_11)

@@ -20,7 +20,6 @@
 
 using namespace std;
 using ospcommon::vec2i;
-using Poco::format;
 using Poco::Net::HTTPRequestHandler;
 using Poco::Net::HTTPRequestHandlerFactory;
 using Poco::Net::HTTPServer;
@@ -44,8 +43,7 @@ public:
     Application &app = Application::instance();
     app.logger().information("Request from " +
                              request.clientAddress().toString() + ": " +
-                             request.getMethod() + " " + request.getURI() +
-                             " " + request.getVersion());
+                             request.getMethod() + " " + request.getURI());
     if (request.find("Upgrade") != request.end() &&
         Poco::icompare(request["Upgrade"], "websocket") == 0) {
       return new WebSocketRequestHandler();
