@@ -7,7 +7,6 @@ target_include_directories(Test
   PRIVATE
     ${OSPRAY_INCLUDE_DIRS}
     ${MPI_CXX_INCLUDE_PATH}
-    ${POCO_INCLUDE_PATH}
     ${PROJECT_SOURCE_DIR}
 )
 target_link_libraries(Test

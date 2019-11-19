@@ -1,0 +1,32 @@
+add_library(voxer STATIC)
+
+file(GLOB_RECURSE VOXER_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+target_sources(voxer PRIVATE ${VOXER_SRCS})
+
+find_package(ospray REQUIRED)
+find_package(MPI REQUIRED)
+
+target_include_directories(voxer
+  PUBLIC
+    ${OSPRAY_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}/include
+  PRIVATE
+    ${MPI_CXX_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}
+)
+
+target_link_libraries(voxer
+  PUBLIC
+    ${OSPRAY_LIBRARY}
+  PRIVATE
+    ${MPI_CXX_LIBRARIES}
+)
+
+if (VOXER_USE_GPU)
+    find_package(VTK REQUIRED COMPONENTS vtkRenderingVolumeOpenGL2 vtkIOImage)
+    include(${VTK_USE_FILE})
+    target_link_libraries(voxer PRIVATE ${VTK_LIBRARIES})
+endif()
+
+target_compile_features(voxer PRIVATE cxx_std_14)
