@@ -1,9 +1,10 @@
 #include "third_party/rapidjson/document.h"
-#include "voxer/encoders/Encoder.hpp"
-#include "voxer/managers/ConfigManager.hpp"
-#include "voxer/managers/DatasetManager.hpp"
-#include "voxer/managers/UserManager.hpp"
-#include "voxer/renderers/Renderer.hpp"
+#include <voxer/ImageEncoder.hpp>
+#include <voxer/ConfigManager.hpp>
+#include <voxer/DatasetManager.hpp>
+#include <voxer/UserManager.hpp>
+#include <voxer/OSPRayRenderer.hpp>
+#include <voxer/VTKRenderer.hpp>
 #include "voxer/utils/Debugger.hpp"
 #define CATCH_CONFIG_RUNNER
 #include "third_party/catch.hpp"

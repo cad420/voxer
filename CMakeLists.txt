@@ -15,7 +15,7 @@ list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
 
 add_subdirectory(src)
 
-set(VOXER_BUILD_SERVER True CACHE BOOL "whether to build voxer server")
+set(VOXER_BUILD_SERVER TRUE CACHE BOOL "whether to build voxer server")
 if (VOXER_BUILD_SERVER)
   add_subdirectory(apps/server)
 endif()

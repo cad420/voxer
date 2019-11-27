@@ -1,3 +1,11 @@
+add_executable(voxer-server)
+target_sources(voxer-server
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/DatasetManager.cpp
+)
+
+find_package(simdjson CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 find_library(
@@ -14,11 +22,6 @@ find_path(UWEBSOCKET_INCLUDE_DIR
   HINTS ${USOCKETS_DIR}/include
 )
 
-add_executable(voxer-server)
-target_sources(voxer-server
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-)
 target_include_directories(voxer-server
   PRIVATE
     ${USOCKET_INCLUDEP_DIR}
@@ -31,5 +34,6 @@ target_link_libraries(voxer-server
     Threads::Threads
     ZLIB::ZLIB
     ${USOCKET_LIBRARY}
+    simdjson::simdjson
 )
 target_compile_features(voxer-server PRIVATE cxx_std_17)

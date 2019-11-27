@@ -1,6 +1,17 @@
 add_library(voxer STATIC)
 
-file(GLOB_RECURSE VOXER_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+list(APPEND VOXER_SRCS
+  ${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/OSPRayRenderer.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/utils/Debugger.cpp
+)
+
+if (VOXER_ENABLE_GPU)
+  list(APPPEND VOXER_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/VTKRenderer.cpp
+  )
+endif()
+
 target_sources(voxer PRIVATE ${VOXER_SRCS})
 
 find_package(ospray REQUIRED)

@@ -8,9 +8,11 @@ static const char *DEBUG = getenv("DEBUG");
 static const bool DEBUG_MODE = DEBUG != nullptr;
 
 namespace voxer {
+
 void Debugger::log(string info) {
   if (!DEBUG_MODE)
     return;
   cout << this->name << ": " << info << endl;
 }
+
 }
