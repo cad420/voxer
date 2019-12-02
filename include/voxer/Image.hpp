@@ -15,9 +15,12 @@ struct Image {
 
   enum class Quality : uint8_t { HIGH = 1, MEDIUM, LOW };
 
-  static Image encode(uint8_t *data, uint32_t width, uint32_t height,
+  static Image encode(const uint8_t *data, uint32_t width, uint32_t height,
                       uint8_t channels, Image::Format format,
-                      Image::Quality quality);
+                      Image::Quality quality = Image::Quality::MEDIUM);
+
+  static Image encode(const Image &image, Image::Format format,
+                      Image::Quality Quality = Image::Quality::MEDIUM);
 };
 
 }; // namespace voxer

@@ -10,12 +10,12 @@ namespace voxer {
 
 class Renderer {
 public:
-  Renderer() {}
+  Renderer() = default;
   Renderer(const Renderer &) = delete;
   Renderer &operator=(const Renderer &) = delete;
 
-  virtual Image render(const Scene &scene, const Camera &camera) = 0;
-  virtual ~Renderer() {}
+  virtual Image render(const Scene &scene) = 0;
+  virtual ~Renderer() = default;
 };
 
 } // namespace voxer

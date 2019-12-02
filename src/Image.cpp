@@ -11,7 +11,7 @@
 using namespace std;
 
 namespace voxer {
-  
+
 static Debugger debug("encoder");
 
 static void _encode(void *context, void *data, int size) {
@@ -22,7 +22,7 @@ static void _encode(void *context, void *data, int size) {
   }
 }
 
-Image Image::encode(uint8_t *data, uint32_t width, uint32_t height,
+Image Image::encode(const uint8_t *data, uint32_t width, uint32_t height,
                     uint8_t channels, Image::Format format,
                     Image::Quality quality) {
   if (format != Image::Format::JPEG) {
@@ -45,6 +45,16 @@ Image Image::encode(uint8_t *data, uint32_t width, uint32_t height,
   debug.log(to_string(delta.count()) + " ms");
 
   return image;
+}
+
+Image Image::encode(const Image &image, Image::Format format,
+                    Image::Quality quality) {
+  if (image.format != Image::Format::JPEG) {
+    return image;
+  }
+
+  return encode(image.data.data(), image.width, image.height, image.channels,
+                format, quality);
 }
 
 } // namespace voxer

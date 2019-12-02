@@ -1,19 +1,20 @@
 #pragma once
 #include <simdjson/jsonparser.h>
 #include <string>
+#include <variant>
+#include <voxer/Scene.hpp>
 
 struct Command {
-  enum class Type { Render, Save };
+  enum class Type { Render, Save, Query };
 
-  Type type;
-}
+  Type type = Type::Render;
+  std::variant<voxer::Scene, std::nullptr_t> params = nullptr;
+};
 
 class CommandParser {
 public:
-  CommandParser();
-  ~CommandParser();
-  Command parse(const char *value, unsigned long long size);
-  Command parse(const std::string &value);
+  auto parse(const std::string &value) -> Command;
+  auto parse(const char *value, uint64_t size) -> Command;
 
 private:
   simdjson::ParsedJson pj;

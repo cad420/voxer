@@ -15,18 +15,22 @@ static Debugger debug("renderer");
 class OSPRayRenderer::Impl {
 public:
   Impl();
-  Image render(const Scene &scene, const Camera &camera);
+  Image render(const Scene &scene);
 };
 
 OSPRayRenderer::OSPRayRenderer() {
   this->impl = make_unique<OSPRayRenderer::Impl>();
 }
 
-Image OSPRayRenderer::render(const Scene &scene, const Camera &camera) {
-  return this->impl->render(scene, camera);
+Image OSPRayRenderer::render(const Scene &scene) {
+  return this->impl->render(scene);
 };
 
-Image OSPRayRenderer::Impl::render(const Scene &scene, const Camera &camera) {
+OSPRayRenderer::Impl::Impl() {
+  // initialize ospray
+}
+
+Image OSPRayRenderer::Impl::render(const Scene &scene) {
   auto start = chrono::steady_clock::now();
 
   OSPModel model;
@@ -147,6 +151,7 @@ Image OSPRayRenderer::Impl::render(const Scene &scene, const Camera &camera) {
 
   lights.push_back(oLight);
 
+  auto &camera = scene.camera;
   auto osp_camera = ospNewCamera("perspective");
   ospSet1f(osp_camera, "aspect",
            camera.width / static_cast<float>(camera.height));

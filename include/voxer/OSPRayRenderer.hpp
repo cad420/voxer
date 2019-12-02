@@ -7,7 +7,7 @@ namespace voxer {
 class OSPRayRenderer : public Renderer {
 public:
   OSPRayRenderer();
-  Image render(const Scene &scene, const Camera &camera) override;
+  Image render(const Scene &scene) override;
 
 private:
   class Impl;
