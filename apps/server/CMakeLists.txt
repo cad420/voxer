@@ -1,9 +1,9 @@
-add_executable(voxer-server)
+add_executable(voxer-server PipelineStore.cpp PipelineStore.hpp)
 target_sources(voxer-server
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/CommandParser.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/DatasetManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/DatasetStore.cpp
         )
 
 find_package(simdjson CONFIG REQUIRED)
@@ -38,6 +38,5 @@ target_link_libraries(voxer-server
         ${USOCKET_LIBRARY}
         simdjson::simdjson
         fmt::fmt
-        fmt::fmt-header-only
         )
 target_compile_features(voxer-server PRIVATE cxx_std_17)

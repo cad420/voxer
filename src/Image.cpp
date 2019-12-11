@@ -14,9 +14,9 @@ namespace voxer {
 
 static Debugger debug("encoder");
 
-static void _encode(void *context, void *data, int size) {
+static inline void _encode(void *context, void *data, int size) {
   auto buf = reinterpret_cast<vector<unsigned char> *>(context);
-  auto res = (unsigned char *)data;
+  auto res = reinterpret_cast<unsigned char *>(data);
   for (auto i = 0; i < size; i++) {
     buf->push_back(*(res + i));
   }
@@ -34,10 +34,9 @@ Image Image::encode(const uint8_t *data, uint32_t width, uint32_t height,
   Image image{width, height, channels, format};
   image.data.reserve(width * height * channels);
 
-  auto qualityValue = static_cast<int>(quality);
-  assert(qualityValue >= 0 && qualityValue <= 3);
-
-  tje_encode_with_func(_encode, &image.data, qualityValue, width, height,
+  auto quality_value = static_cast<int>(quality);
+  assert(quality_value >= 0 && quality_value <= 3);
+  tje_encode_with_func(_encode, &image.data, quality_value, width, height,
                        channels, data);
 
   const auto delta = chrono::duration_cast<chrono::milliseconds>(
@@ -49,7 +48,7 @@ Image Image::encode(const uint8_t *data, uint32_t width, uint32_t height,
 
 Image Image::encode(const Image &image, Image::Format format,
                     Image::Quality quality) {
-  if (image.format != Image::Format::JPEG) {
+  if (image.format == Image::Format::JPEG) {
     return image;
   }
 

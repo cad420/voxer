@@ -4,15 +4,17 @@
 #include <string>
 
 namespace voxer {
+
 struct Camera {
   enum class Type {
     PERSPECTIVE,
   };
-  uint8_t width;
-  uint8_t height;
+  uint32_t width = 0;
+  uint32_t height = 0;
   Type type = Type::PERSPECTIVE;
-  std::array<float, 3> pos;
-  std::array<float, 3> up;
-  std::array<float, 3> dir;
+  std::array<float, 3> pos = {0.0f, 0.0f, 0.1f};
+  std::array<float, 3> up = {0.0f, 1.0f, 0.0f};
+  std::array<float, 3> dir = {0.0f, 0.0f, -1.0f};
 };
+
 } // namespace voxer

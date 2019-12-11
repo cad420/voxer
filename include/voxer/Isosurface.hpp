@@ -5,8 +5,8 @@
 namespace voxer {
 
 struct Isosurface {
-  float value;
-  std::shared_ptr<Volume> volume;
+  float value = 0.0f;
+  int32_t volume_idx = -1;
 };
 
 } // namespace voxer

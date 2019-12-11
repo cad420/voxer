@@ -6,8 +6,8 @@
 namespace voxer {
 
 struct Slice {
-  std::shared_ptr<Volume> volume;
-  std::array<float, 4> coef;
+  std::array<float, 4> coef = {0.0f, 0.0f, 0.0f, 0.0f};
+  int32_t volume_idx = -1;
 };
 
 } // namespace voxer

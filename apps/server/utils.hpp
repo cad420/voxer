@@ -1,8 +1,10 @@
 #pragma once
+#include "DatasetStore.hpp"
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <stdexcept>
 #include <string_view>
+#include <voxer/Dataset.hpp>
 
 class JSON_error : public std::runtime_error {
 public:
@@ -11,38 +13,14 @@ public:
                            ".") {}
 };
 
-namespace fmt {
-template <> struct formatter<voxer::DatasetVariable> {
-  template <typename ParseContext> constexpr auto parse(ParseContext &ctx) {
-    return ctx.begin();
-  }
+inline auto hex_color_to_float(const std::string &str) -> std::array<float, 3> {
+  auto value = std::stoul(str.substr(1), nullptr, 16);
 
-  template <typename FormatContext>
-  auto format(const voxer::DatasetVariable &variable, FormatContext &ctx) {
-    return format_to(ctx.out(), R"({{"name": "{}","timesteps":{}}})",
-                     variable.name.c_str(), variable.timesteps.size());
-  }
-};
+  std::array<float, 3> color = {
+      static_cast<float>((value >> 16) & 0xFF) / 255.0f,
+      static_cast<float>((value >> 8) & 0xFF) / 255.0f,
+      static_cast<float>(value & 0xFF) / 255.0f,
+  };
 
-template <> struct formatter<voxer::Dataset> {
-  template <typename ParseContext> constexpr auto parse(ParseContext &ctx) {
-    return ctx.begin();
-  }
-
-  template <typename FormatContext>
-  auto format(const voxer::Dataset &dataset, FormatContext &ctx) {
-    std::string variables = "[";
-    for (const auto &it : dataset.variables) {
-      const auto &variable = it.second;
-      variables += fmt::to_string(variable);
-      variables += ",";
-    }
-    variables[variables.find_last_of(',')] = ']';
-    return format_to(
-        ctx.out(),
-        R"({{"name": "{}","type":"{}","dimensions":[{}],"variables":{}}})",
-        dataset.name, dataset.type, fmt::join(dataset.dimensions, ","),
-        variables);
-  }
-};
-} // namespace fmt
+  return color;
+}

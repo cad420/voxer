@@ -1,25 +1,24 @@
 #pragma once
 #include <array>
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 
 namespace voxer {
 
-using Buffer = std::vector<uint8_t>;
+struct Dataset;
+enum class DatasetValueType { FLOAT, UCHAR };
 
-struct DatasetVariable {
-  std::string name;
-  std::vector<Buffer> timesteps;
+struct FieldInfo {
+  std::array<uint32_t, 3> dimensions = {0, 0, 0};
+  DatasetValueType type = {DatasetValueType::UCHAR};
+  uint8_t type_size = sizeof(uint8_t);
 };
 
 struct Dataset {
-  std::string name;
-  std::map<std::string, DatasetVariable> variables;
-  std::array<uint32_t, 3> dimensions;
-  enum class ValueType { FLOAT, UCHAR };
-  ValueType type = ValueType::UCHAR;
-  uint8_t type_size = sizeof(uint8_t);
+  FieldInfo meta = {};
+  std::vector<uint8_t> buffer = {};
 };
 
 } // namespace voxer

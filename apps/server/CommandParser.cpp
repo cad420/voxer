@@ -2,25 +2,63 @@
 #include "utils.hpp"
 #include <iostream>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <voxer/TransferFunction.hpp>
 
 using namespace voxer;
 using namespace std;
 
-static auto color_hex_to_floats(const string &str) -> std::array<float, 3> {}
+static inline auto is_number(const simdjson::ParsedJson::Iterator &pjh)
+    -> bool {
+  return (pjh.is_double() || pjh.is_integer());
+}
 
-static auto parse_dataset(simdjson::ParsedJson::Iterator &pjh)
-    -> unique_ptr<Dataset> {
-  auto dataset = make_unique<Dataset>();
+static inline auto get_number(const simdjson::ParsedJson::Iterator &pjh)
+    -> float {
+  if (pjh.is_integer()) {
+    return static_cast<float>(pjh.get_integer());
+  }
+  return static_cast<float>(pjh.get_double());
+}
+
+static auto parse_dataset(simdjson::ParsedJson::Iterator &pjh,
+                          DatasetStore &datasets) -> const Dataset * {
+
   if (!pjh.move_to_key("type") || !pjh.is_string()) {
-    throw JSON_error("params.volumes[i].dataset.type", "object");
+    throw JSON_error("params.dataset[i].type", "string");
   }
   const string type = pjh.get_string();
+  pjh.up();
   if (type == "dataset") {
-  }
+    if (!pjh.move_to_key("name") || !pjh.is_string()) {
+      throw JSON_error("params.datasets[i].name", "string");
+    }
+    string name = pjh.get_string();
+    pjh.up();
 
-  return dataset;
+    string variable_name;
+    if (pjh.move_to_key("variable")) {
+      if (!pjh.is_string()) {
+        throw JSON_error("params.datasets[i].name", "string");
+      }
+      variable_name = pjh.get_string();
+      pjh.up();
+    }
+
+    uint32_t timestep = 0;
+    if (pjh.move_to_key("timestep")) {
+      if (!pjh.is_integer()) {
+        throw JSON_error("params.datasets[i].dataset.name", "string");
+      }
+      timestep = pjh.get_integer();
+      pjh.up();
+    }
+
+    return &(datasets.get(name, variable_name, timestep));
+  } else {
+    throw runtime_error("params.datasets not upport");
+  }
 }
 
 static auto parse_tfcn(simdjson::ParsedJson::Iterator &pjh)
@@ -36,27 +74,23 @@ static auto parse_tfcn(simdjson::ParsedJson::Iterator &pjh)
       throw JSON_error("params.volumes[i].tfcns[j][k]", "object");
     }
 
-    ControlPoint point{};
-
-    if (!pjh.move_to_key("x") || !pjh.is_double()) {
+    if (!pjh.move_to_key("x") || !is_number(pjh)) {
       throw JSON_error("params.volumes[i].tfcns[j][k].x", "double");
     }
-    point.stop = static_cast<float>(pjh.get_double());
+    tfcn.stops.emplace_back(get_number(pjh));
     pjh.up();
 
-    if (!pjh.move_to_key("y") || !pjh.is_double()) {
+    if (!pjh.move_to_key("y") || !is_number(pjh)) {
       throw JSON_error("params.volumes[i].tfcns[j][k].y", "double");
     }
-    point.opacity = static_cast<float>(pjh.get_double());
+    tfcn.opacities.emplace_back(get_number(pjh));
     pjh.up();
 
-    if (!pjh.move_to_key("color") || !pjh.is_double()) {
+    if (!pjh.move_to_key("color") || !pjh.is_string()) {
       throw JSON_error("params.volumes[i].tfcns[j][k].color", "double");
     }
-    point.color = color_hex_to_floats(pjh.get_string());
+    tfcn.colors.emplace_back(hex_color_to_float(pjh.get_string()));
     pjh.up();
-
-    tfcn.points.emplace_back(point);
   } while (pjh.next());
   pjh.up();
 
@@ -73,13 +107,13 @@ static auto parse_volume(simdjson::ParsedJson::Iterator &pjh) -> Volume {
   if (!pjh.move_to_key("dataset") || !pjh.is_integer()) {
     throw JSON_error("params.volumes[i].dataset", "integer");
   }
-  volume.dataset_id = pjh.get_integer();
+  volume.dataset_idx = pjh.get_integer();
   pjh.up();
 
   if (!pjh.move_to_key("tfcn") || !pjh.is_integer()) {
     throw JSON_error("params.volumes[i].tfcn", "integer");
   }
-  volume.tfcn_id = pjh.get_integer();
+  volume.tfcn_idx = pjh.get_integer();
   pjh.up();
 
   if (pjh.move_to_key("spacing")) {
@@ -87,13 +121,12 @@ static auto parse_volume(simdjson::ParsedJson::Iterator &pjh) -> Volume {
       throw JSON_error("params.volumes[i].spacing", "array");
     }
     for (size_t i = 0; i < 3; i++) {
-      if (!pjh.move_to_index(0) || !pjh.is_double()) {
+      if (!pjh.move_to_index(0) || !is_number(pjh)) {
         throw JSON_error("params.volumes[i].spacing[j]", "number");
       }
-      volume.spacing[i] = pjh.get_double();
+      volume.spacing[i] = get_number(pjh);
       pjh.up();
     }
-    pjh.up();
     pjh.up();
   }
 
@@ -107,10 +140,6 @@ static auto parse_volume(simdjson::ParsedJson::Iterator &pjh) -> Volume {
 }
 
 static auto parse_camera(simdjson::ParsedJson::Iterator &pjh) -> Camera {
-  if (!pjh.is_object()) {
-    throw JSON_error("params.camera", "object");
-  }
-
   Camera camera{};
 
   // TODO: maybe not perspective
@@ -130,16 +159,16 @@ static auto parse_camera(simdjson::ParsedJson::Iterator &pjh) -> Camera {
   const array<string, 3> indexes = {"pos", "dir", "up"};
   const array<array<float, 3> *, 3> targets = {&camera.pos, &camera.dir,
                                                &camera.up};
-  for (size_t i = 0; i < sizeof(indexes); i++) {
+  for (size_t i = 0; i < indexes.size(); i++) {
     string idx = indexes[i];
     if (!pjh.move_to_key(idx.c_str()) || !pjh.is_array()) {
       throw JSON_error("params.camera." + idx, "array");
     }
     for (size_t j = 0; j < 3; j++) {
-      if (!pjh.move_to_index(j) || !pjh.is_double()) {
+      if (!pjh.move_to_index(j) || !is_number(pjh)) {
         throw JSON_error("params.camera." + idx + "[i]", "number");
       }
-      (*targets[i])[j] = pjh.get_double();
+      (*targets[i])[j] = get_number(pjh);
       pjh.up();
     }
     pjh.up();
@@ -156,16 +185,16 @@ static auto parse_isosurface(simdjson::ParsedJson::Iterator &pjh)
 
   Isosurface isosurface{};
 
-  if (!pjh.move_to_key("value") || !pjh.is_double()) {
+  if (!pjh.move_to_key("value") || !is_number(pjh)) {
     throw JSON_error("params.isosurfaces[i].value", "number");
   }
-  isosurface.value = static_cast<float>(pjh.get_double());
+  isosurface.value = get_number(pjh);
   pjh.up();
 
   if (!pjh.move_to_key("volume") || !pjh.is_integer()) {
     throw JSON_error("params.isosurfaces[i].volume", "integer");
   }
-  isosurface.volume_id = pjh.get_integer();
+  isosurface.volume_idx = pjh.get_integer();
   pjh.up();
 
   return isosurface;
@@ -182,27 +211,27 @@ static auto parse_slice(simdjson::ParsedJson::Iterator &pjh) -> Slice {
     throw JSON_error("params.slices[i].coef", "array");
   }
   for (size_t i = 0; i < 4; i++) {
-    if (!pjh.move_to_index(i) || !pjh.is_double()) {
+    if (!pjh.move_to_index(i) || !is_number(pjh)) {
       throw JSON_error("params.slices[i].coef[j]", "double");
     }
-    slice.coef[i] = static_cast<float>(pjh.get_double());
+    slice.coef[i] = get_number(pjh);
   }
   pjh.up();
 
   if (!pjh.move_to_key("volume") || !pjh.is_integer()) {
     throw JSON_error("params.slices[i].volume", "integer");
   }
-  slice.volume_id = pjh.get_integer();
+  slice.volume_idx = pjh.get_integer();
   pjh.up();
 
   return slice;
 }
 
-static auto parse_scene(simdjson::ParsedJson::Iterator &pjh) -> Scene {
+static auto parse_scene(simdjson::ParsedJson::Iterator &pjh,
+                        DatasetStore &datasets) -> Scene {
   if (!pjh.is_object()) {
     throw JSON_error("params", "object");
   }
-  pjh.down();
 
   Scene scene{};
 
@@ -212,7 +241,7 @@ static auto parse_scene(simdjson::ParsedJson::Iterator &pjh) -> Scene {
   }
   pjh.down(); // into array
   do {
-    scene.datasets.emplace_back(parse_dataset(pjh));
+    scene.datasets.emplace_back(parse_dataset(pjh, datasets));
   } while (pjh.next());
   pjh.up(); // out of array
   pjh.up(); // back to {}
@@ -245,8 +274,8 @@ static auto parse_scene(simdjson::ParsedJson::Iterator &pjh) -> Scene {
   if (!pjh.move_to_key("camera") || !pjh.is_object()) {
     throw JSON_error("params.camera", "object");
   }
-  pjh.down(); // into camera: {}
   scene.camera = parse_camera(pjh);
+  pjh.up(); // back to {}
 
   // parse isosurfaces
   if (pjh.move_to_key("isosurfaces")) {
@@ -279,7 +308,12 @@ static auto parse_scene(simdjson::ParsedJson::Iterator &pjh) -> Scene {
   return scene;
 }
 
-Command CommandParser::parse(const char *value, uint64_t size) {
+Command CommandParser::parse(const char *value, uint64_t size,
+                             DatasetStore &datasets) {
+  if (!pj.allocate_capacity(size)) {
+    throw runtime_error("prepare parsing JSON failed");
+  }
+
   const int res = simdjson::json_parse(value, size, pj);
   if (res != 0) {
     std::cout << "Error parsing: " << simdjson::error_message(res) << std::endl;
@@ -294,16 +328,15 @@ Command CommandParser::parse(const char *value, uint64_t size) {
     throw JSON_error("root", "object");
   }
 
-  pjh.down();
-  if (!pjh.move_to_key("type")) {
+  if (!pjh.move_to_key("type") || !pjh.is_string()) {
     throw JSON_error("type", "string");
   }
-
   string_view command_type = pjh.get_string();
   pjh.up();
+
   pjh.move_to_key("params");
   if (command_type == "render") {
-    return {Command::Type::Render, parse_scene(pjh)};
+    return {Command::Type::Render, parse_scene(pjh, datasets)};
   }
 
   if (command_type == "query") {
@@ -313,6 +346,6 @@ Command CommandParser::parse(const char *value, uint64_t size) {
   throw runtime_error("invalid JSON: unknown command type");
 }
 
-Command CommandParser::parse(const std::string &value) {
-  return this->parse(value.data(), value.size());
+Command CommandParser::parse(const std::string &value, DatasetStore &datasets) {
+  return this->parse(value.data(), value.size(), datasets);
 }
