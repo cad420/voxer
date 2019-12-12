@@ -1,10 +1,10 @@
 #include "DatasetStore.hpp"
-#include "utils.hpp"
 #include <cassert>
 #include <fmt/core.h>
 #include <simdjson/jsonparser.h>
 #include <simdjson/simdjson.h>
 #include <stdexcept>
+#include <voxer/utils.hpp>
 
 using namespace std;
 using namespace voxer;

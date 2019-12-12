@@ -1,26 +1,30 @@
 #pragma once
-#include "DatasetStore.hpp"
-#include <fmt/core.h>
-#include <fmt/format.h>
-#include <stdexcept>
-#include <string_view>
-#include <voxer/Dataset.hpp>
+#include <random>
+#include <regex>
+#include <string>
 
-class JSON_error : public std::runtime_error {
-public:
-  JSON_error(const std::string &key, const std::string &excepted)
-      : std::runtime_error("invalid JSON: " + key + " should be " + excepted +
-                           ".") {}
-};
+inline auto nanoid(uint8_t size = 16) -> std::string {
+  static const char *url =
+      "ModuleSymbhasOwnPr-0123456789ABCDEFGHNRVfgctiUvz_KqYTJkLxpZXIjQW";
+  std::string id;
 
-inline auto hex_color_to_float(const std::string &str) -> std::array<float, 3> {
-  auto value = std::stoul(str.substr(1), nullptr, 16);
+  std::random_device engine;
+  for (size_t i = 0; i < size; i++) {
+    unsigned byte = engine();
+    id += url[byte & 63u];
+  }
 
-  std::array<float, 3> color = {
-      static_cast<float>((value >> 16) & 0xFF) / 255.0f,
-      static_cast<float>((value >> 8) & 0xFF) / 255.0f,
-      static_cast<float>(value & 0xFF) / 255.0f,
-  };
+  return id;
+}
 
-  return color;
+inline auto extract_params(const std::string &json) -> std::string {
+  std::regex params_regex(R"("params":\s*(\{[^]+\})[\s|\n]*\})",
+                          std::regex_constants::ECMAScript);
+  std::smatch match;
+  std::regex_search(json, match, params_regex);
+  if (match.empty()) {
+    return "";
+  }
+
+  return match[1];
 }

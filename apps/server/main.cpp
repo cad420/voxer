@@ -1,5 +1,6 @@
 #include "CommandParser.hpp"
 #include "DatasetStore.hpp"
+#include "PipelineStore.hpp"
 #include <fmt/format.h>
 #include <iostream>
 #include <utility>
@@ -19,8 +20,13 @@ int main(int argc, const char **argv) {
   }
 
   // create data manager
+  PipelineStore pipelines;
   DatasetStore datasets;
   datasets.load_from_file(string(argv[1]));
+
+  if (argc >= 3) {
+    pipelines.load_from_file(argv[3]);
+  }
 
   // run server
   CommandParser parser;
@@ -33,7 +39,7 @@ int main(int argc, const char **argv) {
     cout << "connected " << endl;
   };
 
-  behavior.message = [&datasets, &parser,
+  behavior.message = [&datasets, &parser, &pipelines,
                       &renderer](uWS::WebSocket<false, true> *ws,
                                  std::string_view message, uWS::OpCode) {
     assert(ws->getUserData() != nullptr);
@@ -46,16 +52,33 @@ int main(int argc, const char **argv) {
       return;
     }
 
-    if (command.type == Command::Type::Render) {
+    switch (command.type) {
+    case Command::Type::Render: {
       const auto &scene = get<Scene>(command.params);
       auto image = renderer.render(scene);
       auto compressed = Image::encode(image, Image::Format::JPEG);
       auto size = compressed.data.size();
-      ws->send(
-          string_view(reinterpret_cast<char *>(compressed.data.data()), size),
-          uWS::OpCode::BINARY);
-    } else if (command.type == Command::Type::Query) {
+      ws->send(reinterpret_cast<char *>(compressed.data.data(), size),
+               uWS::OpCode::BINARY);
+      break;
+    }
+    case Command::Type::Query: {
       ws->send(datasets.print(), uWS::OpCode::TEXT);
+      break;
+    }
+    case Command::Type::RunPipeline: {
+      // TODO: handle run pipeline
+      ws->send(R"({"error": "not supported yet"})");
+      break;
+    }
+    case Command::Type::Save: {
+      auto save = get<pair<string, Scene>>(command.params);
+      auto id = pipelines.save(move(save));
+      ws->send(fmt::format(R"({{"command":"save","value": "{}"}})", id));
+      break;
+    }
+    default:
+      break;
     }
   };
 

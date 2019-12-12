@@ -1,9 +1,10 @@
-add_executable(voxer-server PipelineStore.cpp PipelineStore.hpp)
+add_executable(voxer-server)
 target_sources(voxer-server
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/CommandParser.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/DatasetStore.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/PipelineStore.cpp
         )
 
 find_package(simdjson CONFIG REQUIRED)

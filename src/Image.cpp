@@ -26,7 +26,7 @@ Image Image::encode(const uint8_t *data, uint32_t width, uint32_t height,
                     uint8_t channels, Image::Format format,
                     Image::Quality quality) {
   if (format != Image::Format::JPEG) {
-    throw domain_error("format not suppported!");
+    throw domain_error("currently only support JPEG format!");
   }
 
   auto start = chrono::steady_clock::now();
@@ -48,7 +48,7 @@ Image Image::encode(const uint8_t *data, uint32_t width, uint32_t height,
 
 Image Image::encode(const Image &image, Image::Format format,
                     Image::Quality quality) {
-  if (image.format == Image::Format::JPEG) {
+  if (image.format == format) {
     return image;
   }
 

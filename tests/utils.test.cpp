@@ -1,8 +1,9 @@
-#include "utils.hpp"
+#include <voxer/utils.hpp>
 #define CATCH_CONFIG_MAIN
 #include "third_party/catch.hpp"
 
 using namespace std;
+using namespace voxer;
 
 TEST_CASE("hex_color_to_float", "[conversion]") {
 

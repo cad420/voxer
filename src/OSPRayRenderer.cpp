@@ -13,14 +13,11 @@ static Debugger debug("renderer");
 
 OSPRayRenderer::OSPRayRenderer() {
   auto osp_device = ospNewDevice();
-  //  ospDeviceSet1i(osp_device, "logLevel", 2);
-  //  ospDeviceSetString(osp_device, "logOutput", "cout");
-  ospDeviceSetString(osp_device, "errorOutput", "cerr");
   ospDeviceCommit(osp_device);
   ospSetCurrentDevice(osp_device);
 }
 
-static auto render_impl(const Scene &scene) -> Image {
+auto OSPRayRenderer::render(const Scene &scene) -> Image {
   auto start = chrono::steady_clock::now();
 
   vector<OSPVolume> osp_volumes;
@@ -101,7 +98,6 @@ static auto render_impl(const Scene &scene) -> Image {
         ospSet3f(osp_volume, "volumeClippingBoxUpper", volume.clipBoxUpper[0],
                  volume.clipBoxUpper[1], volume.clipBoxUpper[2]);
         ospCommit(osp_volume);*/
-
     const auto &osp_volume = osp_volumes[idx];
     ospAddVolume(osp_model, osp_volume);
   }
@@ -193,10 +189,6 @@ static auto render_impl(const Scene &scene) -> Image {
   debug.log(to_string(delta.count()) + " ms");
 
   return image;
-}
-
-auto OSPRayRenderer::render(const Scene &scene) -> Image {
-  return render_impl(scene);
 }
 
 } // namespace voxer

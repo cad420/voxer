@@ -7,7 +7,7 @@ using namespace std;
 
 TEST_CASE("DatasetStore", "[init, print]") {
   DatasetStore datasets;
-  datasets.init(
+  datasets.load_from_file(
       "/home/ukabuer/workspace/voxer/tests//data_configs/datasets_new.json");
 
   string res =

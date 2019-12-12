@@ -1,10 +1,15 @@
 add_library(voxer STATIC)
 
 list(APPEND VOXER_SRCS
-  ${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/OSPRayRenderer.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils/Debugger.cpp
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}/OSPRayRenderer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Volume.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/TransferFunction.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Camera.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Isosurface.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Slice.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/utils/Debugger.cpp
+        )
 
 if (VOXER_ENABLE_GPU)
   list(APPPEND VOXER_SRCS
@@ -16,6 +21,7 @@ target_sources(voxer PRIVATE ${VOXER_SRCS})
 
 find_package(ospray REQUIRED)
 find_package(MPI REQUIRED)
+find_package(simdjson CONFIG REQUIRED)
 
 target_include_directories(voxer
   PUBLIC
@@ -29,8 +35,9 @@ target_include_directories(voxer
 
 target_link_libraries(voxer
   PUBLIC
-    ${OSPRAY_LIBRARY}
-  PRIVATE
+        ${OSPRAY_LIBRARY}
+        simdjson::simdjson
+        PRIVATE
     ${MPI_CXX_LIBRARIES}
 )
 

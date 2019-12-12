@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <memory>
+#include <simdjson/jsonparser.h>
 #include <string>
 #include <voxer/Dataset.hpp>
 #include <voxer/TransferFunction.hpp>
@@ -18,6 +19,9 @@ struct Volume {
   std::array<float, 3> clipBoxLower = {0.0f, 0.0f, 0.0f};
   std::array<float, 3> clipBoxUpper = {0.0f, 0.0f, 0.0f};
   bool render = false;
+
+  auto serialize() -> std::string;
+  static auto deserialize(simdjson::ParsedJson::Iterator &pjh) -> Volume;
 };
 
 } // namespace voxer
