@@ -1,4 +1,4 @@
-#include "voxer/Volume.hpp"
+#include "voxer/scene/Volume.hpp"
 #include "voxer/utils.hpp"
 
 using namespace std;

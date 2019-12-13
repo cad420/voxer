@@ -1,4 +1,4 @@
-#include "voxer/TransferFunction.hpp"
+#include "voxer/scene/TransferFunction.hpp"
 #include "voxer/utils.hpp"
 
 using namespace std;

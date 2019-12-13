@@ -4,7 +4,7 @@
 #include <simdjson/jsonparser.h>
 #include <string>
 #include <voxer/Dataset.hpp>
-#include <voxer/TransferFunction.hpp>
+#include <voxer/scene/TransferFunction.hpp>
 
 namespace voxer {
 

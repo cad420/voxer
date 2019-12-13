@@ -7,15 +7,16 @@ add_library(voxer STATIC)
 list(
     APPEND
     VOXER_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/DatasetStore.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/OSPRayRenderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Scene.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/SceneDataset.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Volume.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/TransferFunction.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Camera.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Isosurface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Slice.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Scene.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/SceneDataset.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Volume.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/TransferFunction.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Camera.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Isosurface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Slice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/Debugger.cpp
 )
 

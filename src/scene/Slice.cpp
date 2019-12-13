@@ -1,4 +1,4 @@
-#include "voxer/Slice.hpp"
+#include "voxer/scene/Slice.hpp"
 #include "voxer/utils.hpp"
 
 using namespace std;

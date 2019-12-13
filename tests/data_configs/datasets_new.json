@@ -10,11 +10,6 @@
     "variables": [
       {
         "name": "CTL_ImmunSynapse_centriole",
-        "path": "/home/ukabuer/Downloads/Volume/CTL_ImmunSynapse_seg/raw/CTL_ImmunSynapse_centriole[step].raw",
-        "timesteps": 3
-      },
-      {
-        "name": "CTL_ImmunSynapse_Golgi",
         "path": "/home/ukabuer/Downloads/Volume/CTL_ImmunSynapse_seg/raw/CTL_ImmunSynapse_centriole.raw",
         "timesteps": 1
       }

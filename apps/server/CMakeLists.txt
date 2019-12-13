@@ -4,7 +4,6 @@ target_sources(
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/CommandParser.cpp
-    ../../src/DatasetStore.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/PipelineStore.cpp
 )
 

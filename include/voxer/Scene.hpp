@@ -1,13 +1,13 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <voxer/Camera.hpp>
-#include <voxer/Isosurface.hpp>
-#include <voxer/Light.hpp>
-#include <voxer/SceneDataset.hpp>
-#include <voxer/Slice.hpp>
-#include <voxer/TransferFunction.hpp>
-#include <voxer/Volume.hpp>
+#include <voxer/scene/Camera.hpp>
+#include <voxer/scene/Isosurface.hpp>
+#include <voxer/scene/Light.hpp>
+#include <voxer/scene/SceneDataset.hpp>
+#include <voxer/scene/Slice.hpp>
+#include <voxer/scene/TransferFunction.hpp>
+#include <voxer/scene/Volume.hpp>
 
 namespace voxer {
 

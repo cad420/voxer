@@ -1,4 +1,4 @@
-#include "voxer/Isosurface.hpp"
+#include "voxer/scene/Isosurface.hpp"
 #include "voxer/utils.hpp"
 
 using namespace std;

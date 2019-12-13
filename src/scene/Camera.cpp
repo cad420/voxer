@@ -1,4 +1,4 @@
-#include "voxer/Camera.hpp"
+#include "voxer/scene/Camera.hpp"
 #include "voxer/utils.hpp"
 
 using namespace std;

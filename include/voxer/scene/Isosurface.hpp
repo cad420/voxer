@@ -1,6 +1,6 @@
 #pragma once
 #include <memory>
-#include <voxer/Volume.hpp>
+#include <voxer/scene/Volume.hpp>
 
 namespace voxer {
 

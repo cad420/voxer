@@ -1,4 +1,4 @@
-#include "voxer/SceneDataset.hpp"
+#include "voxer/scene/SceneDataset.hpp"
 #include "voxer/utils.hpp"
 
 using namespace std;
