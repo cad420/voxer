@@ -70,8 +70,17 @@ int main(int argc, const char **argv) {
       break;
     }
     case Command::Type::RunPipeline: {
-      // TODO: handle run pipeline
-      ws->send(R"({"error": "not supported yet"})");
+      auto save = get<pair<string, SceneModifier>>(command.params);
+
+      // merge params changes
+      auto &origin = pipelines.get(save.first);
+      auto scene = save.second(origin);
+      auto image = renderer.render(scene);
+      auto compressed = Image::encode(image, Image::Format::JPEG);
+      auto size = compressed.data.size();
+      ws->send(
+          string_view(reinterpret_cast<char *>(compressed.data.data()), size),
+          uWS::OpCode::BINARY);
       break;
     }
     case Command::Type::Save: {

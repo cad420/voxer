@@ -7,14 +7,16 @@
 #include <variant>
 #include <voxer/Scene.hpp>
 
+using SceneModifier = std::function<voxer::Scene(const voxer::Scene &)>;
+
 struct Command {
   enum class Type { Render, Save, Query, RunPipeline };
 
   Type type = Type::Render;
-  std::variant<voxer::Scene,                                      // for render
-               std::pair<std::string, voxer::Scene>,              // for save
-               std::function<voxer::Scene(const voxer::Scene &)>, // for run
-               std::nullptr_t                                     // for query
+  std::variant<voxer::Scene,                          // for render
+               std::pair<std::string, voxer::Scene>,  // for save
+               std::pair<std::string, SceneModifier>, // for run
+               std::nullptr_t                         // for query
                >
       params = nullptr;
 };
