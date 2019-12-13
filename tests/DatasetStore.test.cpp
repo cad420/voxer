@@ -1,4 +1,4 @@
-#include "DatasetStore.hpp"
+#include "voxer/DatasetStore.hpp"
 #define CATCH_CONFIG_MAIN
 #include "third_party/catch.hpp"
 #include <iostream>
@@ -6,7 +6,7 @@
 using namespace std;
 
 TEST_CASE("DatasetStore", "[init, print]") {
-  DatasetStore datasets;
+  voxer::DatasetStore datasets;
   datasets.load_from_file(
       "/home/ukabuer/workspace/voxer/tests//data_configs/datasets_new.json");
 

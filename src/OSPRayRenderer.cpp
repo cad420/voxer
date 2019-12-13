@@ -11,7 +11,8 @@ namespace voxer {
 
 static Debugger debug("renderer");
 
-OSPRayRenderer::OSPRayRenderer() {
+OSPRayRenderer::OSPRayRenderer(const DatasetStore &datasets)
+    : Renderer(datasets) {
   auto osp_device = ospNewDevice();
   ospDeviceCommit(osp_device);
   ospSetCurrentDevice(osp_device);
@@ -49,14 +50,15 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
     ospSet2f(osp_tfcn, "valueRange", 0.0f, 255.0f);
     ospCommit(osp_tfcn);
 
-    auto dataset = scene.datasets[volume.dataset_idx];
+    auto &scene_dataset = scene.datasets[volume.dataset_idx];
+    auto dataset = datasets.get(scene_dataset);
     auto osp_dataset =
-        ospNewData(dataset->buffer.size(), OSP_UCHAR,
-                   static_cast<const void *>(dataset->buffer.data()),
+        ospNewData(dataset.buffer.size(), OSP_UCHAR,
+                   static_cast<const void *>(dataset.buffer.data()),
                    OSP_DATA_SHARED_BUFFER);
     ospCommit(osp_dataset);
 
-    auto &meta = dataset->meta;
+    auto &meta = dataset.meta;
     auto &dimensions = meta.dimensions;
     auto osp_volume = ospNewVolume("shared_structured_volume");
     ospSet3i(osp_volume, "dimensions", dimensions[0], dimensions[1],

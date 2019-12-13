@@ -9,6 +9,8 @@ list(
     VOXER_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/OSPRayRenderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Scene.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/SceneDataset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Volume.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/TransferFunction.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Camera.cpp

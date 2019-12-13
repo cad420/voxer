@@ -5,6 +5,9 @@
 #include <simdjson/jsonparser.h>
 #include <string>
 #include <voxer/Dataset.hpp>
+#include <voxer/SceneDataset.hpp>
+
+namespace voxer {
 
 class DatasetStore {
   using TimestepLookUpTable = std::vector<uint32_t>;
@@ -12,9 +15,10 @@ class DatasetStore {
 
 public:
   void load_from_file(const std::string &filepath);
-  //  void load_from_json(const std::string &json);
+  void load_from_json(const char *json, uint32_t size);
   auto get(const std::string &name, const std::string &variable = "",
-           uint32_t timestep = 0) -> const voxer::Dataset &;
+           uint32_t timestep = 0) const -> const voxer::Dataset &;
+  auto get(const SceneDataset &scene_dataset) const -> const voxer::Dataset &;
   [[nodiscard]] auto print() const -> std::string;
 
 private:
@@ -22,3 +26,5 @@ private:
   std::vector<voxer::Dataset> datasets;
   std::map<std::string, VariableLookUpTable> lookup_table;
 };
+
+} // namespace voxer

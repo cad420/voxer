@@ -4,14 +4,13 @@
 #include <voxer/Scene.hpp>
 
 class PipelineStore {
-  using PipelineSave = std::pair<std::string, voxer::Scene>;
-
 public:
   void load_from_file(const std::string &path);
-  [[nodiscard]] auto get(const std::string &id) const -> const PipelineSave &;
-  auto save(PipelineSave save) -> std::string;
+  [[nodiscard]] auto get(const std::string &id) const -> const voxer::Scene &;
+  [[nodiscard]] auto save(const std::string &json, voxer::Scene scene)
+      -> std::string;
 
 private:
-  std::map<std::string, PipelineSave> pipelines;
-  std::string path = "pipelines.json";
+  simdjson::ParsedJson pj;
+  std::map<std::string, voxer::Scene> pipelines;
 };

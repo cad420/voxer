@@ -1,5 +1,4 @@
 #pragma once
-#include "DatasetStore.hpp"
 #include <functional>
 #include <iostream>
 #include <simdjson/jsonparser.h>
@@ -22,9 +21,8 @@ struct Command {
 
 class CommandParser {
 public:
-  auto parse(const std::string &value, DatasetStore &datasets) -> Command;
-  auto parse(const char *value, uint64_t size, DatasetStore &datasets)
-      -> Command;
+  auto parse(const std::string &value) -> Command;
+  auto parse(const char *value, uint64_t size) -> Command;
 
 private:
   simdjson::ParsedJson pj;

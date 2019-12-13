@@ -6,7 +6,6 @@ using namespace std;
 using namespace voxer;
 
 TEST_CASE("hex_color_to_float", "[conversion]") {
-
   const string v1 = "#ffffff";
   auto res1 = hex_color_to_float(v1);
   REQUIRE((res1[0] == 1.0f && res1[1] == 1.0f && res1[2] == 1.0f));

@@ -1,6 +1,6 @@
 #include "CommandParser.hpp"
-#include "DatasetStore.hpp"
 #include "PipelineStore.hpp"
+#include "voxer/DatasetStore.hpp"
 #include <fmt/format.h>
 #include <iostream>
 #include <utility>
@@ -19,19 +19,21 @@ int main(int argc, const char **argv) {
     return 0;
   }
 
-  // create data manager
-  PipelineStore pipelines;
+  // prepare datasets
   DatasetStore datasets;
   datasets.load_from_file(string(argv[1]));
 
+  // load exist pipelines
+  PipelineStore pipelines;
   if (argc >= 3) {
+    // TODO: load ALL exist pipelines
     pipelines.load_from_file(argv[3]);
   }
 
-  // run server
-  CommandParser parser;
-  OSPRayRenderer renderer;
+  CommandParser parser{};
+  OSPRayRenderer renderer{datasets};
 
+  // configure server
   uWS::App::WebSocketBehavior behavior{uWS::SHARED_COMPRESSOR, 1024 * 1024,
                                        30 * 60, 1024 * 1024 * 1024};
 
@@ -45,7 +47,7 @@ int main(int argc, const char **argv) {
     assert(ws->getUserData() != nullptr);
     Command command;
     try {
-      command = parser.parse(message.data(), message.size(), datasets);
+      command = parser.parse(message.data(), message.size());
     } catch (const exception &excpetion) {
       ws->send(fmt::format(R"({{"error": "{}"}})", excpetion.what()),
                uWS::OpCode::TEXT);
@@ -73,7 +75,7 @@ int main(int argc, const char **argv) {
     }
     case Command::Type::Save: {
       auto save = get<pair<string, Scene>>(command.params);
-      auto id = pipelines.save(move(save));
+      auto id = pipelines.save(save.first, move(save.second));
       ws->send(fmt::format(R"({{"command":"save","value": "{}"}})", id));
       break;
     }
@@ -86,18 +88,17 @@ int main(int argc, const char **argv) {
     cout << ws->getRemoteAddress() << "closed" << endl;
   };
 
-  auto server = uWS::App().ws<UserData>("/*", move(behavior));
-
+  // run server
   const auto port = 3000;
-  auto handler = [port](auto *token) {
+  auto on_success = [port](auto *token) {
     if (!token) {
       cout << " failed to listen on port " << port << endl;
       return;
     }
-
     cout << "listening on port " << port << endl;
   };
-  server.listen(port, handler).run();
+  auto server = uWS::App().ws<UserData>("/*", move(behavior));
+  server.listen(port, on_success).run();
 
   return 0;
 }

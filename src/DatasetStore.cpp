@@ -1,4 +1,4 @@
-#include "DatasetStore.hpp"
+#include "voxer/DatasetStore.hpp"
 #include <cassert>
 #include <fmt/core.h>
 #include <simdjson/jsonparser.h>
@@ -7,10 +7,15 @@
 #include <voxer/utils.hpp>
 
 using namespace std;
-using namespace voxer;
+
+namespace voxer {
 
 void DatasetStore::load_from_file(const string &filepath) {
-  auto p = simdjson::get_corpus(filepath);
+  this->load_from_json(filepath.c_str(), filepath.size());
+}
+
+void DatasetStore::load_from_json(const char *json, uint32_t size) {
+  auto p = simdjson::get_corpus(json);
   if (!pj.allocate_capacity(p.size())) {
     throw runtime_error("prepare parsing JSON failed");
   }
@@ -143,7 +148,7 @@ void DatasetStore::load_from_file(const string &filepath) {
 }
 
 auto DatasetStore::get(const std::string &name, const std::string &variable,
-                       uint32_t timestep) -> const voxer::Dataset & {
+                       uint32_t timestep) const -> const voxer::Dataset & {
   const auto it = lookup_table.find(name);
   if (it == lookup_table.end()) {
     throw runtime_error("cannot find dataset");
@@ -162,6 +167,12 @@ auto DatasetStore::get(const std::string &name, const std::string &variable,
 
   auto idx = timestep_lookup_table[timestep];
   return datasets[idx];
+}
+
+auto DatasetStore::get(const SceneDataset &scene_dataset) const
+    -> const voxer::Dataset & {
+  return this->get(scene_dataset.name, scene_dataset.variable,
+                   scene_dataset.timestep);
 }
 
 auto DatasetStore::print() const -> string {
@@ -192,3 +203,5 @@ auto DatasetStore::print() const -> string {
   res[res.find_last_of(',')] = ']';
   return res;
 }
+
+} // namespace voxer

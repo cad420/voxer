@@ -7,7 +7,7 @@ target_sources(
     TestDataStore
     PRIVATE
     DatasetStore.test.cpp
-    ${PROJECT_SOURCE_DIR}/apps/server/DatasetStore.cpp
+    ../src/DatasetStore.cpp
 )
 target_include_directories(
     TestDataStore
@@ -48,7 +48,7 @@ target_sources(
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/CommandParser.test.cpp
     ${PROJECT_SOURCE_DIR}/apps/server/CommandParser.cpp
-    ${PROJECT_SOURCE_DIR}/apps/server/DatasetStore.cpp
+    ../src/DatasetStore.cpp
 )
 target_include_directories(
     TestCommandParser

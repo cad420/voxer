@@ -1,39 +1,77 @@
 #include "PipelineStore.hpp"
 #include "utils.hpp"
 #include <stdexcept>
+#include <voxer/utils.hpp>
 
 using namespace std;
+using namespace voxer;
 
 void PipelineStore::load_from_file(const std::string &filepath) {
   ifstream fs(filepath);
-  if (!fs.is_open()) {
+  if (!fs.good() || !fs.is_open()) {
     throw runtime_error("cannot open file: " + filepath);
   }
 
-  // TODO: read and parse pipelines from file
+  stringstream sstr;
+  sstr << fs.rdbuf();
+  auto json = sstr.str();
 
-  this->path = filepath;
+  if (!pj.allocate_capacity(json.size())) {
+    throw runtime_error("prepare parsing JSON failed");
+  }
+
+  const int res = simdjson::json_parse(json, pj);
+  if (res != 0) {
+    throw runtime_error("Error parsing " + filepath + " : " +
+                        simdjson::error_message(res));
+  }
+
+  simdjson::ParsedJson::Iterator pjh(pj);
+  if (!pjh.is_ok()) {
+    throw runtime_error("invalid json");
+  }
+
+  if (!pjh.is_object()) {
+    throw JSON_error("root", "object");
+  }
+
+  if (!pjh.move_to_key("id") || !pjh.is_string()) {
+    throw JSON_error("id", "string");
+  }
+
+  string id = pjh.get_string();
+  pjh.up();
+
+  pjh.move_to_key("params");
+
+  auto scene = voxer::Scene::deserialize(pjh);
+  pipelines.emplace(move(id), move(scene));
 }
 
-auto PipelineStore::get(const std::string &id) const -> const PipelineSave & {
+auto PipelineStore::get(const std::string &id) const -> const voxer::Scene & {
   if (pipelines.find(id) == pipelines.end()) {
     throw runtime_error("cannot find pipeline with id " + id);
   }
+
   return pipelines.at(id);
 }
 
-auto PipelineStore::save(PipelineSave save) -> string {
+auto PipelineStore::save(const std::string &json, voxer::Scene scene)
+    -> string {
   auto id = nanoid();
   while (pipelines.find(id) != pipelines.end()) {
     id = nanoid();
   }
 
-  ofstream fs(path);
-  // TODO: write pipelines to file
-  fs.write(save.first.c_str(), save.first.size());
+  string filename = id + ".json";
+  ofstream fs(filename);
+  if (!fs.good() || !fs.is_open()) {
+    throw runtime_error("cannot open " + filename + " to backup pipeline.");
+  }
+  fs.write(json.c_str(), json.size());
   fs.close();
 
-  pipelines.emplace(id, move(save));
+  pipelines.emplace(id, move(scene));
 
   return id;
 }
