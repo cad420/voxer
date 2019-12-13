@@ -51,7 +51,7 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
     ospCommit(osp_tfcn);
 
     auto &scene_dataset = scene.datasets[volume.dataset_idx];
-    auto dataset = datasets.get(scene_dataset);
+    auto &dataset = datasets.get(scene_dataset);
     auto osp_dataset =
         ospNewData(dataset.buffer.size(), OSP_UCHAR,
                    static_cast<const void *>(dataset.buffer.data()),

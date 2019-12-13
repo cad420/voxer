@@ -1,10 +1,10 @@
 #include "CommandParser.hpp"
 #include "PipelineStore.hpp"
-#include "voxer/DatasetStore.hpp"
 #include <fmt/format.h>
 #include <iostream>
 #include <utility>
 #include <uwebsockets/App.h>
+#include <voxer/DatasetStore.hpp>
 #include <voxer/Image.hpp>
 #include <voxer/OSPRayRenderer.hpp>
 
@@ -60,8 +60,9 @@ int main(int argc, const char **argv) {
       auto image = renderer.render(scene);
       auto compressed = Image::encode(image, Image::Format::JPEG);
       auto size = compressed.data.size();
-      ws->send(reinterpret_cast<char *>(compressed.data.data(), size),
-               uWS::OpCode::BINARY);
+      ws->send(
+          string_view(reinterpret_cast<char *>(compressed.data.data()), size),
+          uWS::OpCode::BINARY);
       break;
     }
     case Command::Type::Query: {

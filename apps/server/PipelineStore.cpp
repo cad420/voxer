@@ -1,5 +1,6 @@
 #include "PipelineStore.hpp"
 #include "utils.hpp"
+#include <fmt/format.h>
 #include <stdexcept>
 #include <voxer/utils.hpp>
 
@@ -68,7 +69,9 @@ auto PipelineStore::save(const std::string &json, voxer::Scene scene)
   if (!fs.good() || !fs.is_open()) {
     throw runtime_error("cannot open " + filename + " to backup pipeline.");
   }
-  fs.write(json.c_str(), json.size());
+
+  auto backup = fmt::format(R"({{"id":"{}","params":{}}})", id, json);
+  fs.write(backup.c_str(), backup.size());
   fs.close();
 
   pipelines.emplace(id, move(scene));
