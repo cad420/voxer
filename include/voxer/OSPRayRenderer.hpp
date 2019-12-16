@@ -12,8 +12,8 @@ public:
   Image render(const Scene &scene) override;
 
 private:
-  struct Impl;
-  std::unique_ptr<Impl> impl;
+  struct Cache;
+  std::unique_ptr<Cache> cache;
 };
 
 } // namespace voxer

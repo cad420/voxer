@@ -20,6 +20,7 @@ struct FieldInfo {
 struct Dataset {
   FieldInfo meta = {};
   std::vector<uint8_t> buffer = {};
+  std::vector<uint32_t> histogram;
 };
 
 } // namespace voxer

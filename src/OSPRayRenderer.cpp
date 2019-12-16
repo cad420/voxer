@@ -1,9 +1,10 @@
 #include "utils/Debugger.hpp"
 #include <algorithm>
 #include <chrono>
-// #include <ospray/ospray.h>
 #include <memory>
-#include <ospray/ospray_cpp.h>
+#include <ospray/ospray.h>
+#include <voxer/filter/differ.hpp>
+//#include <ospray/ospray_cpp.h>
 #include <voxer/OSPRayRenderer.hpp>
 
 using namespace std;
@@ -49,27 +50,35 @@ static auto interpolate(const TransferFunction &tf)
   return make_pair(move(opacities), move(colors));
 }
 
-struct OSPRayRenderer::Impl {
-  explicit Impl(const std::vector<Dataset> &datasets) {
+struct OSPRayRenderer::Cache {
+  explicit Cache(const std::vector<Dataset> &datasets) {
     for (auto &dataset : datasets) {
       auto &meta = dataset.meta;
       auto &dimensions = meta.dimensions;
-      auto osp_volume = ospNewVolume("block_bricked_volume");
-      ospSet3i(osp_volume, "dimensions", dimensions[0], dimensions[1],
-               dimensions[2]);
-      ospSetString(osp_volume, "voxelType", "uchar");
-      ospSetRegion(osp_volume,
-                   reinterpret_cast<void *>(
-                       const_cast<uint8_t *>(dataset.buffer.data())),
-                   osp::vec3i{0, 0, 0},
-                   osp::vec3i{static_cast<int>(dimensions[0]),
-                              static_cast<int>(dimensions[1]),
-                              static_cast<int>(dimensions[2])});
-      ospCommit(osp_volume);
-      osp_volumes.emplace(&dataset, osp_volume);
+      this->create_osp_volume(dataset);
     }
   }
+  void create_osp_volume(const Dataset &dataset) {
+    auto &meta = dataset.meta;
+    auto &dimensions = meta.dimensions;
+    auto osp_volume = ospNewVolume("block_bricked_volume");
+    ospSet3i(osp_volume, "dimensions", dimensions[0], dimensions[1],
+             dimensions[2]);
+    ospSetString(osp_volume, "voxelType", "uchar");
+    ospSetRegion(
+        osp_volume,
+        reinterpret_cast<void *>(const_cast<uint8_t *>(dataset.buffer.data())),
+        osp::vec3i{0, 0, 0},
+        osp::vec3i{static_cast<int>(dimensions[0]),
+                   static_cast<int>(dimensions[1]),
+                   static_cast<int>(dimensions[2])});
+    ospCommit(osp_volume);
+    osp_volumes.emplace(&dataset, osp_volume);
+  }
+  // TODO: should be dataset cache
   std::map<const Dataset *, OSPVolume> osp_volumes;
+  // TODO: ugly
+  std::map<pair<const Dataset *, const Dataset *>, Dataset> differed_datasets;
 };
 
 OSPRayRenderer::OSPRayRenderer(const DatasetStore &datasets)
@@ -81,7 +90,7 @@ OSPRayRenderer::OSPRayRenderer(const DatasetStore &datasets)
   ospDeviceCommit(osp_device);
   ospSetCurrentDevice(osp_device);
 
-  this->impl = make_unique<OSPRayRenderer::Impl>(datasets.get());
+  this->cache = make_unique<OSPRayRenderer::Cache>(datasets.get());
 }
 
 OSPRayRenderer::~OSPRayRenderer() = default;
@@ -91,7 +100,27 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
 
   vector<OSPVolume> osp_volumes;
   vector<uint32_t> render_idxs;
-  for (auto i = 0u; i < scene.volumes.size(); i++) {
+
+  for (size_t i = 0; i < scene.datasets.size(); i++) {
+    auto &current = scene.datasets[i];
+    auto &parent = scene.datasets[current.parent];
+    auto &parent_dataset = datasets.get(parent);
+    if (current.diff) {
+      auto &another = scene.datasets[current.another];
+      auto &another_dataset = datasets.get(another);
+      auto key = make_pair(&another_dataset, &parent_dataset);
+      auto &differed_datasets = this->cache->differed_datasets;
+      if (differed_datasets.find(key) != differed_datasets.end()) {
+        continue;
+      }
+      this->cache->differed_datasets.emplace(
+          key, differ(parent_dataset, another_dataset));
+      auto *new_dataset = &(this->cache->differed_datasets.at(key));
+      this->cache->create_osp_volume(*new_dataset);
+    }
+  }
+
+  for (size_t i = 0; i < scene.volumes.size(); i++) {
     const auto &volume = scene.volumes[i];
     const auto &tfcn = scene.tfcns[volume.tfcn_idx];
     auto interpolated = interpolate(tfcn);
@@ -109,10 +138,23 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
     ospCommit(osp_tfcn);
 
     auto &scene_dataset = scene.datasets[volume.dataset_idx];
-    auto &dataset = datasets.get(scene_dataset);
-    auto &meta = dataset.meta;
+    // TODO: if dataset is created  by clipping, differing, find then in the
+    // local cache
+
+    const Dataset *dataset = nullptr;
+    if (scene_dataset.diff) {
+      auto &parent = scene.datasets[scene_dataset.parent];
+      auto &parent_dataset = datasets.get(parent);
+      auto &another = scene.datasets[scene_dataset.another];
+      auto &another_dataset = datasets.get(another);
+      auto key = make_pair(&another_dataset, &parent_dataset);
+      dataset = &(this->cache->differed_datasets.at(key));
+    } else {
+      dataset = &(datasets.get(scene_dataset));
+    }
+    auto &meta = dataset->meta;
     auto &dimensions = meta.dimensions;
-    auto osp_volume = this->impl->osp_volumes.at(&dataset);
+    auto osp_volume = this->cache->osp_volumes.at(dataset);
     ospSet2f(osp_volume, "voxelRange", 0.0f, 255.0f);
     ospSet3f(osp_volume, "gridOrigin",
              -static_cast<float>(dimensions[0]) / 2.0f,
@@ -123,6 +165,15 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
              volume.spacing[2]);
     ospSet1b(osp_volume, "singleShade", 0);
     ospSet1b(osp_volume, "gradientShadingEnabled", 1);
+    if (scene_dataset.clip) {
+      // TODO: not safe
+      ospSet3f(osp_volume, "volumeClippingBoxLower",
+               scene_dataset.clip_box.lower[0], scene_dataset.clip_box.lower[1],
+               scene_dataset.clip_box.lower[2]);
+      ospSet3f(osp_volume, "volumeClippingBoxLower",
+               scene_dataset.clip_box.upper[0], scene_dataset.clip_box.upper[1],
+               scene_dataset.clip_box.upper[2]);
+    }
     ospCommit(osp_volume);
 
     osp_volumes.push_back(osp_volume);

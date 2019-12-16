@@ -1,4 +1,5 @@
 #include "voxer/DatasetStore.hpp"
+#include "voxer/filter/histogram.hpp"
 #include <cassert>
 #include <fmt/core.h>
 #include <simdjson/jsonparser.h>
@@ -135,6 +136,7 @@ void DatasetStore::load_from_json(const char *json, uint32_t size) {
         dataset.buffer.insert(dataset.buffer.begin(),
                               istream_iterator<uint8_t>(fs),
                               istream_iterator<uint8_t>());
+        dataset.histogram = calculate_histogram(dataset);
         datasets.emplace_back(move(dataset));
         timestep_lookup_table[i] = datasets.size() - 1;
       }
