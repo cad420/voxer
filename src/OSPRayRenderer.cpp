@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <chrono>
 // #include <ospray/ospray.h>
+#include <memory>
 #include <ospray/ospray_cpp.h>
 #include <voxer/OSPRayRenderer.hpp>
 
@@ -11,12 +12,79 @@ namespace voxer {
 
 static Debugger debug("renderer");
 
+static auto interpolate(const TransferFunction &tf)
+    -> pair<std::vector<float>, vector<array<float, 3>>> {
+  static const size_t total_samples = 200;
+
+  vector<float> opacities;
+  opacities.reserve(total_samples);
+  vector<array<float, 3>> colors(total_samples);
+  colors.reserve(total_samples);
+
+  for (int32_t i = 0; i < (tf.stops.size() - 1); ++i) {
+    auto start_x = tf.stops[i];
+    auto end_x = tf.stops[i + 1];
+    auto start_opacity = tf.opacities[i];
+    auto end_opacity = tf.opacities[i + 1];
+    auto start_r = tf.colors[i][0];
+    auto start_g = tf.colors[i][1];
+    auto start_b = tf.colors[i][2];
+    auto end_r = tf.colors[i + 1][0];
+    auto end_g = tf.colors[i + 1][1];
+    auto end_b = tf.colors[i + 1][2];
+
+    auto samples = static_cast<uint32_t>(total_samples * (end_x - start_x));
+    auto delta = 1.0f / static_cast<float>(samples);
+    auto diff_opacity = delta * (end_opacity - start_opacity);
+    auto diff_r = delta * (end_r - start_r);
+    auto diff_g = delta * (end_g - start_g);
+    auto diff_b = delta * (end_b - start_b);
+    for (auto j = 0; j < samples; j++) {
+      opacities.emplace_back(start_opacity + j * diff_opacity);
+      colors.emplace_back(array<float, 3>{
+          start_r + j * diff_r, start_g + j * diff_g, start_b + j * diff_b});
+    }
+  }
+
+  return make_pair(move(opacities), move(colors));
+}
+
+struct OSPRayRenderer::Impl {
+  explicit Impl(const std::vector<Dataset> &datasets) {
+    for (auto &dataset : datasets) {
+      auto &meta = dataset.meta;
+      auto &dimensions = meta.dimensions;
+      auto osp_volume = ospNewVolume("block_bricked_volume");
+      ospSet3i(osp_volume, "dimensions", dimensions[0], dimensions[1],
+               dimensions[2]);
+      ospSetString(osp_volume, "voxelType", "uchar");
+      ospSetRegion(osp_volume,
+                   reinterpret_cast<void *>(
+                       const_cast<uint8_t *>(dataset.buffer.data())),
+                   osp::vec3i{0, 0, 0},
+                   osp::vec3i{static_cast<int>(dimensions[0]),
+                              static_cast<int>(dimensions[1]),
+                              static_cast<int>(dimensions[2])});
+      ospCommit(osp_volume);
+      osp_volumes.emplace(&dataset, osp_volume);
+    }
+  }
+  std::map<const Dataset *, OSPVolume> osp_volumes;
+};
+
 OSPRayRenderer::OSPRayRenderer(const DatasetStore &datasets)
     : Renderer(datasets) {
   auto osp_device = ospNewDevice();
+  //  ospDeviceSet1i(osp_device, "logLevel", 2);
+  ospDeviceSetString(osp_device, "logOutput", "cout");
+  ospDeviceSetString(osp_device, "errorOutput", "cout");
   ospDeviceCommit(osp_device);
   ospSetCurrentDevice(osp_device);
+
+  this->impl = make_unique<OSPRayRenderer::Impl>(datasets.get());
 }
+
+OSPRayRenderer::~OSPRayRenderer() = default;
 
 auto OSPRayRenderer::render(const Scene &scene) -> Image {
   auto start = chrono::steady_clock::now();
@@ -26,24 +94,14 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
   for (auto i = 0u; i < scene.volumes.size(); i++) {
     const auto &volume = scene.volumes[i];
     const auto &tfcn = scene.tfcns[volume.tfcn_idx];
-    vector<float> opacities(255, 0);
-    // if (volume.ranges.size() != 0) {
-    //   for (auto range : volume.ranges) {
-    //     for (auto i = range.start; i < range.end && i <= 255; i++) {
-    //       opacities[i] = tfcn.opacities[i];
-    //     }
-    //   }
-    // } else {
-    //   opacities = tfcn.opacities;
-    // }
-
+    auto interpolated = interpolate(tfcn);
     auto osp_colors_data =
         ospNewData(tfcn.colors.size(), OSP_FLOAT3,
-                   reinterpret_cast<const void *>(tfcn.colors.data()),
+                   reinterpret_cast<const void *>(interpolated.second.data()),
                    OSP_DATA_SHARED_BUFFER);
     auto osp_opacity_data =
-        ospNewData(tfcn.opacities.size(), OSP_FLOAT, tfcn.opacities.data());
-
+        ospNewData(tfcn.opacities.size(), OSP_FLOAT, interpolated.first.data(),
+                   OSP_DATA_SHARED_BUFFER);
     auto osp_tfcn = ospNewTransferFunction("piecewise_linear");
     ospSetData(osp_tfcn, "colors", osp_colors_data);
     ospSetData(osp_tfcn, "opacities", osp_opacity_data);
@@ -52,25 +110,15 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
 
     auto &scene_dataset = scene.datasets[volume.dataset_idx];
     auto &dataset = datasets.get(scene_dataset);
-    auto osp_dataset =
-        ospNewData(dataset.buffer.size(), OSP_UCHAR,
-                   static_cast<const void *>(dataset.buffer.data()),
-                   OSP_DATA_SHARED_BUFFER);
-    ospCommit(osp_dataset);
-
     auto &meta = dataset.meta;
     auto &dimensions = meta.dimensions;
-    auto osp_volume = ospNewVolume("shared_structured_volume");
-    ospSet3i(osp_volume, "dimensions", dimensions[0], dimensions[1],
-             dimensions[2]);
-    ospSetString(osp_volume, "voxelType", "uchar");
+    auto osp_volume = this->impl->osp_volumes.at(&dataset);
+    ospSet2f(osp_volume, "voxelRange", 0.0f, 255.0f);
     ospSet3f(osp_volume, "gridOrigin",
              -static_cast<float>(dimensions[0]) / 2.0f,
              -static_cast<float>(dimensions[1]) / 2.0f,
              -static_cast<float>(dimensions[2]) / 2.0f);
-    ospSetData(osp_volume, "voxelData", osp_dataset);
     ospSetObject(osp_volume, "transferFunction", osp_tfcn);
-    ospSet2f(osp_volume, "voxelRange", 0.0f, 255.0f);
     ospSet3f(osp_volume, "gridSpacing", volume.spacing[0], volume.spacing[1],
              volume.spacing[2]);
     ospSet1b(osp_volume, "singleShade", 0);
@@ -151,8 +199,8 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
   auto osp_renderer = ospNewRenderer("scivis");
   ospSetData(osp_renderer, "lights",
              ospNewData(lights.size(), OSP_LIGHT, lights.data()));
-  ospSet1i(osp_renderer, "spp", camera.width == 64 ? 1 : 2);
-  // renderer.set("aoSamples", 1);
+  ospSet1i(osp_renderer, "spp", 1);
+  ospSet1i(osp_renderer, "aoSamples", 1);
   ospSet1f(osp_renderer, "bgColor", 0.0f);
   ospSetObject(osp_renderer, "camera", osp_camera);
   ospSetObject(osp_renderer, "model", osp_model);

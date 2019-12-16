@@ -26,9 +26,11 @@ static auto create_modifier(simdjson::ParsedJson::Iterator pjh)
     if (json.move_to_key("camera") && json.is_object()) {
       if (json.move_to_key("width") && json.is_integer()) {
         scene.camera.width = json.get_integer();
+        json.up();
       }
       if (json.move_to_key("height") && json.is_integer()) {
         scene.camera.height = json.get_integer();
+        json.up();
       }
       array<const char *, 3> keys = {"pos", "dir", "up"};
       array<array<float, 3> *, 3> targets = {

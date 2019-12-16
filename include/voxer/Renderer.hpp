@@ -13,6 +13,8 @@ public:
   explicit Renderer(const DatasetStore &datasets) : datasets(datasets){};
   Renderer(const Renderer &) = delete;
   Renderer &operator=(const Renderer &) = delete;
+  Renderer(const Renderer &&) = delete;
+  Renderer &operator=(Renderer &&) = delete;
 
   virtual Image render(const Scene &scene) = 0;
   virtual ~Renderer() = default;

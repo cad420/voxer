@@ -16,9 +16,14 @@ class DatasetStore {
 public:
   void load_from_file(const std::string &filepath);
   void load_from_json(const char *json, uint32_t size);
-  auto get(const std::string &name, const std::string &variable = "",
-           uint32_t timestep = 0) const -> const voxer::Dataset &;
-  auto get(const SceneDataset &scene_dataset) const -> const voxer::Dataset &;
+  [[nodiscard]] auto get(const std::string &name,
+                         const std::string &variable = "",
+                         uint32_t timestep = 0) const -> const voxer::Dataset &;
+  [[nodiscard]] auto get(const SceneDataset &scene_dataset) const
+      -> const voxer::Dataset &;
+  [[nodiscard]] auto get() const -> const std::vector<voxer::Dataset> & {
+    return datasets;
+  }
   [[nodiscard]] auto print() const -> std::string;
 
 private:

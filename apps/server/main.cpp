@@ -48,49 +48,48 @@ int main(int argc, const char **argv) {
     Command command;
     try {
       command = parser.parse(message.data(), message.size());
+
+      switch (command.type) {
+      case Command::Type::Render: {
+        const auto &scene = get<Scene>(command.params);
+        auto image = renderer.render(scene);
+        auto compressed = Image::encode(image, Image::Format::JPEG);
+        auto size = compressed.data.size();
+        ws->send(
+            string_view(reinterpret_cast<char *>(compressed.data.data()), size),
+            uWS::OpCode::BINARY);
+        break;
+      }
+      case Command::Type::Query: {
+        ws->send(datasets.print(), uWS::OpCode::TEXT);
+        break;
+      }
+      case Command::Type::RunPipeline: {
+        auto save = get<pair<string, SceneModifier>>(command.params);
+
+        // merge params changes
+        auto &origin = pipelines.get(save.first);
+        auto scene = save.second(origin);
+        auto image = renderer.render(scene);
+        auto compressed = Image::encode(image, Image::Format::JPEG);
+        auto size = compressed.data.size();
+        ws->send(
+            string_view(reinterpret_cast<char *>(compressed.data.data()), size),
+            uWS::OpCode::BINARY);
+        break;
+      }
+      case Command::Type::Save: {
+        auto save = get<pair<string, Scene>>(command.params);
+        auto id = pipelines.save(save.first, move(save.second));
+        ws->send(fmt::format(R"({{"command":"save","value": "{}"}})", id));
+        break;
+      }
+      default:
+        break;
+      }
     } catch (const exception &excpetion) {
       ws->send(fmt::format(R"({{"error": "{}"}})", excpetion.what()),
                uWS::OpCode::TEXT);
-      return;
-    }
-
-    switch (command.type) {
-    case Command::Type::Render: {
-      const auto &scene = get<Scene>(command.params);
-      auto image = renderer.render(scene);
-      auto compressed = Image::encode(image, Image::Format::JPEG);
-      auto size = compressed.data.size();
-      ws->send(
-          string_view(reinterpret_cast<char *>(compressed.data.data()), size),
-          uWS::OpCode::BINARY);
-      break;
-    }
-    case Command::Type::Query: {
-      ws->send(datasets.print(), uWS::OpCode::TEXT);
-      break;
-    }
-    case Command::Type::RunPipeline: {
-      auto save = get<pair<string, SceneModifier>>(command.params);
-
-      // merge params changes
-      auto &origin = pipelines.get(save.first);
-      auto scene = save.second(origin);
-      auto image = renderer.render(scene);
-      auto compressed = Image::encode(image, Image::Format::JPEG);
-      auto size = compressed.data.size();
-      ws->send(
-          string_view(reinterpret_cast<char *>(compressed.data.data()), size),
-          uWS::OpCode::BINARY);
-      break;
-    }
-    case Command::Type::Save: {
-      auto save = get<pair<string, Scene>>(command.params);
-      auto id = pipelines.save(save.first, move(save.second));
-      ws->send(fmt::format(R"({{"command":"save","value": "{}"}})", id));
-      break;
-    }
-    default:
-      break;
     }
   };
 
