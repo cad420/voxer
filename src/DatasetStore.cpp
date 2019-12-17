@@ -12,16 +12,22 @@ using namespace std;
 namespace voxer {
 
 void DatasetStore::load_from_file(const string &filepath) {
+  ifstream fs(filepath);
+  if (!fs.good() || !fs.is_open()) {
+    throw runtime_error("cannot open file: " + filepath);
+  }
+  stringstream sstr;
+  sstr << fs.rdbuf();
+  auto json = sstr.str();
   this->load_from_json(filepath.c_str(), filepath.size());
 }
 
 void DatasetStore::load_from_json(const char *json, uint32_t size) {
-  auto p = simdjson::get_corpus(json);
-  if (!pj.allocate_capacity(p.size())) {
+  if (!pj.allocate_capacity(size)) {
     throw runtime_error("prepare parsing JSON failed");
   }
 
-  const int res = simdjson::json_parse(p, pj);
+  const int res = simdjson::json_parse(json, size, pj);
   if (res != 0) {
     throw domain_error("Parse Error: " + simdjson::error_message(res));
   }

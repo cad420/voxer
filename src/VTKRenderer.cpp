@@ -1,8 +1,8 @@
+#include "utils/Logger.hpp"
 #include "voxer/Config.hpp"
+#include <algorithm>
 #include <voxer/UserManager.hpp>
 #include <voxer/VTKRenderer.hpp>
-#include "utils/Debugger.hpp"
-#include <algorithm>
 #include <vtkCamera.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkImageImport.h>

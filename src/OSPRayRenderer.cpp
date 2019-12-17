@@ -1,4 +1,4 @@
-#include "utils/Debugger.hpp"
+#include "utils/Logger.hpp"
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -11,7 +11,7 @@ using namespace std;
 
 namespace voxer {
 
-static Debugger debug("renderer");
+static Logger logger("renderer");
 
 static auto interpolate(const TransferFunction &tf)
     -> pair<std::vector<float>, vector<array<float, 3>>> {
@@ -287,7 +287,7 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
 
   const auto delta = chrono::duration_cast<chrono::milliseconds>(
       chrono::steady_clock::now() - start);
-  debug.log(to_string(delta.count()) + " ms");
+  logger.info(to_string(delta.count()) + " ms");
 
   return image;
 }

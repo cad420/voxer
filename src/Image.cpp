@@ -1,7 +1,7 @@
 #include <voxer/Image.hpp>
 #define TJE_IMPLEMENTATION
 #include "third_party/tiny_jpeg.h"
-#include "utils/Debugger.hpp"
+#include "utils/Logger.hpp"
 #include <cassert>
 #include <chrono>
 #include <stdexcept>
@@ -12,7 +12,7 @@ using namespace std;
 
 namespace voxer {
 
-static Debugger debug("encoder");
+static Logger logger("encoder");
 
 static inline void _encode(void *context, void *data, int size) {
   auto buf = reinterpret_cast<vector<unsigned char> *>(context);
@@ -41,7 +41,7 @@ Image Image::encode(const uint8_t *data, uint32_t width, uint32_t height,
 
   const auto delta = chrono::duration_cast<chrono::milliseconds>(
       chrono::steady_clock::now() - start);
-  debug.log(to_string(delta.count()) + " ms");
+  logger.info(to_string(delta.count()) + " ms");
 
   return image;
 }

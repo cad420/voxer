@@ -19,7 +19,6 @@ list(
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/Slice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/filter/differ.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/filter/histogram.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/Debugger.cpp
 )
 
 if (VOXER_ENABLE_GPU)
