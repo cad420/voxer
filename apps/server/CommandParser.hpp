@@ -10,13 +10,14 @@
 using SceneModifier = std::function<voxer::Scene(const voxer::Scene &)>;
 
 struct Command {
-  enum class Type { Render, Save, Query, RunPipeline };
+  enum class Type { Render, Save, Query, QueryDataset, RunPipeline };
 
   Type type = Type::Render;
   std::variant<voxer::Scene,                          // for render
                std::pair<std::string, voxer::Scene>,  // for save
                std::pair<std::string, SceneModifier>, // for run
-               std::nullptr_t                         // for query
+               voxer::SceneDataset, // for query specific dataset
+               std::nullptr_t       // for query dataset list
                >
       params = nullptr;
 };

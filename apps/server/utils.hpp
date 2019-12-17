@@ -2,6 +2,7 @@
 #include <random>
 #include <regex>
 #include <string>
+#include <vector>
 
 inline auto nanoid(uint8_t size = 16) -> std::string {
   static const char *url =
@@ -27,4 +28,14 @@ inline auto extract_params(const std::string &json) -> std::string {
   }
 
   return match[1];
+}
+
+inline auto histogram_to_json(const std::vector<uint32_t> &data)
+    -> std::string {
+  std::string res = "[";
+  for (auto &value : data) {
+    res += std::to_string(value) + ",";
+  }
+  res[res.find_last_of(',')] = ']';
+  return res;
 }

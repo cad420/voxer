@@ -87,7 +87,25 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
   }
 
   if (command_type == "query") {
-    return {Command::Type::Query, nullptr};
+    if (!pjh.is_object()) {
+      throw JSON_error("params", "object");
+    }
+
+    if (!pjh.move_to_key("target") || !pjh.is_string()) {
+      throw JSON_error("params.target", "string");
+    }
+
+    string target = pjh.get_string();
+    if (target == "datasets") {
+      return {Command::Type::Query, nullptr};
+    }
+
+    pjh.up();
+    if (target == "dataset") {
+      if (!pjh.move_to_key("params")) {
+        return {Command::Type::QueryDataset, SceneDataset::deserialize(pjh)};
+      }
+    }
   }
 
   if (command_type == "save") {
@@ -96,8 +114,6 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
   }
 
   if (command_type == "run") {
-    // TODO
-
     return {Command::Type::RunPipeline, create_modifier(move(pjh))};
   }
 

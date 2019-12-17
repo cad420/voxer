@@ -42,3 +42,9 @@ TEST_CASE("extract_params", "[extract]") {
   "obj2": "value"
 })");
 }
+
+TEST_CASE("histogram_to_json", "[conversion]") {
+  vector<uint32_t> histogram = {1,2,3,4,5,100000};
+
+  REQUIRE(histogram_to_json(histogram) == "[1,2,3,4,5,100000]");
+}

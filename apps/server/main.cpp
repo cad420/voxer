@@ -1,5 +1,6 @@
 #include "CommandParser.hpp"
 #include "PipelineStore.hpp"
+#include "utils.hpp"
 #include <fmt/format.h>
 #include <iostream>
 #include <utility>
@@ -62,6 +63,12 @@ int main(int argc, const char **argv) {
       }
       case Command::Type::Query: {
         ws->send(datasets.print(), uWS::OpCode::TEXT);
+        break;
+      }
+      case Command::Type::QueryDataset: {
+        auto scene_dataset = get<SceneDataset>(command.params);
+        auto &dataset = datasets.get(scene_dataset);
+        ws->send(histogram_to_json(dataset.histogram), uWS::OpCode::TEXT);
         break;
       }
       case Command::Type::RunPipeline: {
