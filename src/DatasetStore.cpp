@@ -1,11 +1,13 @@
 #include "voxer/DatasetStore.hpp"
+#include "voxer/filter/differ.hpp"
 #include "voxer/filter/histogram.hpp"
+#include "voxer/utils.hpp"
 #include <cassert>
 #include <fmt/core.h>
+#include <memory>
 #include <simdjson/jsonparser.h>
 #include <simdjson/simdjson.h>
 #include <stdexcept>
-#include <voxer/utils.hpp>
 
 using namespace std;
 
@@ -19,7 +21,7 @@ void DatasetStore::load_from_file(const string &filepath) {
   stringstream sstr;
   sstr << fs.rdbuf();
   auto json = sstr.str();
-  this->load_from_json(filepath.c_str(), filepath.size());
+  this->load_from_json(json.c_str(), json.size());
 }
 
 void DatasetStore::load_from_json(const char *json, uint32_t size) {
@@ -137,11 +139,12 @@ void DatasetStore::load_from_json(const char *json, uint32_t size) {
         }
 
         // load
-        Dataset dataset{meta};
-        dataset.buffer.reserve(total);
-        dataset.buffer.insert(dataset.buffer.begin(),
-                              istream_iterator<uint8_t>(fs),
-                              istream_iterator<uint8_t>());
+        Dataset dataset{nanoid(5), meta};
+        dataset.buffer = make_shared<vector<uint8_t>>();
+        dataset.buffer->reserve(total);
+        dataset.buffer->insert(dataset.buffer->begin(),
+                               istream_iterator<uint8_t>(fs),
+                               istream_iterator<uint8_t>());
         dataset.histogram = calculate_histogram(dataset);
         datasets.emplace_back(move(dataset));
         timestep_lookup_table[i] = datasets.size() - 1;
@@ -177,10 +180,42 @@ auto DatasetStore::get(const std::string &name, const std::string &variable,
   return datasets[idx];
 }
 
-auto DatasetStore::get(const SceneDataset &scene_dataset) const
+auto DatasetStore::get_or_create(const SceneDataset &scene_dataset,
+                                 const vector<SceneDataset> &scene_datasets)
     -> const voxer::Dataset & {
-  return this->get(scene_dataset.name, scene_dataset.variable,
-                   scene_dataset.timestep);
+  if (!scene_dataset.clip || !scene_dataset.diff) {
+    return this->get(scene_dataset.name, scene_dataset.variable,
+                     scene_dataset.timestep);
+  }
+
+  auto &parent = scene_datasets[scene_dataset.parent];
+  // no recurse
+  auto &parent_dataset =
+      this->get(parent.name, parent.variable, parent.timestep);
+  if (scene_dataset.clip) {
+    return parent_dataset;
+  }
+
+  if (scene_dataset.diff) {
+    auto &another = scene_datasets[scene_dataset.another];
+    auto &another_dataset =
+        this->get(another.name, another.variable, another.timestep);
+
+    auto id = parent_dataset.id + "-" + another_dataset.id;
+    if (temp_datasets.find(id) != temp_datasets.end()) {
+      return temp_datasets.at(id);
+    }
+
+    auto differed_buffer =
+        differ(*parent_dataset.buffer, *another_dataset.buffer);
+    Dataset dataset{};
+    dataset.id = move(id);
+    dataset.meta = parent_dataset.meta;
+    dataset.buffer = make_shared<vector<uint8_t>>(move(differed_buffer));
+    dataset.histogram = calculate_histogram(dataset);
+    temp_datasets.emplace(id, dataset);
+    return temp_datasets.at(id);
+  }
 }
 
 auto DatasetStore::print() const -> string {

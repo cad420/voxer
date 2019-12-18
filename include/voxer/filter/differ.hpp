@@ -1,8 +1,10 @@
 #pragma once
-#include <voxer/Dataset.hpp>
+#include <cstdint>
+#include <vector>
 
 namespace voxer {
 
-auto differ(const Dataset &lfh, const Dataset &rhs) -> Dataset;
+auto differ(const std::vector<uint8_t> &lfh, const std::vector<uint8_t> &rhs)
+    -> std::vector<uint8_t>;
 
 }

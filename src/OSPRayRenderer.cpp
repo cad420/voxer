@@ -1,11 +1,9 @@
+#include "voxer/OSPRayRenderer.hpp"
 #include "utils/Logger.hpp"
-#include <algorithm>
+#include "voxer/filter/differ.hpp"
 #include <chrono>
 #include <memory>
 #include <ospray/ospray.h>
-#include <voxer/filter/differ.hpp>
-//#include <ospray/ospray_cpp.h>
-#include <voxer/OSPRayRenderer.hpp>
 
 using namespace std;
 
@@ -67,7 +65,7 @@ struct OSPRayRenderer::Cache {
     ospSetString(osp_volume, "voxelType", "uchar");
     ospSetRegion(
         osp_volume,
-        reinterpret_cast<void *>(const_cast<uint8_t *>(dataset.buffer.data())),
+        reinterpret_cast<void *>(const_cast<uint8_t *>(dataset.buffer->data())),
         osp::vec3i{0, 0, 0},
         osp::vec3i{static_cast<int>(dimensions[0]),
                    static_cast<int>(dimensions[1]),
@@ -77,12 +75,9 @@ struct OSPRayRenderer::Cache {
   }
   // TODO: should be dataset cache
   std::map<const Dataset *, OSPVolume> osp_volumes;
-  // TODO: ugly
-  std::map<pair<const Dataset *, const Dataset *>, Dataset> differed_datasets;
 };
 
-OSPRayRenderer::OSPRayRenderer(const DatasetStore &datasets)
-    : Renderer(datasets) {
+OSPRayRenderer::OSPRayRenderer(DatasetStore &datasets) : Renderer(datasets) {
   auto osp_device = ospNewDevice();
   //  ospDeviceSet1i(osp_device, "logLevel", 2);
   ospDeviceSetString(osp_device, "logOutput", "cout");
@@ -100,25 +95,6 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
 
   vector<OSPVolume> osp_volumes;
   vector<uint32_t> render_idxs;
-
-  for (size_t i = 0; i < scene.datasets.size(); i++) {
-    auto &current = scene.datasets[i];
-    auto &parent = scene.datasets[current.parent];
-    auto &parent_dataset = datasets.get(parent);
-    if (current.diff) {
-      auto &another = scene.datasets[current.another];
-      auto &another_dataset = datasets.get(another);
-      auto key = make_pair(&another_dataset, &parent_dataset);
-      auto &differed_datasets = this->cache->differed_datasets;
-      if (differed_datasets.find(key) != differed_datasets.end()) {
-        continue;
-      }
-      this->cache->differed_datasets.emplace(
-          key, differ(parent_dataset, another_dataset));
-      auto *new_dataset = &(this->cache->differed_datasets.at(key));
-      this->cache->create_osp_volume(*new_dataset);
-    }
-  }
 
   for (size_t i = 0; i < scene.volumes.size(); i++) {
     const auto &volume = scene.volumes[i];
@@ -141,17 +117,8 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
     // TODO: if dataset is created  by clipping, differing, find then in the
     // local cache
 
-    const Dataset *dataset = nullptr;
-    if (scene_dataset.diff) {
-      auto &parent = scene.datasets[scene_dataset.parent];
-      auto &parent_dataset = datasets.get(parent);
-      auto &another = scene.datasets[scene_dataset.another];
-      auto &another_dataset = datasets.get(another);
-      auto key = make_pair(&another_dataset, &parent_dataset);
-      dataset = &(this->cache->differed_datasets.at(key));
-    } else {
-      dataset = &(datasets.get(scene_dataset));
-    }
+    const Dataset *dataset =
+        &(datasets.get_or_create(scene_dataset, scene.datasets));
     auto &meta = dataset->meta;
     auto &dimensions = meta.dimensions;
     auto osp_volume = this->cache->osp_volumes.at(dataset);

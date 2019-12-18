@@ -18,9 +18,10 @@ struct FieldInfo {
 };
 
 struct Dataset {
+  std::string id = "";
   FieldInfo meta = {};
-  std::vector<uint8_t> buffer = {};
-  std::vector<uint32_t> histogram;
+  std::shared_ptr<std::vector<uint8_t>> buffer = nullptr;
+  std::vector<uint32_t> histogram = {};
 };
 
 } // namespace voxer

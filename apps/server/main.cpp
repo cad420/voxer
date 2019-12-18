@@ -67,7 +67,9 @@ int main(int argc, const char **argv) {
       }
       case Command::Type::QueryDataset: {
         auto scene_dataset = get<SceneDataset>(command.params);
-        auto &dataset = datasets.get(scene_dataset);
+        // TODO: what about differed dataset?
+        auto &dataset = datasets.get(scene_dataset.name, scene_dataset.variable,
+                                     scene_dataset.timestep);
         ws->send(histogram_to_json(dataset.histogram), uWS::OpCode::TEXT);
         break;
       }
@@ -76,13 +78,13 @@ int main(int argc, const char **argv) {
 
         // merge params changes
         auto &origin = pipelines.get(save.first);
-        auto scene = save.second(origin);
+        auto &modify_scene = save.second;
+        auto scene = modify_scene(origin);
         auto image = renderer.render(scene);
         auto compressed = Image::encode(image, Image::Format::JPEG);
-        auto size = compressed.data.size();
-        ws->send(
-            string_view(reinterpret_cast<char *>(compressed.data.data()), size),
-            uWS::OpCode::BINARY);
+        ws->send(string_view(reinterpret_cast<char *>(compressed.data.data()),
+                             compressed.data.size()),
+                 uWS::OpCode::BINARY);
         break;
       }
       case Command::Type::Save: {

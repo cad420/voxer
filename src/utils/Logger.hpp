@@ -13,10 +13,20 @@ enum struct LogLevel : int8_t {
 };
 
 struct Logger {
-  static LogLevel level;
+  LogLevel level;
   std::string name;
 
-  explicit Logger(const char *name) : name(name) {}
+  explicit Logger(const char *name) : name(name) {
+    std::string env = getenv("LOG_LEVEL");
+    Logger::level = LogLevel::WARNING;
+    if (env == "ERROR") {
+      Logger::level = LogLevel::ERROR;
+    } else if (env == "INFO") {
+      Logger::level = LogLevel::INFO;
+    } else if (env == "DEBUG") {
+      Logger::level = LogLevel::DEBUG;
+    }
+  }
 
   void error(const std::string &content) {
     if (static_cast<uint8_t>(level) < static_cast<uint8_t>(LogLevel::ERROR)) {

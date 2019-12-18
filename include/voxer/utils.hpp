@@ -1,4 +1,5 @@
 #pragma once
+#include <random>
 #include <simdjson/jsonparser.h>
 #include <stdexcept>
 
@@ -10,6 +11,20 @@ public:
       : std::runtime_error("invalid JSON: " + key + " should be " + excepted +
                            ".") {}
 };
+
+inline auto nanoid(uint8_t size = 16) -> std::string {
+  static const char *url =
+      "ModuleSymbhasOwnPr-0123456789ABCDEFGHNRVfgctiUvz_KqYTJkLxpZXIjQW";
+  std::string id;
+
+  std::random_device engine;
+  for (size_t i = 0; i < size; i++) {
+    unsigned byte = engine();
+    id += url[byte & 63u];
+  }
+
+  return id;
+}
 
 inline auto is_number(const simdjson::ParsedJson::Iterator &pjh) -> bool {
   return (pjh.is_double() || pjh.is_integer());

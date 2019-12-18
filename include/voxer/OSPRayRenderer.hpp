@@ -6,7 +6,7 @@ namespace voxer {
 
 class OSPRayRenderer : public Renderer {
 public:
-  explicit OSPRayRenderer(const DatasetStore &datasets);
+  explicit OSPRayRenderer(DatasetStore &datasets);
   ~OSPRayRenderer() override;
 
   Image render(const Scene &scene) override;

@@ -10,7 +10,7 @@ namespace voxer {
 
 class Renderer {
 public:
-  explicit Renderer(const DatasetStore &datasets) : datasets(datasets){};
+  explicit Renderer(DatasetStore &datasets) : datasets(datasets){};
   Renderer(const Renderer &) = delete;
   Renderer &operator=(const Renderer &) = delete;
   Renderer(const Renderer &&) = delete;
@@ -20,7 +20,7 @@ public:
   virtual ~Renderer() = default;
 
 protected:
-  const DatasetStore &datasets;
+  DatasetStore &datasets;
 };
 
 } // namespace voxer

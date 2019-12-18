@@ -19,7 +19,9 @@ public:
   [[nodiscard]] auto get(const std::string &name,
                          const std::string &variable = "",
                          uint32_t timestep = 0) const -> const voxer::Dataset &;
-  [[nodiscard]] auto get(const SceneDataset &scene_dataset) const
+  [[nodiscard]] auto
+  get_or_create(const SceneDataset &scene_dataset,
+                const std::vector<SceneDataset> &scene_datasets)
       -> const voxer::Dataset &;
   [[nodiscard]] auto get() const -> const std::vector<voxer::Dataset> & {
     return datasets;
@@ -29,6 +31,7 @@ public:
 private:
   simdjson::ParsedJson pj;
   std::vector<voxer::Dataset> datasets;
+  std::map<std::string, voxer::Dataset> temp_datasets;
   std::map<std::string, VariableLookUpTable> lookup_table;
 };
 

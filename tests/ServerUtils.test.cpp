@@ -5,22 +5,6 @@
 
 using namespace std;
 
-TEST_CASE("nanoid", "[generate]") {
-  auto collision = false;
-  map<string, bool> table;
-  for (size_t i = 0; i < 100000; i++) {
-    auto res = nanoid();
-    if (table.find(res) == table.end()) {
-      table.emplace(res, true);
-    } else {
-      collision = true;
-      break;
-    }
-  }
-
-  REQUIRE(!collision);
-}
-
 TEST_CASE("extract_params", "[extract]") {
   string str1 = R"({"params":{}})";
   string str2 = R"({"params":{"hello":1}})";

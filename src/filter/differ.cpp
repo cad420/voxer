@@ -4,16 +4,14 @@ using namespace std;
 
 namespace voxer {
 
-auto differ(const Dataset &lhs, const Dataset &rhs) -> Dataset {
-  auto &meta = lhs.buffer.size() > rhs.buffer.size() ? lhs.meta : rhs.meta;
-  auto limit = lhs.buffer.size() > rhs.buffer.size() ? rhs.buffer.size()
-                                                     : lhs.buffer.size();
-  Dataset dataset{meta};
-  dataset.buffer.resize(limit);
+auto differ(const std::vector<uint8_t> &lhs, const std::vector<uint8_t> &rhs)
+    -> std::vector<uint8_t> {
+  auto limit = lhs.size() > rhs.size() ? rhs.size() : lhs.size();
+  vector<uint8_t> buffer(limit);
   for (auto i = 0; i < limit; i++) {
-    dataset.buffer[i] = (lhs.buffer[i] - rhs.buffer[i] + 255) / 2;
+    buffer[i] = (lhs[i] - rhs[i] + 255) / 2;
   }
-  return dataset;
+  return buffer;
 }
 
 } // namespace voxer
