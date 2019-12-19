@@ -96,15 +96,24 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
     }
 
     string target = pjh.get_string();
+    pjh.up();
     if (target == "datasets") {
-      return {Command::Type::Query, nullptr};
+      return {Command::Type::QueryDatasets, nullptr};
     }
 
-    pjh.up();
+    if (target == "pipelines") {
+      return {Command::Type::QueryPipelines, nullptr};
+    }
+
     if (target == "dataset") {
-      if (!pjh.move_to_key("params")) {
-        return {Command::Type::QueryDataset, SceneDataset::deserialize(pjh)};
+      return {Command::Type::QueryDataset, SceneDataset::deserialize(pjh)};
+    }
+
+    if (target == "pipeline") {
+      if (!pjh.move_to_key("id") || !pjh.is_string()) {
+        throw JSON_error("params.id", "string when params.target == pipeline");
       }
+      return {Command::Type::QueryPipeline, pjh.get_string()};
     }
   }
 

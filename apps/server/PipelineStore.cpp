@@ -47,15 +47,27 @@ void PipelineStore::load_from_file(const std::string &filepath) {
   pjh.move_to_key("params");
 
   auto scene = voxer::Scene::deserialize(pjh);
-  pipelines.emplace(move(id), move(scene));
+  pipelines.emplace(id, move(scene));
+  serialized.emplace(move(id), move(json));
 }
 
 auto PipelineStore::get(const std::string &id) const -> const voxer::Scene & {
-  if (pipelines.find(id) == pipelines.end()) {
+  auto position = pipelines.find(id);
+  if (position == pipelines.end()) {
     throw runtime_error("cannot find pipeline with id " + id);
   }
 
-  return pipelines.at(id);
+  return position->second;
+}
+
+auto PipelineStore::get_serialized(const std::string &id) const
+    -> const std::string & {
+  auto position = serialized.find(id);
+  if (position == serialized.end()) {
+    throw runtime_error("cannot find pipeline with id " + id);
+  }
+
+  return position->second;
 }
 
 auto PipelineStore::save(const std::string &json, voxer::Scene scene)
@@ -76,6 +88,7 @@ auto PipelineStore::save(const std::string &json, voxer::Scene scene)
   fs.close();
 
   pipelines.emplace(id, move(scene));
+  serialized.emplace(id, move(backup));
 
   return id;
 }
@@ -94,4 +107,18 @@ void PipelineStore::load_from_directory(const std::string &directory) {
 
     this->load_from_file(filepath);
   }
+}
+
+auto PipelineStore::print() const -> std::string {
+  if (serialized.empty()) {
+    return "[]";
+  }
+
+  string res = "[";
+  for (auto &item : serialized) {
+    res += item.second;
+    res += ",";
+  }
+  res[res.find_last_of(',')] = ']';
+  return res;
 }

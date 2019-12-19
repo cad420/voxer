@@ -61,7 +61,7 @@ int main(int argc, const char **argv) {
             uWS::OpCode::BINARY);
         break;
       }
-      case Command::Type::Query: {
+      case Command::Type::QueryDatasets: {
         ws->send(datasets.print(), uWS::OpCode::TEXT);
         break;
       }
@@ -71,6 +71,16 @@ int main(int argc, const char **argv) {
         auto &dataset = datasets.get(scene_dataset.name, scene_dataset.variable,
                                      scene_dataset.timestep);
         ws->send(histogram_to_json(dataset.histogram), uWS::OpCode::TEXT);
+        break;
+      }
+      case Command::Type::QueryPipelines: {
+        ws->send(pipelines.print(), uWS::OpCode::TEXT);
+        break;
+      }
+      case Command::Type ::QueryPipeline: {
+        auto &id = get<string>(command.params);
+        auto &json = pipelines.get_serialized(id);
+        ws->send(json, uWS::OpCode::TEXT);
         break;
       }
       case Command::Type::RunPipeline: {
@@ -94,7 +104,7 @@ int main(int argc, const char **argv) {
         break;
       }
       default:
-        break;
+        ws->send(fmt::format(R"({{"error":"unsupported command"}})"));
       }
     } catch (const exception &excpetion) {
       ws->send(fmt::format(R"({{"error": "{}"}})", excpetion.what()),
