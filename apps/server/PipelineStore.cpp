@@ -1,5 +1,6 @@
 #include "PipelineStore.hpp"
 #include "utils.hpp"
+#include <filesystem>
 #include <fmt/format.h>
 #include <stdexcept>
 #include <voxer/utils.hpp>
@@ -77,4 +78,20 @@ auto PipelineStore::save(const std::string &json, voxer::Scene scene)
   pipelines.emplace(id, move(scene));
 
   return id;
+}
+
+void PipelineStore::load_from_directory(const std::string &directory) {
+  for (const auto &entry : filesystem::directory_iterator(directory)) {
+    if (entry.is_directory()) {
+      continue;
+    }
+
+    auto &filepath = entry.path();
+    auto ext = filepath.extension().string();
+    if (ext != ".json") {
+      continue;
+    }
+
+    this->load_from_file(filepath);
+  }
 }

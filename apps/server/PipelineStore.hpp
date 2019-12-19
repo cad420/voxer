@@ -6,6 +6,7 @@
 class PipelineStore {
 public:
   void load_from_file(const std::string &path);
+  void load_from_directory(const std::string &directory);
   [[nodiscard]] auto get(const std::string &id) const -> const voxer::Scene &;
   [[nodiscard]] auto save(const std::string &json, voxer::Scene scene)
       -> std::string;

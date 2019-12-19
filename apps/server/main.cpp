@@ -28,7 +28,7 @@ int main(int argc, const char **argv) {
   PipelineStore pipelines;
   if (argc >= 3) {
     // TODO: load ALL exist pipelines
-    pipelines.load_from_file(argv[3]);
+    pipelines.load_from_directory(argv[2]);
   }
 
   CommandParser parser{};
