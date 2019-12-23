@@ -51,30 +51,28 @@ static auto interpolate(const TransferFunction &tf)
 struct OSPRayRenderer::Cache {
   explicit Cache(const std::vector<Dataset> &datasets) {
     for (auto &dataset : datasets) {
-      auto &meta = dataset.meta;
-      auto &dimensions = meta.dimensions;
       this->create_osp_volume(dataset);
     }
   }
   void create_osp_volume(const Dataset &dataset) {
-    auto &meta = dataset.meta;
-    auto &dimensions = meta.dimensions;
+    auto &info = dataset.info;
+    auto &dimensions = info.dimensions;
     auto osp_volume = ospNewVolume("block_bricked_volume");
     ospSet3i(osp_volume, "dimensions", dimensions[0], dimensions[1],
              dimensions[2]);
     ospSetString(osp_volume, "voxelType", "uchar");
     ospSetRegion(
         osp_volume,
-        reinterpret_cast<void *>(const_cast<uint8_t *>(dataset.buffer->data())),
+        reinterpret_cast<void *>(const_cast<uint8_t *>(dataset.buffer.data())),
         osp::vec3i{0, 0, 0},
         osp::vec3i{static_cast<int>(dimensions[0]),
                    static_cast<int>(dimensions[1]),
                    static_cast<int>(dimensions[2])});
     ospCommit(osp_volume);
-    osp_volumes.emplace(&dataset, osp_volume);
+    osp_volumes.emplace(dataset.id, osp_volume);
   }
   // TODO: should be dataset cache
-  std::map<const Dataset *, OSPVolume> osp_volumes;
+  std::map<string, OSPVolume> osp_volumes;
 };
 
 OSPRayRenderer::OSPRayRenderer(DatasetStore &datasets) : Renderer(datasets) {
@@ -100,12 +98,12 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
     const auto &volume = scene.volumes[i];
     const auto &tfcn = scene.tfcns[volume.tfcn_idx];
     auto interpolated = interpolate(tfcn);
-    auto osp_colors_data =
-        ospNewData(tfcn.colors.size(), OSP_FLOAT3,
-                   reinterpret_cast<const void *>(interpolated.second.data()),
-                   OSP_DATA_SHARED_BUFFER);
     auto osp_opacity_data =
-        ospNewData(tfcn.opacities.size(), OSP_FLOAT, interpolated.first.data(),
+        ospNewData(interpolated.first.size(), OSP_FLOAT,
+                   interpolated.first.data(), OSP_DATA_SHARED_BUFFER);
+    auto osp_colors_data =
+        ospNewData(interpolated.second.size(), OSP_FLOAT3,
+                   reinterpret_cast<const void *>(interpolated.second.data()),
                    OSP_DATA_SHARED_BUFFER);
     auto osp_tfcn = ospNewTransferFunction("piecewise_linear");
     ospSetData(osp_tfcn, "colors", osp_colors_data);
@@ -117,11 +115,10 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
     // TODO: if dataset is created  by clipping, differing, find then in the
     // local cache
 
-    const Dataset *dataset =
-        &(datasets.get_or_create(scene_dataset, scene.datasets));
-    auto &meta = dataset->meta;
-    auto &dimensions = meta.dimensions;
-    auto osp_volume = this->cache->osp_volumes.at(dataset);
+    const auto &dataset = datasets.get_or_create(scene_dataset, scene.datasets);
+    auto &info = dataset.info;
+    auto &dimensions = info.dimensions;
+    auto osp_volume = this->cache->osp_volumes.at(dataset.id);
     ospSet2f(osp_volume, "voxelRange", 0.0f, 255.0f);
     ospSet3f(osp_volume, "gridOrigin",
              -static_cast<float>(dimensions[0]) / 2.0f,
@@ -219,7 +216,7 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
              ospNewData(lights.size(), OSP_LIGHT, lights.data()));
   ospSet1i(osp_renderer, "spp", 1);
   ospSet1i(osp_renderer, "aoSamples", 1);
-  ospSet1f(osp_renderer, "bgColor", 0.0f);
+  ospSet1f(osp_renderer, "bgColor", 1.0f);
   ospSetObject(osp_renderer, "camera", osp_camera);
   ospSetObject(osp_renderer, "model", osp_model);
   ospCommit(osp_renderer);

@@ -1,4 +1,6 @@
 #include "voxer/DatasetStore.hpp"
+#include "databases/MRC/MRCReader.hpp"
+#include "databases/Raw/RawReader.hpp"
 #include "voxer/filter/differ.hpp"
 #include "voxer/filter/histogram.hpp"
 #include "voxer/utils.hpp"
@@ -56,34 +58,44 @@ void DatasetStore::load_from_json(const char *json, uint32_t size) {
     auto &variable_lookup_table = lookup_table[name];
     pjh.up();
 
-    FieldInfo meta{};
-    pjh.move_to_key("type");
-    const string type = pjh.get_string();
-    if (type == "float") {
-      meta.type = DatasetValueType::FLOAT;
-      meta.type_size = sizeof(float);
+    VolumeInfo info{};
+    auto has_value_type = false;
+    if (pjh.move_to_key("type")) {
+      if (!pjh.is_string()) {
+        throw JSON_error("type", "string");
+      }
+      string type_str = pjh.get_string();
+      if (type_str == "float") {
+        info.value_type = ValueType::FLOAT;
+      }
+      pjh.up();
+      has_value_type = true;
     }
-    pjh.up();
 
-    if (!pjh.move_to_key("dimensions") || !pjh.is_array()) {
-      throw JSON_error("dimensions", "array");
+    auto has_dimensions = false;
+    if (pjh.move_to_key("dimensions")) {
+      if (!pjh.is_array()) {
+        throw JSON_error("dimensions", "array");
+      }
+      if (!pjh.move_to_index(0) || !pjh.is_integer()) {
+        throw JSON_error("dimensions[0]", "integer");
+      }
+      info.dimensions[0] = static_cast<uint16_t>(pjh.get_integer());
+      pjh.up();
+      if (!pjh.move_to_index(1) || !pjh.is_integer()) {
+        throw JSON_error("dimensions[1]", "integer");
+      }
+      info.dimensions[1] = static_cast<uint16_t>(pjh.get_integer());
+      pjh.up();
+      if (!pjh.move_to_index(2) || !pjh.is_integer()) {
+        throw JSON_error("dimensions[2]", "integer");
+      }
+      info.dimensions[2] = static_cast<uint16_t>(pjh.get_integer());
+      pjh.up();
+
+      has_dimensions = true;
+      pjh.up();
     }
-    if (!pjh.move_to_index(0) || !pjh.is_integer()) {
-      throw JSON_error("dimensions[0]", "integer");
-    }
-    meta.dimensions[0] = static_cast<uint32_t>(pjh.get_integer());
-    pjh.up();
-    if (!pjh.move_to_index(1) || !pjh.is_integer()) {
-      throw JSON_error("dimensions[1]", "integer");
-    }
-    meta.dimensions[1] = static_cast<uint32_t>(pjh.get_integer());
-    pjh.up();
-    if (!pjh.move_to_index(2) || !pjh.is_integer()) {
-      throw JSON_error("dimensions[2]", "integer");
-    }
-    meta.dimensions[2] = static_cast<uint32_t>(pjh.get_integer());
-    pjh.up();
-    pjh.up();
 
     if (!pjh.move_to_key("variables") || !pjh.is_array()) {
       throw JSON_error("datasets[i].variables", "array");
@@ -112,8 +124,6 @@ void DatasetStore::load_from_json(const char *json, uint32_t size) {
 
       pjh.move_to_key("path");
       const string path = pjh.get_string();
-      auto total = meta.dimensions[0] * meta.dimensions[1] *
-                   meta.dimensions[2] * meta.type_size;
       // TODO: handle data type other than uchar
       auto idx = string::npos;
       if (timesteps > 1) {
@@ -130,22 +140,21 @@ void DatasetStore::load_from_json(const char *json, uint32_t size) {
           real_path.replace(idx, idx + 6, to_string(i));
         }
 
-        ifstream fs(real_path.c_str(), ios::binary);
-        fs.unsetf(ios::skipws);
-        if (!fs.is_open()) {
-          throw runtime_error(fmt::format(
-              "Read {} timestep of volume data {}'s variable {} failed.",
-              to_string(i + 1), name, variable_name));
+        Dataset dataset{};
+        auto ext = get_file_extension(real_path);
+        if (ext == ".raw") {
+          if (!has_dimensions && !has_value_type) {
+            throw runtime_error("dimensions and value type information is "
+                                "needed for raw dataset.");
+          }
+          RawReader reader(real_path, info.dimensions, info.value_type);
+          dataset = reader.load();
+        } else if (ext == ".mrc") {
+          MRCReader reader(real_path);
+          dataset = reader.load();
+        } else {
+          throw runtime_error("unknown dataset format: " + ext);
         }
-
-        // load
-        Dataset dataset{nanoid(5), meta};
-        dataset.buffer = make_shared<vector<uint8_t>>();
-        dataset.buffer->reserve(total);
-        dataset.buffer->insert(dataset.buffer->begin(),
-                               istream_iterator<uint8_t>(fs),
-                               istream_iterator<uint8_t>());
-        dataset.histogram = calculate_histogram(dataset);
         datasets.emplace_back(move(dataset));
         timestep_lookup_table[i] = datasets.size() - 1;
       }
@@ -183,39 +192,33 @@ auto DatasetStore::get(const std::string &name, const std::string &variable,
 auto DatasetStore::get_or_create(const SceneDataset &scene_dataset,
                                  const vector<SceneDataset> &scene_datasets)
     -> const voxer::Dataset & {
-  if (!scene_dataset.clip || !scene_dataset.diff) {
+  if (!scene_dataset.diff) {
     return this->get(scene_dataset.name, scene_dataset.variable,
                      scene_dataset.timestep);
   }
 
+  // TODO: ensure scene_dataset.parent < (current idx in scene_datasets), and
+  // all previous datasets are processed
   auto &parent = scene_datasets[scene_dataset.parent];
-  // no recurse
+  // no recursion
   auto &parent_dataset =
       this->get(parent.name, parent.variable, parent.timestep);
-  if (scene_dataset.clip) {
-    return parent_dataset;
-  }
 
-  if (scene_dataset.diff) {
-    auto &another = scene_datasets[scene_dataset.another];
-    auto &another_dataset =
-        this->get(another.name, another.variable, another.timestep);
+  // TODO: ensure scene_dataset.another < (current idx in scene_datasets), and
+  // all previous datasets are processed
+  auto &another = scene_datasets[scene_dataset.another];
+  auto &another_dataset =
+      this->get(another.name, another.variable, another.timestep);
 
-    auto id = parent_dataset.id + "-" + another_dataset.id;
-    if (temp_datasets.find(id) != temp_datasets.end()) {
-      return temp_datasets.at(id);
-    }
-
-    auto differed_buffer =
-        differ(*parent_dataset.buffer, *another_dataset.buffer);
-    Dataset dataset{};
-    dataset.id = move(id);
-    dataset.meta = parent_dataset.meta;
-    dataset.buffer = make_shared<vector<uint8_t>>(move(differed_buffer));
-    dataset.histogram = calculate_histogram(dataset);
-    temp_datasets.emplace(id, dataset);
+  auto id = parent_dataset.id + "-" + another_dataset.id;
+  if (temp_datasets.find(id) != temp_datasets.end()) {
     return temp_datasets.at(id);
   }
+
+  auto differed_buffer = differ(parent_dataset.buffer, another_dataset.buffer);
+  Dataset dataset{move(id), parent_dataset.info, move(differed_buffer)};
+  temp_datasets.emplace(id, dataset);
+  return temp_datasets.at(id);
 }
 
 auto DatasetStore::print() const -> string {

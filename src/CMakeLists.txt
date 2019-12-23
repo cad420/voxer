@@ -8,6 +8,8 @@ list(
     APPEND
     VOXER_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/DatasetStore.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/databases/MRC/MRCReader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/databases/Raw/RawReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/OSPRayRenderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/Scene.cpp

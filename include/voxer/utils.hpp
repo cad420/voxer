@@ -49,4 +49,13 @@ inline auto hex_color_to_float(const std::string &str) -> std::array<float, 3> {
   return color;
 }
 
+inline auto get_file_extension(const std::string &filepath) -> std::string {
+  auto ext_idx = filepath.find_last_of('.');
+  if (ext_idx == std::string::npos) {
+    return "";
+  }
+
+  return filepath.substr(ext_idx);
+}
+
 } // namespace voxer

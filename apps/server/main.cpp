@@ -8,6 +8,7 @@
 #include <voxer/DatasetStore.hpp>
 #include <voxer/Image.hpp>
 #include <voxer/OSPRayRenderer.hpp>
+#include <voxer/filter/histogram.hpp>
 
 using namespace std;
 using namespace voxer;
@@ -23,6 +24,12 @@ int main(int argc, const char **argv) {
   // prepare datasets
   DatasetStore datasets;
   datasets.load_from_file(string(argv[1]));
+
+  // prepare histograms
+  map<string, vector<uint32_t>> histograms;
+  for (auto &dataset : datasets.get()) {
+    histograms.emplace(dataset.id, calculate_histogram(dataset));
+  }
 
   // load exist pipelines
   PipelineStore pipelines;
@@ -42,7 +49,7 @@ int main(int argc, const char **argv) {
     cout << "connected " << endl;
   };
 
-  behavior.message = [&datasets, &parser, &pipelines,
+  behavior.message = [&datasets, &parser, &pipelines, &histograms,
                       &renderer](uWS::WebSocket<false, true> *ws,
                                  std::string_view message, uWS::OpCode) {
     assert(ws->getUserData() != nullptr);
@@ -70,7 +77,11 @@ int main(int argc, const char **argv) {
         // TODO: what about differed dataset?
         auto &dataset = datasets.get(scene_dataset.name, scene_dataset.variable,
                                      scene_dataset.timestep);
-        ws->send(histogram_to_json(dataset.histogram), uWS::OpCode::TEXT);
+        auto item = histograms.find(dataset.id);
+        if (item == histograms.end()) {
+          histograms.emplace(dataset.id, calculate_histogram(dataset));
+        }
+        ws->send(histogram_to_json(item->second), uWS::OpCode::TEXT);
         break;
       }
       case Command::Type::QueryPipelines: {
