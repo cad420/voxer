@@ -14,10 +14,9 @@ static Logger logger("renderer");
 static auto interpolate(const TransferFunction &tf)
     -> pair<std::vector<float>, vector<array<float, 3>>> {
   static const size_t total_samples = 200;
-
-  vector<float> opacities;
+  vector<float> opacities{};
   opacities.reserve(total_samples);
-  vector<array<float, 3>> colors(total_samples);
+  vector<array<float, 3>> colors{};
   colors.reserve(total_samples);
 
   for (int32_t i = 0; i < (tf.stops.size() - 1); ++i) {
@@ -34,14 +33,14 @@ static auto interpolate(const TransferFunction &tf)
 
     auto samples = static_cast<uint32_t>(total_samples * (end_x - start_x));
     auto delta = 1.0f / static_cast<float>(samples);
-    auto diff_opacity = delta * (end_opacity - start_opacity);
-    auto diff_r = delta * (end_r - start_r);
-    auto diff_g = delta * (end_g - start_g);
-    auto diff_b = delta * (end_b - start_b);
+    auto step_opacity = delta * (end_opacity - start_opacity);
+    auto step_r = delta * (end_r - start_r);
+    auto step_g = delta * (end_g - start_g);
+    auto step_b = delta * (end_b - start_b);
     for (auto j = 0; j < samples; j++) {
-      opacities.emplace_back(start_opacity + j * diff_opacity);
+      opacities.emplace_back(start_opacity + j * step_opacity);
       colors.emplace_back(array<float, 3>{
-          start_r + j * diff_r, start_g + j * diff_g, start_b + j * diff_b});
+          start_r + j * step_r, start_g + j * step_g, start_b + j * step_b});
     }
   }
 
@@ -216,7 +215,7 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
              ospNewData(lights.size(), OSP_LIGHT, lights.data()));
   ospSet1i(osp_renderer, "spp", 1);
   ospSet1i(osp_renderer, "aoSamples", 1);
-  ospSet1f(osp_renderer, "bgColor", 1.0f);
+  ospSet1f(osp_renderer, "bgColor", 0.0f);
   ospSetObject(osp_renderer, "camera", osp_camera);
   ospSetObject(osp_renderer, "model", osp_model);
   ospCommit(osp_renderer);
