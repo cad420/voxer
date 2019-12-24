@@ -2,11 +2,9 @@
 #include "databases/MRC/MRCReader.hpp"
 #include "databases/Raw/RawReader.hpp"
 #include "voxer/filter/differ.hpp"
-#include "voxer/filter/histogram.hpp"
 #include "voxer/utils.hpp"
 #include <cassert>
 #include <fmt/core.h>
-#include <memory>
 #include <simdjson/jsonparser.h>
 #include <simdjson/simdjson.h>
 #include <stdexcept>

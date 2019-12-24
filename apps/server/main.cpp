@@ -69,7 +69,10 @@ int main(int argc, const char **argv) {
         break;
       }
       case Command::Type::QueryDatasets: {
-        ws->send(datasets.print(), uWS::OpCode::TEXT);
+        auto msg =
+            fmt::format(R"({{"type":"query","target":"datasets","data":{}}})",
+                        datasets.print());
+        ws->send(msg, uWS::OpCode::TEXT);
         break;
       }
       case Command::Type::QueryDataset: {
@@ -81,17 +84,25 @@ int main(int argc, const char **argv) {
         if (item == histograms.end()) {
           histograms.emplace(dataset.id, calculate_histogram(dataset));
         }
-        ws->send(histogram_to_json(item->second), uWS::OpCode::TEXT);
+        auto msg =
+            fmt::format(R"({{"type":"query","target":"dataset","data":{}}})",
+                        histogram_to_json(item->second));
+        ws->send(msg, uWS::OpCode::TEXT);
         break;
       }
       case Command::Type::QueryPipelines: {
-        ws->send(pipelines.print(), uWS::OpCode::TEXT);
+        auto msg =
+            fmt::format(R"({{"type":"query","target":"pipelines","data":{}}})",
+                        pipelines.print());
+        ws->send(msg, uWS::OpCode::TEXT);
         break;
       }
       case Command::Type ::QueryPipeline: {
         auto &id = get<string>(command.params);
         auto &json = pipelines.get_serialized(id);
-        ws->send(json, uWS::OpCode::TEXT);
+        auto msg = fmt::format(
+            R"({{"type":"query","target":"pipeline","data":{}}})", json);
+        ws->send(msg, uWS::OpCode::TEXT);
         break;
       }
       case Command::Type::RunPipeline: {

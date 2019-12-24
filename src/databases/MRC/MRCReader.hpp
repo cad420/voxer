@@ -6,7 +6,7 @@
 namespace voxer {
 
 struct MRCReader {
-  std::fstream fs;
+  std::ifstream fs;
 
   explicit MRCReader(const std::string &filepath);
   auto load() -> Dataset;

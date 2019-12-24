@@ -23,31 +23,57 @@ static auto create_modifier(simdjson::ParsedJson::Iterator pjh)
   auto modifier = [json = move(pjh)](const Scene &origin) mutable -> Scene {
     Scene scene = origin;
 
-    if (json.move_to_key("camera") && json.is_object()) {
-      if (json.move_to_key("width") && json.is_integer()) {
-        scene.camera.width = json.get_integer();
+    if (json.move_to_key("camera")) {
+      if (json.is_object()) {
+        if (json.move_to_key("width")) {
+          if (json.is_integer()) {
+            scene.camera.width = json.get_integer();
+          }
+        }
         json.up();
-      }
-      if (json.move_to_key("height") && json.is_integer()) {
-        scene.camera.height = json.get_integer();
+
+        if (json.move_to_key("height")) {
+          if (json.is_integer()) {
+            scene.camera.height = json.get_integer();
+          }
+        }
         json.up();
-      }
-      array<const char *, 3> keys = {"pos", "dir", "up"};
-      array<array<float, 3> *, 3> targets = {
-          &(scene.camera.pos), &(scene.camera.dir), &(scene.camera.up)};
-      for (size_t i = 0; i < keys.size(); i++) {
-        if (json.move_to_key(keys[i]) && json.is_array()) {
-          for (size_t j = 0; j < 3; j++) {
-            if (json.move_to_index(j) && is_number(json)) {
-              (*targets[i])[j] = get_number(json);
-              json.up();
+
+        array<string, 3> keys = {"pos", "dir", "up"};
+        array<array<float, 3> *, 3> targets = {
+            &(scene.camera.pos), &(scene.camera.dir), &(scene.camera.up)};
+        for (size_t i = 0; i < keys.size(); i++) {
+          if (json.move_to_key(keys[i].c_str())) {
+            if (json.is_array()) {
+              for (size_t j = 0; j < 3; j++) {
+                if (json.move_to_index(j)) {
+                  if (is_number(json)) {
+                    (*targets[i])[j] = get_number(json);
+                  }
+                }
+                json.up();
+              }
             }
           }
           json.up();
         }
       }
-      json.up();
     }
+    json.up();
+
+    if (json.move_to_key("tfcns")) {
+      if (json.is_array()) {
+        json.down(); // into array
+        scene.tfcns.clear();
+        do {
+          scene.tfcns.emplace_back(TransferFunction::deserialize(json));
+        } while (json.next());
+        json.up(); // out of array
+      }
+    }
+    json.up(); // back to {}
+
+    json.up();
 
     return scene;
   };
@@ -106,6 +132,9 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
     }
 
     if (target == "dataset") {
+      if (!pjh.move_to_key("params") || !pjh.is_object()) {
+        throw JSON_error("params.params", "object");
+      }
       return {Command::Type::QueryDataset, SceneDataset::deserialize(pjh)};
     }
 

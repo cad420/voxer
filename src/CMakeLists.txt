@@ -1,6 +1,7 @@
 find_package(ospray REQUIRED)
 find_package(MPI REQUIRED)
 find_package(simdjson CONFIG REQUIRED)
+find_package(Threads REQUIRED)
 
 add_library(voxer STATIC)
 
@@ -47,6 +48,7 @@ target_link_libraries(
     PUBLIC
     ${OSPRAY_LIBRARY}
     simdjson::simdjson
+    Threads::Threads
     PRIVATE
     ${MPI_CXX_LIBRARIES}
 )
