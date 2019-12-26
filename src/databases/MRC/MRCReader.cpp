@@ -1,4 +1,5 @@
 #include "MRCReader.hpp"
+#include "databases/conversion.hpp"
 #include "voxer/utils.hpp"
 #include <cstring>
 #include <fstream>
@@ -469,9 +470,17 @@ auto MRCReader::load() -> Dataset {
                              static_cast<uint16_t>(header.ny),
                              static_cast<uint16_t>(header.nz)};
   if (header.mode == MRC_MODE_FLOAT) {
+    auto total = header.nx * header.ny * header.nz;
+    auto uint8_buffer =
+        conversion(reinterpret_cast<const float *>(data_buffer.data()), total,
+                   header.dmax, header.dmin);
     dataset.info.value_type = ValueType::FLOAT;
+    dataset.buffer = move(uint8_buffer);
+  } else if (header.mode == MRC_MODE_BYTE) {
+    dataset.buffer = move(data_buffer);
+  } else {
+    throw runtime_error("unsupported MRC data type");
   }
-  dataset.buffer = move(data_buffer);
 
   return dataset;
 }

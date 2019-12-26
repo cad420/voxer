@@ -1,4 +1,5 @@
 #include "databases/Raw/RawReader.hpp"
+#include "databases/conversion.hpp"
 #include "voxer/utils.hpp"
 #include <iostream>
 #include <iterator>
@@ -24,10 +25,19 @@ auto RawReader::load() -> Dataset {
   Dataset dataset{};
   dataset.id = nanoid(5);
   dataset.info.dimensions = dimensions;
-  dataset.info.value_type = value_type;
-  dataset.buffer.resize(dataset.info.byte_count());
-  dataset.buffer.insert(dataset.buffer.begin(), istream_iterator<uint8_t>(fs),
-                        istream_iterator<uint8_t>());
+  if (value_type == ValueType::UINT8) {
+    dataset.buffer.resize(dataset.info.byte_count());
+    dataset.buffer.insert(dataset.buffer.begin(), istream_iterator<uint8_t>(fs),
+                          istream_iterator<uint8_t>());
+  } else {
+    uint64_t total = dimensions[0] * dimensions[1] * dimensions[2];
+    vector<float> buffer;
+    buffer.resize(total);
+    buffer.insert(buffer.begin(), istream_iterator<float>(fs),
+                  istream_iterator<float>{});
+    dataset.buffer = conversion(buffer.data(), total);
+  }
+  dataset.info.value_type = ValueType::UINT8;
   return dataset;
 }
 
