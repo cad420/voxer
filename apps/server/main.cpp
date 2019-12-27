@@ -122,7 +122,15 @@ int main(int argc, const char **argv) {
       case Command::Type::Save: {
         auto save = get<pair<string, Scene>>(command.params);
         auto id = pipelines.save(save.first, move(save.second));
-        ws->send(fmt::format(R"({{"command":"save","value": "{}"}})", id));
+        ws->send(fmt::format(R"({{"command":"save","value":"{}"}})", id));
+        break;
+      }
+      case Command::Type::AddDataset: {
+        auto json = get<string>(command.params);
+        auto pj = simdjson::build_parsed_json(json);
+        simdjson::ParsedJson::Iterator pjh(pj);
+        datasets.load_one(pjh);
+        ws->send(R"({"type":"add"})", uWS::OpCode::TEXT);
         break;
       }
       default:

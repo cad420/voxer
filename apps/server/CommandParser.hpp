@@ -17,7 +17,8 @@ struct Command {
     QueryDataset,
     QueryPipelines,
     QueryPipeline,
-    RunPipeline
+    RunPipeline,
+    AddDataset
   };
 
   Type type = Type::Render;
@@ -26,7 +27,7 @@ struct Command {
                std::pair<std::string, SceneModifier>, // for run
                voxer::SceneDataset, // for query specific dataset
                std::nullptr_t,      // for query dataset list or pipeline list
-               std::string          // for query specific pipeline
+               std::string // for query specific pipeline or add dataset
                >
       params = nullptr;
 };

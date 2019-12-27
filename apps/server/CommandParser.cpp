@@ -1,5 +1,6 @@
 #include "CommandParser.hpp"
 #include "utils.hpp"
+#include <fmt/format.h>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -153,6 +154,25 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
 
   if (command_type == "run") {
     return {Command::Type::RunPipeline, create_modifier(move(pjh))};
+  }
+
+  if (command_type == "add") {
+    if (!pjh.is_object()) {
+      throw JSON_error("params", "object");
+    }
+
+    if (!pjh.move_to_key("target") || !pjh.is_string()) {
+      throw JSON_error("params.target", "string");
+    }
+
+    string target = pjh.get_string();
+    pjh.up();
+
+    if (target == "dataset") {
+      return {Command::Type::AddDataset, extract_params(value)};
+    }
+
+    throw runtime_error("unsupported add type: " + target);
   }
 
   throw runtime_error("invalid JSON: unknown command type");
