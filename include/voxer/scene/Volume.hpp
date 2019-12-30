@@ -4,7 +4,7 @@
 #include <simdjson/jsonparser.h>
 #include <string>
 #include <voxer/Dataset.hpp>
-#include <voxer/scene/TransferFunction.hpp>
+#include <voxer/formatter/formatter.hpp>
 
 namespace voxer {
 
@@ -25,3 +25,15 @@ struct Volume {
 };
 
 } // namespace voxer
+
+namespace formatter {
+
+template <> inline auto registerMembers<voxer::Volume>() {
+  using Volume = voxer::Volume;
+  return std::make_tuple(
+      member("dataset", &Volume::dataset_idx), member("range", &Volume::range),
+      member("translate", &Volume::translate), member("scale", &Volume::scale),
+      member("spacing", &Volume::spacing));
+}
+
+} // namespace formatter

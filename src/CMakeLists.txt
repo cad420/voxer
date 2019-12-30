@@ -2,6 +2,7 @@ find_package(ospray REQUIRED)
 find_package(MPI REQUIRED)
 find_package(simdjson CONFIG REQUIRED)
 find_package(Threads REQUIRED)
+find_package(RapidJSON CONFIG REQUIRED)
 
 add_library(voxer STATIC)
 
@@ -38,6 +39,7 @@ target_include_directories(
     PUBLIC
     ${OSPRAY_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/include
+    ${RAPIDJSON_INCLUDE_DIRS}
     PRIVATE
     ${MPI_CXX_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}

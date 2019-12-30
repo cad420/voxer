@@ -474,7 +474,7 @@ auto MRCReader::load() -> Dataset {
     auto uint8_buffer =
         conversion(reinterpret_cast<const float *>(data_buffer.data()), total,
                    header.dmax, header.dmin);
-    dataset.info.value_type = ValueType::FLOAT;
+    dataset.info.value_type = ValueType::UINT8;
     dataset.buffer = move(uint8_buffer);
   } else if (header.mode == MRC_MODE_BYTE) {
     dataset.buffer = move(data_buffer);

@@ -3,6 +3,7 @@
 #include <map>
 #include <simdjson/jsonparser.h>
 #include <string>
+#include <voxer/formatter/formatter.hpp>
 
 namespace voxer {
 
@@ -22,3 +23,15 @@ struct Camera {
 };
 
 } // namespace voxer
+
+namespace formatter {
+
+template <> inline auto registerMembers<voxer::Camera>() {
+  using Camera = voxer::Camera;
+  return std::make_tuple(member("width", &Camera::width),
+                         member("height", &Camera::height),
+                         member("pos", &Camera::pos), member("up", &Camera::up),
+                         member("dir", &Camera::dir));
+}
+
+} // namespace formatter

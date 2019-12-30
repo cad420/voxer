@@ -2,6 +2,7 @@
 #include <array>
 #include <simdjson/parsedjson.h>
 #include <voxer/filter/clip.hpp>
+#include <voxer/formatter/formatter.hpp>
 
 namespace voxer {
 
@@ -26,3 +27,14 @@ struct SceneDataset {
 };
 
 } // namespace voxer
+
+namespace formatter {
+
+template <> inline auto registerMembers<voxer::SceneDataset>() {
+  using SceneDataset = voxer::SceneDataset;
+  return std::make_tuple(member("name", &SceneDataset::name),
+                         member("variable", &SceneDataset::variable),
+                         member("timestep", &SceneDataset::timestep));
+}
+
+} // namespace formatter
