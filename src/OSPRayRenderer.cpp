@@ -19,17 +19,17 @@ static auto interpolate(const TransferFunction &tf)
   vector<array<float, 3>> colors{};
   colors.reserve(total_samples);
 
-  for (int32_t i = 0; i < (tf.stops.size() - 1); ++i) {
-    auto start_x = tf.stops[i];
-    auto end_x = tf.stops[i + 1];
-    auto start_opacity = tf.opacities[i];
-    auto end_opacity = tf.opacities[i + 1];
-    auto start_r = tf.colors[i][0];
-    auto start_g = tf.colors[i][1];
-    auto start_b = tf.colors[i][2];
-    auto end_r = tf.colors[i + 1][0];
-    auto end_g = tf.colors[i + 1][1];
-    auto end_b = tf.colors[i + 1][2];
+  for (int32_t i = 0; i < (tf.size() - 1); ++i) {
+    auto start_x = tf[i].x;
+    auto end_x = tf[i + 1].x;
+    auto start_opacity = tf[i].y;
+    auto end_opacity = tf[i + 1].y;
+    auto start_r = tf[i].color[0];
+    auto start_g = tf[i].color[1];
+    auto start_b = tf[i].color[2];
+    auto end_r = tf[i + 1].color[0];
+    auto end_g = tf[i + 1].color[1];
+    auto end_b = tf[i + 1].color[2];
 
     auto samples = static_cast<uint32_t>(total_samples * (end_x - start_x));
     auto delta = 1.0f / static_cast<float>(samples);
@@ -49,6 +49,8 @@ static auto interpolate(const TransferFunction &tf)
 
 struct OSPRayRenderer::Cache {
   explicit Cache(const std::vector<Dataset> &datasets) {
+    // TODO: OSPVolume creation is really expensive
+    // TODO: OSPVolume modification is not thread safe!!!
     for (auto &dataset : datasets) {
       this->create_osp_volume(dataset);
     }
@@ -117,7 +119,12 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
     const auto &dataset = datasets.get_or_create(scene_dataset, scene.datasets);
     auto &info = dataset.info;
     auto &dimensions = info.dimensions;
-    auto osp_volume = this->cache->osp_volumes.at(dataset.id);
+    auto it = this->cache->osp_volumes.find(dataset.id);
+    if (it == this->cache->osp_volumes.end()) {
+      this->cache->create_osp_volume(dataset);
+      it = this->cache->osp_volumes.find(dataset.id);
+    }
+    auto &osp_volume = it->second;
     ospSet2f(osp_volume, "voxelRange", 0.0f, 255.0f);
     ospSet3f(osp_volume, "gridOrigin",
              -static_cast<float>(dimensions[0]) / 2.0f,

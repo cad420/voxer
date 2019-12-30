@@ -1,80 +1,100 @@
 #include "CommandParser.hpp"
 #include "utils.hpp"
 #include <fmt/format.h>
+#include <rapidjson/document.h>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 #include <voxer/utils.hpp>
 
 using namespace voxer;
 using namespace std;
 
-static auto create_modifier(simdjson::ParsedJson::Iterator pjh)
+static auto create_modifier(rapidjson::Value json_)
     -> pair<string, SceneModifier> {
-  if (!pjh.is_object()) {
+  if (!json_.IsObject()) {
     throw JSON_error("params", "object");
   }
 
-  if (!pjh.move_to_key("id") || !pjh.is_string()) {
+  auto params = json_.GetObject();
+  auto it = params.FindMember("id");
+  if (it == params.end() || !it->value.IsString()) {
     throw JSON_error("params.id", "string");
   }
-  string id = pjh.get_string();
-  pjh.up();
+  string id = it->value.GetString();
 
-  auto modifier = [json = move(pjh)](const Scene &origin) mutable -> Scene {
+  auto ptr = make_shared<rapidjson::Value>(move(json_));
+  auto modifier = [ptr](const Scene &origin) -> Scene {
     Scene scene = origin;
+    auto &json = *ptr;
+    auto params = json.GetObject();
 
-    if (json.move_to_key("camera")) {
-      if (json.is_object()) {
-        if (json.move_to_key("width")) {
-          if (json.is_integer()) {
-            scene.camera.width = json.get_integer();
-          }
-        }
-        json.up();
+    auto it = params.FindMember("camera");
+    if (it != params.end() && it->value.IsObject()) {
+      auto camera_params = it->value.GetObject();
+      it = camera_params.FindMember("width");
+      if (it != camera_params.end() && it->value.IsNumber()) {
+        scene.camera.width = it->value.GetInt();
+      }
 
-        if (json.move_to_key("height")) {
-          if (json.is_integer()) {
-            scene.camera.height = json.get_integer();
-          }
-        }
-        json.up();
+      it = camera_params.FindMember("height");
+      if (it != camera_params.end() && it->value.IsNumber()) {
+        scene.camera.height = it->value.GetInt();
+      }
 
-        array<string, 3> keys = {"pos", "dir", "up"};
-        array<array<float, 3> *, 3> targets = {
-            &(scene.camera.pos), &(scene.camera.dir), &(scene.camera.up)};
-        for (size_t i = 0; i < keys.size(); i++) {
-          if (json.move_to_key(keys[i].c_str())) {
-            if (json.is_array()) {
-              for (size_t j = 0; j < 3; j++) {
-                if (json.move_to_index(j)) {
-                  if (is_number(json)) {
-                    (*targets[i])[j] = get_number(json);
-                  }
-                }
-                json.up();
-              }
+      array<const char *, 3> keys = {"pos", "dir", "up"};
+      array<array<float, 3> *, 3> targets = {
+          &(scene.camera.pos), &(scene.camera.dir), &(scene.camera.up)};
+      for (size_t i = 0; i < keys.size(); i++) {
+        it = camera_params.FindMember(keys[i]);
+        if (it != camera_params.end() && it->value.IsArray()) {
+          auto array = it->value.GetArray();
+          for (size_t j = 0; j < 3; j++) {
+            if (array[i].IsNumber()) {
+              (*targets[i])[j] = array[j].GetFloat();
             }
           }
-          json.up();
         }
       }
     }
-    json.up();
 
-    if (json.move_to_key("tfcns")) {
-      if (json.is_array()) {
-        json.down(); // into array
-        scene.tfcns.clear();
-        do {
-          scene.tfcns.emplace_back(TransferFunction::deserialize(json));
-        } while (json.next());
-        json.up(); // out of array
+    it = params.FindMember("tfcns");
+    if (it != params.end() && it->value.IsArray()) {
+      auto tfcn_json = it->value.GetArray();
+      scene.tfcns.clear();
+      for (auto &item : tfcn_json) {
+        TransferFunction tfcn{};
+        if (item.IsArray()) {
+          auto points = item.GetArray();
+          for (auto &point_json : points) {
+            ControlPoint point{};
+            formatter::deserialize(point, point_json);
+            tfcn.emplace_back(point);
+          }
+        }
+        scene.tfcns.emplace_back(move(tfcn));
       }
     }
-    json.up(); // back to {}
 
-    json.up();
+    for (auto &tfcn : scene.tfcns) {
+      for (auto &point : tfcn) {
+        point.color = hex_color_to_float(point.hex_color);
+      }
+    }
+
+    it = params.FindMember("isosurfaces");
+    if (it != params.end() && it->value.IsArray()) {
+      auto isosurfaces = it->value.GetArray();
+      for (size_t i = 0; i < isosurfaces.Size(); i++) {
+        auto &item = isosurfaces[i];
+        if (item.IsObject()) {
+          auto isosurface = item.GetObject();
+          it = isosurface.FindMember("value");
+          if (it != isosurface.end() && it->value.IsNumber()) {
+            scene.isosurfaces[i].value = it->value.GetFloat();
+          }
+        }
+      }
+    }
 
     return scene;
   };
@@ -83,47 +103,41 @@ static auto create_modifier(simdjson::ParsedJson::Iterator pjh)
 }
 
 auto CommandParser::parse(const char *value, uint64_t size) -> Command {
-  if (!pj.allocate_capacity(size)) {
-    throw runtime_error("prepare parsing JSON failed");
-  }
+  document.Parse(value, size);
 
-  const int res = simdjson::json_parse(value, size, pj);
-  if (res != 0) {
-    throw runtime_error("Error parsing: " + simdjson::error_message(res));
-  }
-
-  simdjson::ParsedJson::Iterator pjh(pj);
-  if (!pjh.is_ok()) {
-    throw runtime_error("invalid json");
-  }
-
-  if (!pjh.is_object()) {
+  if (!document.IsObject()) {
     throw JSON_error("root", "object");
   }
 
-  if (!pjh.move_to_key("type") || !pjh.is_string()) {
+  auto json = document.GetObject();
+
+  auto it = json.FindMember("type");
+  if (it == json.end() || !(it->value.IsString())) {
     throw JSON_error("type", "string");
   }
+  string command_type = it->value.GetString();
 
-  string_view command_type = pjh.get_string();
-  pjh.up();
+  it = json.FindMember("params");
+  if (it == json.end()) {
+    throw JSON_error("params", "required");
+  }
+  auto params = it->value.GetObject();
 
-  pjh.move_to_key("params");
   if (command_type == "render") {
-    return {Command::Type::Render, Scene::deserialize(pjh)};
+    return {Command::Type::Render, Scene::deserialize(params)};
   }
 
   if (command_type == "query") {
-    if (!pjh.is_object()) {
+    if (it == json.end() || !it->value.IsObject()) {
       throw JSON_error("params", "object");
     }
 
-    if (!pjh.move_to_key("target") || !pjh.is_string()) {
+    it = params.FindMember("target");
+    if (it == params.end() || !it->value.IsString()) {
       throw JSON_error("params.target", "string");
     }
 
-    string target = pjh.get_string();
-    pjh.up();
+    string target = it->value.GetString();
     if (target == "datasets") {
       return {Command::Type::QueryDatasets, nullptr};
     }
@@ -133,41 +147,34 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
     }
 
     if (target == "dataset") {
-      if (!pjh.move_to_key("params") || !pjh.is_object()) {
-        throw JSON_error("params.params", "object");
-      }
-      return {Command::Type::QueryDataset, SceneDataset::deserialize(pjh)};
+      return {Command::Type::QueryDataset, SceneDataset::deserialize(params)};
     }
 
     if (target == "pipeline") {
-      if (!pjh.move_to_key("id") || !pjh.is_string()) {
+      it = params.FindMember("id");
+      if (it == params.end()) {
         throw JSON_error("params.id", "string when params.target == pipeline");
       }
-      return {Command::Type::QueryPipeline, pjh.get_string()};
+      return {Command::Type::QueryPipeline, it->value.GetString()};
     }
   }
 
   if (command_type == "save") {
     return {Command::Type::Save,
-            make_pair(extract_params(value), Scene::deserialize(pjh))};
+            make_pair(extract_params(value), Scene::deserialize(params))};
   }
 
   if (command_type == "run") {
-    return {Command::Type::RunPipeline, create_modifier(move(pjh))};
+    return {Command::Type::RunPipeline, create_modifier(move(params))};
   }
 
   if (command_type == "add") {
-    if (!pjh.is_object()) {
-      throw JSON_error("params", "object");
-    }
-
-    if (!pjh.move_to_key("target") || !pjh.is_string()) {
+    it = params.FindMember("target");
+    if (it == params.end() || !it->value.IsString()) {
       throw JSON_error("params.target", "string");
     }
 
-    string target = pjh.get_string();
-    pjh.up();
-
+    string target = it->value.GetString();
     if (target == "dataset") {
       return {Command::Type::AddDataset, extract_params(value)};
     }

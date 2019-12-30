@@ -15,7 +15,7 @@ public:
   [[nodiscard]] auto print() const -> std::string;
 
 private:
-  simdjson::ParsedJson pj;
+  rapidjson::Document document;
   std::map<std::string, voxer::Scene> pipelines;
   std::map<std::string, std::string> serialized;
 };

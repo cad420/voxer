@@ -7,7 +7,6 @@ target_sources(
     ${CMAKE_CURRENT_SOURCE_DIR}/PipelineStore.cpp
 )
 
-find_package(simdjson CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -41,7 +40,6 @@ target_link_libraries(
     Threads::Threads
     ZLIB::ZLIB
     ${USOCKET_LIBRARY}
-    simdjson::simdjson
     fmt::fmt
 )
 target_compile_features(voxer-server PRIVATE cxx_std_17)

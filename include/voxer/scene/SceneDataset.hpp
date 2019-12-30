@@ -22,8 +22,8 @@ struct SceneDataset {
   bool transform = false;
   std::array<float, 16> matrix;
 
-  auto serialize() -> std::string;
-  static auto deserialize(simdjson::ParsedJson::Iterator &pjh) -> SceneDataset;
+  auto serialize() -> rapidjson::Document;
+  static auto deserialize(const rapidjson::Value &json) -> SceneDataset;
 };
 
 } // namespace voxer

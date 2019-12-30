@@ -38,5 +38,5 @@ public:
   auto parse(const char *value, uint64_t size) -> Command;
 
 private:
-  simdjson::ParsedJson pj;
+  rapidjson::Document document;
 };

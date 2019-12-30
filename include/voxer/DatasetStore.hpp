@@ -16,7 +16,8 @@ class DatasetStore {
 public:
   void load_from_file(const std::string &filepath);
   void load_from_json(const char *json, uint32_t size);
-  void load_one(simdjson::ParsedJson::Iterator &pjh);
+  void load_one(const rapidjson::Value &json);
+  void add_from_json(const char *text, uint32_t size);
   [[nodiscard]] auto get(const std::string &name,
                          const std::string &variable = "",
                          uint32_t timestep = 0) const -> const voxer::Dataset &;
@@ -30,7 +31,8 @@ public:
   [[nodiscard]] auto print() const -> std::string;
 
 private:
-  simdjson::ParsedJson pj;
+  std::string path;
+  rapidjson::Document document;
   std::vector<voxer::Dataset> datasets;
   std::map<std::string, voxer::Dataset> temp_datasets;
   std::map<std::string, VariableLookUpTable> lookup_table;

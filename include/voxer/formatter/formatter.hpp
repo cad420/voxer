@@ -15,6 +15,7 @@ namespace formatter {
 template <typename Object, typename T> struct Member {
   const char *key;
   T Object::*ptr;
+  std::unique_ptr<T> default_value;
   using Type = T;
 };
 
@@ -47,6 +48,10 @@ auto serialize(const T &obj,
                    nullptr) -> rapidjson::Document;
 
 template <typename T>
+auto serialize(const T &obj, std::enable_if_t<is_string<T>::value> * = nullptr)
+    -> rapidjson::Document;
+
+template <typename T>
 void deserialize(T &data, const rapidjson::Value &value,
                  std::enable_if_t<std::is_arithmetic<T>::value> * = nullptr);
 
@@ -57,6 +62,10 @@ void deserialize(T &data, const rapidjson::Value &value,
 template <typename T>
 void deserialize(T &data, const rapidjson::Value &value,
                  std::enable_if_t<is_array<T>::value> * = nullptr);
+
+template <typename T>
+void deserialize(T &data, const rapidjson::Value &value,
+                 std::enable_if_t<is_string<T>::value> * = nullptr);
 
 template <typename T>
 void deserialize(T &data, const rapidjson::Value &value,
@@ -83,6 +92,17 @@ auto serialize(const T &obj,
     rapidjson::Value item(json_value, allocator);
     json.PushBack(item, allocator);
   }
+
+  return json;
+}
+
+template <typename T>
+auto serialize(const T &obj, std::enable_if_t<is_string<T>::value> *)
+    -> rapidjson::Document {
+  rapidjson::Document json(rapidjson::kStringType);
+  auto &allocator = json.GetAllocator();
+
+  json.SetString(obj.c_str(), obj.size(), allocator);
 
   return json;
 }
@@ -117,11 +137,21 @@ auto serialize(const T &obj, std::enable_if_t<is_object<T>::value> *)
 template <typename T>
 void deserialize(T &data, const rapidjson::Value &value,
                  std::enable_if_t<std::is_arithmetic<T>::value> *) {
-  if (!value.Is<T>()) {
+  if (!value.IsBool() && !value.IsNumber()) {
     throw std::runtime_error("wrong type");
   }
 
   data = value.Get<T>();
+}
+
+template <typename T>
+void deserialize(T &data, const rapidjson::Value &value,
+                 std::enable_if_t<is_string<T>::value> *) {
+  if (!value.IsString()) {
+    throw std::runtime_error("wrong type");
+  }
+
+  data = value.GetString();
 }
 
 template <typename T>

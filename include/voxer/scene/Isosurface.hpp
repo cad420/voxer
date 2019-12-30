@@ -9,8 +9,8 @@ struct Isosurface {
   float value = 0.0f;
   int32_t volume_idx = -1;
 
-  auto serialize() -> std::string;
-  static auto deserialize(simdjson::ParsedJson::Iterator &pjh) -> Isosurface;
+  auto serialize() -> rapidjson::Document;
+  static auto deserialize(const rapidjson::Value &json) -> Isosurface;
 };
 
 } // namespace voxer
@@ -19,7 +19,7 @@ namespace formatter {
 
 template <> inline auto registerMembers<voxer::Isosurface>() {
   using Isosurface = voxer::Isosurface;
-  return std::make_tuple(member("width", &Isosurface::value),
+  return std::make_tuple(member("value", &Isosurface::value),
                          member("volume", &Isosurface::volume_idx));
 }
 

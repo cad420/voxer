@@ -83,6 +83,7 @@ int main(int argc, const char **argv) {
         auto item = histograms.find(dataset.id);
         if (item == histograms.end()) {
           histograms.emplace(dataset.id, calculate_histogram(dataset));
+          item = histograms.find(dataset.id);
         }
         auto msg =
             fmt::format(R"({{"type":"query","target":"dataset","data":{}}})",
@@ -127,9 +128,7 @@ int main(int argc, const char **argv) {
       }
       case Command::Type::AddDataset: {
         auto json = get<string>(command.params);
-        auto pj = simdjson::build_parsed_json(json);
-        simdjson::ParsedJson::Iterator pjh(pj);
-        datasets.load_one(pjh);
+        datasets.add_from_json(json.c_str(), json.size());
         ws->send(R"({"type":"add"})", uWS::OpCode::TEXT);
         break;
       }

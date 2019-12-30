@@ -18,8 +18,8 @@ struct Camera {
   std::array<float, 3> up = {0.0f, 1.0f, 0.0f};
   std::array<float, 3> dir = {0.0f, 0.0f, -1.0f};
 
-  auto serialize() -> std::string;
-  static auto deserialize(simdjson::ParsedJson::Iterator &pjh) -> Camera;
+  auto serialize() -> rapidjson::Document;
+  static auto deserialize(const rapidjson::Value &json) -> Camera;
 };
 
 } // namespace voxer

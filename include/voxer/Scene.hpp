@@ -20,8 +20,8 @@ struct Scene {
   std::vector<Light> lights;
   Camera camera;
 
-  auto serialize() -> std::string;
-  static auto deserialize(simdjson::ParsedJson::Iterator &pjh) -> Scene;
+  auto serialize() -> rapidjson::Document;
+  static auto deserialize(const rapidjson::Value &json) -> Scene;
 };
 
 } // namespace voxer
@@ -30,6 +30,7 @@ namespace formatter {
 
 template <> inline auto registerMembers<voxer::Scene>() {
   using Scene = voxer::Scene;
+  // TODO: parse lights
   return std::make_tuple(
       member("datasets", &Scene::datasets), member("volumes", &Scene::volumes),
       member("tfcns", &Scene::tfcns),

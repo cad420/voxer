@@ -5,8 +5,8 @@
 #include "voxer/utils.hpp"
 #include <cassert>
 #include <fmt/core.h>
-#include <simdjson/jsonparser.h>
-#include <simdjson/simdjson.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 #include <stdexcept>
 
 using namespace std;
@@ -18,117 +18,105 @@ void DatasetStore::load_from_file(const string &filepath) {
   if (!fs.good() || !fs.is_open()) {
     throw runtime_error("cannot open file: " + filepath);
   }
+  this->path = filepath;
   stringstream sstr;
   sstr << fs.rdbuf();
   auto json = sstr.str();
   this->load_from_json(json.c_str(), json.size());
 }
 
-void DatasetStore::load_from_json(const char *json, uint32_t size) {
-  if (!pj.allocate_capacity(size)) {
-    throw runtime_error("prepare parsing JSON failed");
-  }
-
-  const int res = simdjson::json_parse(json, size, pj);
-  if (res != 0) {
-    throw domain_error("Parse Error: " + simdjson::error_message(res));
-  }
-
-  simdjson::ParsedJson::Iterator pjh(pj);
-  if (!pjh.is_ok()) {
-    throw domain_error("invalid JSON");
-  }
-
-  if (!pjh.is_array() || !pjh.down()) {
+void DatasetStore::load_from_json(const char *text, uint32_t size) {
+  document.Parse(text, size);
+  if (!document.IsArray()) {
     throw JSON_error("root", "array");
   }
 
-  // datasets
-  do {
-    load_one(pjh);
-  } while (pjh.next());
+  for (auto &item : document.GetArray()) {
+    load_one(item);
+  }
 
   fmt::print("load {} datasets.\n", datasets.size());
 }
 
-void DatasetStore::load_one(simdjson::ParsedJson::Iterator &pjh) {
-  if (!pjh.is_object()) {
+void DatasetStore::load_one(const rapidjson::Value &json) {
+  if (!json.IsObject()) {
     throw JSON_error("dataset", "object");
   }
 
+  auto params = json.GetObject();
   // key values
-  pjh.move_to_key("name");
-  string name = pjh.get_string();
+  auto it = params.FindMember("name");
+  if (it == params.end() || !(it->value.IsString())) {
+    throw JSON_error("dataset.name", "string");
+  }
+  string name = it->value.GetString();
 
   auto &variable_lookup_table = lookup_table[name];
-  pjh.up();
 
   VolumeInfo info{};
   auto has_value_type = false;
-  if (pjh.move_to_key("type")) {
-    if (!pjh.is_string()) {
-      throw JSON_error("type", "string");
+  it = params.FindMember("type");
+  if (it != params.end()) {
+    if (!(it->value.IsString())) {
+      throw JSON_error("dataset.type", "string");
     }
-    string type_str = pjh.get_string();
-    if (type_str == "float") {
+    string type = it->value.GetString();
+    if (type == "float") {
       info.value_type = ValueType::FLOAT;
     }
     has_value_type = true;
   }
-  pjh.up();
 
   auto has_dimensions = false;
-  if (pjh.move_to_key("dimensions")) {
-    if (!pjh.is_array()) {
-      throw JSON_error("dimensions", "array");
+  it = params.FindMember("dimensions");
+  if (it != params.end()) {
+    if (!(it->value.IsArray()) || (it->value.GetArray().Size() != 3)) {
+      throw JSON_error("dataset.dimensions", "array of three item");
     }
-    if (!pjh.move_to_index(0) || !pjh.is_integer()) {
-      throw JSON_error("dimensions[0]", "integer");
-    }
-    info.dimensions[0] = static_cast<uint16_t>(pjh.get_integer());
-    pjh.up();
-    if (!pjh.move_to_index(1) || !pjh.is_integer()) {
-      throw JSON_error("dimensions[1]", "integer");
-    }
-    info.dimensions[1] = static_cast<uint16_t>(pjh.get_integer());
-    pjh.up();
-    if (!pjh.move_to_index(2) || !pjh.is_integer()) {
-      throw JSON_error("dimensions[2]", "integer");
-    }
-    info.dimensions[2] = static_cast<uint16_t>(pjh.get_integer());
-    pjh.up();
 
+    auto dimensions = it->value.GetArray();
+    for (size_t i = 0; i < 3; i++) {
+      if (!dimensions[i].IsNumber()) {
+        throw JSON_error("dimensions[" + to_string(i) + "]", "integer");
+      }
+      info.dimensions[i] = dimensions[i].GetInt();
+    }
     has_dimensions = true;
   }
-  pjh.up();
 
-  if (!pjh.move_to_key("variables") || !pjh.is_array()) {
-    throw JSON_error("datasets[i].variables", "array");
+  it = params.FindMember("variables");
+  if (it == params.end() || !(it->value.IsArray())) {
+    throw JSON_error("dataset.variables", "array");
   }
-  pjh.down();
 
   // into variables []
-  do {
-    if (!pjh.is_object()) {
-      throw JSON_error("datasets[i].variables[j]", "object");
+  auto variables = it->value.GetArray();
+  for (auto &item : variables) {
+    if (!item.IsObject()) {
+      throw JSON_error("datasets.variables[i]", "object");
     }
-    pjh.move_to_key("name");
-    string variable_name = pjh.get_string();
-    pjh.up();
-
+    auto variable = item.GetObject();
+    it = variable.FindMember("name");
+    if (it == variable.end() && !(it->value.IsString())) {
+      throw JSON_error("datasets.variables[i].name", "string");
+    }
+    string variable_name = it->value.GetString();
     auto &timestep_lookup_table = variable_lookup_table[variable_name];
 
-    if (!pjh.move_to_key("timesteps") || !pjh.is_integer()) {
-      throw JSON_error("datasets[i].variables[j].timesteps", "integer");
+    it = variable.FindMember("timesteps");
+    if (it == variable.end() && !(it->value.IsInt())) {
+      throw JSON_error("dataset.variables[i].timesteps", "integer");
     }
-    const auto timesteps = static_cast<uint32_t>(pjh.get_integer());
+    const auto timesteps = static_cast<uint32_t>(it->value.GetInt());
     assert(timesteps >= 1);
-    pjh.up();
 
     timestep_lookup_table.resize(timesteps);
+    it = variable.FindMember("path");
+    if (it == variable.end() && !(it->value.IsInt())) {
+      throw JSON_error("dataset.variables[i].path", "string");
+    }
 
-    pjh.move_to_key("path");
-    const string path = pjh.get_string();
+    const string path = it->value.GetString();
     // TODO: handle data type other than uchar
     auto idx = string::npos;
     if (timesteps > 1) {
@@ -163,10 +151,7 @@ void DatasetStore::load_one(simdjson::ParsedJson::Iterator &pjh) {
       datasets.emplace_back(move(dataset));
       timestep_lookup_table[i] = datasets.size() - 1;
     }
-    pjh.up();
-  } while (pjh.next());
-  pjh.up(); // in variables []
-  pjh.up(); // in dataset {}
+  }
 }
 
 auto DatasetStore::get(const std::string &name, const std::string &variable,
@@ -250,6 +235,17 @@ auto DatasetStore::print() const -> string {
   }
   res[res.find_last_of(',')] = ']';
   return res;
+}
+void DatasetStore::add_from_json(const char *text, uint32_t size) {
+  rapidjson::Document current;
+  current.Parse(text, size);
+  this->load_one(current);
+
+  this->document.PushBack(current, document.GetAllocator());
+  rapidjson::StringBuffer buffer{};
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  document.Accept(writer);
+  cout << buffer.GetString() << endl;
 }
 
 } // namespace voxer

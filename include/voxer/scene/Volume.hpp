@@ -20,8 +20,8 @@ struct Volume {
   std::array<float, 3> clipBoxUpper = {0.0f, 0.0f, 0.0f};
   bool render = false;
 
-  auto serialize() -> std::string;
-  static auto deserialize(simdjson::ParsedJson::Iterator &pjh) -> Volume;
+  auto serialize() -> rapidjson::Document;
+  static auto deserialize(const rapidjson::Value &json) -> Volume;
 };
 
 } // namespace voxer
@@ -30,10 +30,10 @@ namespace formatter {
 
 template <> inline auto registerMembers<voxer::Volume>() {
   using Volume = voxer::Volume;
-  return std::make_tuple(
-      member("dataset", &Volume::dataset_idx), member("range", &Volume::range),
-      member("translate", &Volume::translate), member("scale", &Volume::scale),
-      member("spacing", &Volume::spacing));
+  return std::make_tuple(member("dataset", &Volume::dataset_idx),
+                         member("tfcn", &Volume::tfcn_idx),
+                         member("spacing", &Volume::spacing),
+                         member("render", &Volume::render));
 }
 
 } // namespace formatter

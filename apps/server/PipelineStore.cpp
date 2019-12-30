@@ -16,39 +16,29 @@ void PipelineStore::load_from_file(const std::string &filepath) {
 
   stringstream sstr;
   sstr << fs.rdbuf();
-  auto json = sstr.str();
+  auto str = sstr.str();
 
-  if (!pj.allocate_capacity(json.size())) {
-    throw runtime_error("prepare parsing JSON failed");
-  }
-
-  const int res = simdjson::json_parse(json, pj);
-  if (res != 0) {
-    throw runtime_error("Error parsing " + filepath + " : " +
-                        simdjson::error_message(res));
-  }
-
-  simdjson::ParsedJson::Iterator pjh(pj);
-  if (!pjh.is_ok()) {
-    throw runtime_error("invalid json");
-  }
-
-  if (!pjh.is_object()) {
+  document.Parse(str.c_str(), str.size());
+  if (!document.IsObject()) {
     throw JSON_error("root", "object");
   }
 
-  if (!pjh.move_to_key("id") || !pjh.is_string()) {
+  auto json = document.GetObject();
+  auto it = json.FindMember("id");
+  if (it == json.end() || !(it->value.IsString())) {
     throw JSON_error("id", "string");
   }
 
-  string id = pjh.get_string();
-  pjh.up();
+  string id = it->value.GetString();
 
-  pjh.move_to_key("params");
+  it = json.FindMember("params");
+  if (it == json.end() || !(it->value.IsObject())) {
+    throw JSON_error("params", "object");
+  }
 
-  auto scene = voxer::Scene::deserialize(pjh);
+  auto scene = voxer::Scene::deserialize(it->value);
   pipelines.emplace(id, move(scene));
-  serialized.emplace(move(id), move(json));
+  serialized.emplace(move(id), move(str));
 }
 
 auto PipelineStore::get(const std::string &id) const -> const voxer::Scene & {
