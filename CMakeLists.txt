@@ -1,19 +1,22 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.10)
 
 if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
   set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       CACHE STRING "")
-endif()
+endif ()
 
 project(voxer
-  LANGUAGES CXX
-  VERSION 0.0.1
-)
+    LANGUAGES CXX
+    VERSION 0.1.0
+    )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+SET(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../lib")
+
 if (UNIX)
-    #  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak -fsanitize=undefined -g")
-    #  set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak -fsanitize=undefined -g")
+  #  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak -fsanitize=undefined -g")
+  #  set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak -fsanitize=undefined -g")
 endif ()
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
 
@@ -24,9 +27,7 @@ if (VOXER_BUILD_SERVER)
   add_subdirectory(apps/server)
 endif()
 
-set(VOXER_BUILD_TESTS FALSE CACHE BOOL "whether to build tests")
+option(VOXER_BUILD_TESTS "whether to build tests" OFF)
 if(VOXER_BUILD_TESTS)
   add_subdirectory(tests)
-  enable_testing()
-  # add_test(NAME TestVolumeRendering COMMAND Test ${CMAKE_CURRENT_SOURCE_DIR}/test/configs/volume.json)
 endif()

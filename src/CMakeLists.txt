@@ -1,9 +1,12 @@
 find_package(ospray REQUIRED)
-#find_package(MPI REQUIRED)
+# find_package(MPI REQUIRED)
 find_package(Threads REQUIRED)
-find_package(RapidJSON CONFIG REQUIRED)
-
-add_library(voxer STATIC)
+find_path(
+    RAPIDJSON_INCLUDE_DIRS
+    NAMES rapidjson/document.h
+    HINTS ${RAPIDJSON_INCLUDE_PATH}
+)
+find_package(fmt CONFIG REQUIRED)
 
 list(
     APPEND
@@ -32,25 +35,21 @@ if (VOXER_ENABLE_GPU)
   )
 endif ()
 
-target_sources(voxer PRIVATE ${VOXER_SRCS})
+add_library(voxer STATIC ${VOXER_SRCS})
 target_include_directories(
     voxer
     PUBLIC
-    ${OSPRAY_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/include
-    ${RAPIDJSON_INCLUDE_DIRS}
+    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${RAPIDJSON_INCLUDE_DIRS}>
     PRIVATE
-    #    ${MPI_CXX_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}
 )
 target_link_libraries(
     voxer
-    PUBLIC
-    ${OSPRAY_LIBRARY}
-    Threads::Threads
-    PRIVATE
-    #    ${MPI_CXX_LIBRARIES}
+    PUBLIC Threads::Threads ospray::ospray
+    PRIVATE fmt::fmt
 )
 
 if (VOXER_USE_GPU)
@@ -59,4 +58,46 @@ if (VOXER_USE_GPU)
   target_link_libraries(voxer PRIVATE ${VTK_LIBRARIES})
 endif ()
 
+target_compile_options(voxer PRIVATE -Werror)
 target_compile_features(voxer PRIVATE cxx_std_14)
+
+install(
+    TARGETS voxer
+    DESTINATION lib
+    EXPORT voxer-target
+)
+install(
+    DIRECTORY ${PROJECT_SOURCE_DIR}/include/voxer
+    DESTINATION include
+)
+install(
+    EXPORT voxer-target
+    FILE VoxerTargets.cmake
+    NAMESPACE voxer::
+    DESTINATION lib/cmake/voxer
+)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+    ${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/VoxerConfig.cmake"
+    INSTALL_DESTINATION "lib/cmake/voxer"
+    NO_SET_AND_CHECK_MACRO
+    NO_CHECK_REQUIRED_COMPONENTS_MACRO
+)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/VoxerConfigVersion.cmake"
+    VERSION ${PACKAGE_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+install(
+    FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/VoxerConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/VoxerConfigVersion.cmake
+    DESTINATION lib/cmake/voxer
+)
+export(
+    EXPORT voxer-target
+    NAMESPACE voxer::
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/VoxerTargets.cmake"
+)

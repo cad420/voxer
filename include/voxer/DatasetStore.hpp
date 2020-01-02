@@ -2,7 +2,6 @@
 #include <array>
 #include <map>
 #include <memory>
-#include <simdjson/jsonparser.h>
 #include <string>
 #include <voxer/Dataset.hpp>
 #include <voxer/scene/SceneDataset.hpp>

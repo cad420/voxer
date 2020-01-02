@@ -2,7 +2,6 @@
 #include <array>
 #include <cstdint>
 #include <map>
-#include <simdjson/jsonparser.h>
 #include <string>
 #include <vector>
 

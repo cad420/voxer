@@ -1,5 +1,4 @@
 #pragma once
-#include <simdjson/jsonparser.h>
 #include <vector>
 #include <voxer/formatter/formatter.hpp>
 

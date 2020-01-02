@@ -1,22 +1,25 @@
-# Prerequisites
-To build and run the renderer in the server, you need to have installed
-1. [Ospray](http://www.ospray.org) v1.6.1 or newer.
-2. MPI library, etc MPICH2, OpenMPI, Intel MPI.
-3. [Poco](https://pocoproject.org/) Library v1.8.1 or newer.
-4. CMake, any C++ compiler supporting C++11 and standard Linux development tools.
+# Voxer
 
-To build and bundle the frontend files, you need
-1. [NodeJS](https://nodejs.org/) v8.11.3 or newer.
-2. [Yarn](https://yarnpkg.com) v1.7.0 or newer.
+## Pre
+1. Any c++ compiler supporting **C++17**
+1. CMake v3.10 or newer
+1. [OSPRay](http://www.ospray.org) v1.8.5 or newer
+1. [uSockets]()
+1. [uWebSockets]()
+1. zlib
+1. [fmt]()
 
-# Build
+### Use vcpkg to install dependecies
+
+### Or install dependecies manully
+
+## Build
 Build server renderer
 ``` shell
 cd voxer
 mkdir build
 cd build
 cmake ..
-# or cmake .. \
 # -DOSPRAY_LIB_PATH=/your_path \
 # -DOSPRAY_INCLUDE_DIR=/your_path \
 # -DMPI_COMPILER_PATH=/your_path \
@@ -25,17 +28,7 @@ cmake ..
 make
 ```
 
-Build webpage
-``` shell
-cd web
-npm install
-npm run build
-```
+## Run
 
-## Roadmap
-- Lights modules
-- Modules in backend
-- Animation Display module
-- Transition & AnimationRender modules: specific params first state & last state, generate animation
-- Remove three.js & mout
-- Sort-last MPI
+## Use Docker Image
+

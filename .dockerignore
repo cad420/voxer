@@ -1,5 +1,8 @@
 build
 .vscode
+.git
+.idea
 data
 yarn-error.log
 web/node_modules
+Dockerfile

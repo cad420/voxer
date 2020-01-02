@@ -2,6 +2,8 @@
 #include "utils.hpp"
 #include <filesystem>
 #include <fmt/format.h>
+#include <fstream>
+#include <sstream>
 #include <stdexcept>
 #include <voxer/utils.hpp>
 

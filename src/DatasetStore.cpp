@@ -7,6 +7,7 @@
 #include <fmt/core.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <sstream>
 #include <stdexcept>
 
 using namespace std;

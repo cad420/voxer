@@ -1,4 +1,6 @@
 #include "voxer/Dataset.hpp"
+#include <array>
+#include <fstream>
 
 namespace voxer {
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "voxer/Dataset.hpp"
 #include <array>
+#include <fstream>
 #include <string>
 
 namespace voxer {

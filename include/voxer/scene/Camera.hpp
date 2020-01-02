@@ -1,7 +1,6 @@
 #pragma once
 #include <array>
 #include <map>
-#include <simdjson/jsonparser.h>
 #include <string>
 #include <voxer/formatter/formatter.hpp>
 

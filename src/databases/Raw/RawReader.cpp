@@ -1,6 +1,7 @@
 #include "databases/Raw/RawReader.hpp"
 #include "databases/conversion.hpp"
 #include "voxer/utils.hpp"
+#include <cassert>
 #include <iostream>
 #include <iterator>
 #include <memory>

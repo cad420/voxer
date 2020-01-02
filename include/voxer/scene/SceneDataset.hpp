@@ -1,6 +1,5 @@
 #pragma once
 #include <array>
-#include <simdjson/parsedjson.h>
 #include <voxer/filter/clip.hpp>
 #include <voxer/formatter/formatter.hpp>
 

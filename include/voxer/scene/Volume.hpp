@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdint>
 #include <memory>
-#include <simdjson/jsonparser.h>
 #include <string>
 #include <voxer/Dataset.hpp>
 #include <voxer/formatter/formatter.hpp>

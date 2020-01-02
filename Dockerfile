@@ -1,48 +1,50 @@
-FROM mpi:ubuntu
+FROM ubuntu:19.10 as builder
 
-ARG build_parallel
-
-USER root
-
-RUN sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list && apt-get update
+RUN apt-get update
 RUN apt-get install -y \
-            libgl1-mesa-dev \
-            libglew-dev \
-            libxt-dev
-    # && \
-    # rm -rf /var/lib/apt/lists/*
+  build-essential \
+  git \
+  cmake
 
-ADD docker/deps/ospray-1.8.2.x86_64.linux.tar.gz /tmp/
-RUN mv /tmp/ospray-1.8.2.x86_64.linux/lib/* /usr/lib && \
-    mv /tmp/ospray-1.8.2.x86_64.linux/include/* /usr/include && \
-    rm -rf /tmp/ospray-1.8.2.x86_64.linux
+ADD ospray-1.8.5.x86_64.linux.tar.gz /tmp/
 
-ADD docker/deps/poco-1.9.0.tar.gz /tmp/
-RUN mv /tmp/poco-1.9.0 /tmp/poco && \
-    mkdir /tmp/poco/cmake-build && \
-    cd /tmp/poco/cmake-build && \
-    cmake ..  -DCMAKE_INSTALL_PREFIX=/usr/ && \
-    cmake --build . -- -j4 && \
-    cmake --install . && \
-    make install && \
-    rm -rf /tmp/poco
+WORKDIR /tmp
+RUN git clone --depth=1 https://github.com/uNetworking/uSockets.git \
+  && cd uSockets \
+  && make \
+  && cp uSockets.a libuSockets.a
 
-ADD docker/deps/vtk-v8.2.0.tar.gz /tmp/
-RUN mv /tmp/vtk-v8.2.0 /tmp/vtk && \
-    mkdir /tmp/vtk/build && \
-    cd /tmp/vtk/build && \
-    cmake .. -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/ && \
-    cmake --build . -- -j4 && \
-    cmake --install . && \
-    make install && \
-    rm -rf /tmp/vtk
+RUN git clone --depth=1 https://github.com/uNetworking/uWebSockets.git \
+&& cd uWebSockets \
+&& cp -r src uwebsockets
 
-COPY voxer /tmp/vovis/voxer
-COPY server /tmp/vovis/server
-COPY test /tmp/vovis/test
-COPY third_party /tmp/vovis/third_party
-COPY CMakeLists.txt /tmp/vovis
-WORKDIR /tmp/vovis/build
-RUN cmake .. && cmake --build . -- -j4
+RUN git clone --depth=1 https://github.com/Tencent/rapidjson.git
 
-CMD ["./server/VovisRenderer", "--datasets", "/home/mpi/configs/datasets-for-docker.json"]
+RUN git clone --depth=1 https://github.com/fmtlib/fmt.git && mkdir -p fmt/build && cd fmt/build && cmake .. -DFMT_TEST=OFF -DFMT_DOC=OFF -DCMAKE_INSTALL_PREFIX=./fmt && cmake --build . --target install
+
+RUN apt-get install -y zlib1g-dev
+
+ADD . /tmp/voxer
+WORKDIR /tmp/voxer
+RUN mkdir build && cd build && \
+  cmake .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -Dospray_DIR=/tmp/ospray-1.8.5.x86_64.linux/lib/cmake/ospray-1.8.5 \
+  -DRAPIDJSON_INCLUDE_PATH=/tmp/rapidjson/include \
+  -DUSOCKETS_LIB_PATH=/tmp/uSockets/ \
+  -DUSOCKETS_INCLUDE_PATH=/tmp/uSockets/src \
+  -DUWEBSOCKETS_INCLUDE_PATH=/tmp/uWebSockets/ \
+  -Dfmt_DIR=/tmp/fmt/build/fmt/lib/cmake/fmt \
+  -DCMAKE_INSTALL_PREFIX=/tmp/voxer-install && \
+  cmake --build . --target install
+
+RUN cp -r /tmp/ospray-1.8.5.x86_64.linux/lib/* /tmp/voxer-install/lib
+RUN cp /usr/lib/x86_64-linux-gnu/libz.so* /tmp/voxer-install/lib/
+RUN ls /usr/lib/x86_64-linux-gnu
+
+FROM ubuntu:19.10
+COPY --from=builder /tmp/voxer-install /tmp/voxer
+
+EXPOSE 3000
+
+CMD ["/tmp/voxer/bin/voxer-server"]

@@ -2,7 +2,6 @@
 #include "databases/conversion.hpp"
 #include "voxer/utils.hpp"
 #include <cstring>
-#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <vector>

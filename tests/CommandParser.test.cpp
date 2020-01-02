@@ -12,6 +12,6 @@ TEST_CASE("CommandParser", "[parse]") {
   voxer::DatasetStore datasets;
   CommandParser parser;
   auto command = parser.parse(json);
-  REQUIRE(command.type == Command::Type::Query);
+  REQUIRE(command.type == Command::Type::QueryPipeline);
   REQUIRE(get<std::nullptr_t>(command.params) == nullptr);
 }

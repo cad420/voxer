@@ -17,13 +17,14 @@ struct Logger {
   std::string name;
 
   explicit Logger(const char *name) : name(name) {
-    std::string env = getenv("LOG_LEVEL");
+    const char *env = getenv("LOG_LEVEL");
+    std::string logLevel = env == nullptr ? "" : env;
     Logger::level = LogLevel::WARNING;
-    if (env == "ERROR") {
+    if (logLevel == "ERROR") {
       Logger::level = LogLevel::ERROR;
-    } else if (env == "INFO") {
+    } else if (logLevel == "INFO") {
       Logger::level = LogLevel::INFO;
-    } else if (env == "DEBUG") {
+    } else if (logLevel == "DEBUG") {
       Logger::level = LogLevel::DEBUG;
     }
   }

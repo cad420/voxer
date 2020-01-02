@@ -1,6 +1,5 @@
 #pragma once
 #include <random>
-#include <simdjson/jsonparser.h>
 #include <stdexcept>
 
 namespace voxer {
@@ -24,17 +23,6 @@ inline auto nanoid(uint8_t size = 16) -> std::string {
   }
 
   return id;
-}
-
-inline auto is_number(const simdjson::ParsedJson::Iterator &pjh) -> bool {
-  return (pjh.is_double() || pjh.is_integer());
-}
-
-inline auto get_number(const simdjson::ParsedJson::Iterator &pjh) -> float {
-  if (pjh.is_integer()) {
-    return static_cast<float>(pjh.get_integer());
-  }
-  return static_cast<float>(pjh.get_double());
 }
 
 inline auto hex_color_to_float(const std::string &str) -> std::array<float, 3> {

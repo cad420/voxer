@@ -1,13 +1,7 @@
-find_package(simdjson CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 
-add_executable(TestDataStore)
-target_sources(
-    TestDataStore
-    PRIVATE
-    DatasetStore.test.cpp
-)
+add_executable(TestDataStore DatasetStore.test.cpp)
 target_include_directories(
     TestDataStore
     PRIVATE
@@ -19,7 +13,6 @@ target_link_libraries(
     PRIVATE
     voxer
     Threads::Threads
-    simdjson::simdjson
     fmt::fmt
 )
 target_compile_features(TestDataStore PRIVATE cxx_std_17)
@@ -35,15 +28,12 @@ target_link_libraries(
     TestUtils
     PRIVATE
     Threads::Threads
-    simdjson::simdjson
     fmt::fmt
 )
 target_compile_features(TestUtils PRIVATE cxx_std_17)
 
-add_executable(TestCommandParser)
-target_sources(
+add_executable(
     TestCommandParser
-    PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/CommandParser.test.cpp
     ${PROJECT_SOURCE_DIR}/apps/server/CommandParser.cpp
 )
@@ -73,7 +63,13 @@ target_link_libraries(
     TestServerUtils
     PRIVATE
     Threads::Threads
-    simdjson::simdjson
     fmt::fmt
 )
-target_compile_features(TestServerUtils PRIVATE cxx_std_17)
+target_compile_features(TestServerUtils PRIVATE cxx_std_14)
+
+enable_testing()
+add_test(NAME TestDataStore COMMAND TestDataStore)
+add_test(NAME TestUtils COMMAND TestUtils)
+add_test(NAME TestCommandParser COMMAND TestCommandParser)
+add_test(NAME TestServerUtils COMMAND TestServerUtils)
+
