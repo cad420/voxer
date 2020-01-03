@@ -13,6 +13,7 @@ public:
       -> const std::string &;
   [[nodiscard]] auto save(const std::string &json, voxer::Scene scene)
       -> std::string;
+  void update(const std::string &id, voxer::Scene scene);
   [[nodiscard]] auto print() const -> std::string;
 
 private:

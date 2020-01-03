@@ -168,6 +168,17 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
     return {Command::Type::RunPipeline, create_modifier(move(params))};
   }
 
+  if (command_type == "modify") {
+    it = params.FindMember("id");
+    if (it == params.end() || !it->value.IsString()) {
+      throw JSON_error("params.id", "string");
+    }
+
+    return {
+        Command::Type::ModifyDataset,
+        make_pair(string(it->value.GetString()), Scene::deserialize(params))};
+  }
+
   if (command_type == "add") {
     it = params.FindMember("target");
     if (it == params.end() || !it->value.IsString()) {

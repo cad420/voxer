@@ -3,6 +3,8 @@
 #include <filesystem>
 #include <fmt/format.h>
 #include <fstream>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 #include <sstream>
 #include <stdexcept>
 #include <voxer/utils.hpp>
@@ -123,4 +125,20 @@ auto PipelineStore::print() const -> std::string {
   }
   res[res.find_last_of(',')] = ']';
   return res;
+}
+
+void PipelineStore::update(const std::string &id, voxer::Scene scene) {
+  auto it = pipelines.find(id);
+  if (it == pipelines.end()) {
+    throw runtime_error("cannot find pipeline with id: " + id);
+  }
+
+  auto json = scene.serialize();
+  rapidjson::StringBuffer buffer{};
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  document.Accept(writer);
+  string str(buffer.GetString(), buffer.GetSize());
+
+  serialized.emplace(id, move(str));
+  pipelines.emplace(id, move(scene));
 }

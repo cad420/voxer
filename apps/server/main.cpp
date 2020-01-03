@@ -18,6 +18,7 @@ struct UserData {};
 int main(int argc, const char **argv) {
   // prepare datasets
   DatasetStore datasets;
+
   if (argc >= 2) {
     datasets.load_from_file(string(argv[1]));
   } else {
@@ -129,6 +130,14 @@ int main(int argc, const char **argv) {
         auto json = get<string>(command.params);
         datasets.add_from_json(json.c_str(), json.size());
         ws->send(R"({"type":"add"})", uWS::OpCode::TEXT);
+        break;
+      }
+      case Command::Type ::ModifyDataset: {
+        auto params = get<pair<string, Scene>>(command.params);
+        auto id = params.first;
+        auto scene = move(params.second);
+        pipelines.update(id, scene);
+        ws->send(R"({"type":"modify"})", uWS::OpCode::TEXT);
         break;
       }
       default:

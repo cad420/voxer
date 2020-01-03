@@ -17,7 +17,8 @@ struct Command {
     QueryPipelines,
     QueryPipeline,
     RunPipeline,
-    AddDataset
+    AddDataset,
+    ModifyDataset
   };
 
   Type type = Type::Render;
