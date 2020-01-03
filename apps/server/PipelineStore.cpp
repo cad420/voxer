@@ -69,10 +69,16 @@ auto PipelineStore::save(const std::string &json, voxer::Scene scene)
     id = nanoid();
   }
 
-  string filename = id + ".json";
-  ofstream fs(filename);
+  string filepath = id + ".json";
+  if (this->dir[this->dir.size() - 1] == '/') {
+    filepath = this->dir + filepath;
+  } else {
+    filepath = this->dir + "/" + filepath;
+  }
+
+  ofstream fs(filepath);
   if (!fs.good() || !fs.is_open()) {
-    throw runtime_error("cannot open " + filename + " to backup pipeline.");
+    throw runtime_error("cannot open " + filepath + " to backup pipeline.");
   }
 
   auto backup = fmt::format(R"({{"id":"{}","params":{}}})", id, json);
@@ -93,13 +99,17 @@ void PipelineStore::load_from_directory(const std::string &directory) {
 
     auto &filepath = entry.path();
     auto ext = filepath.extension().string();
-    if (ext != ".json") {
+    if (ext != ".json" || filepath.filename() == "datasets.json") {
       continue;
     }
 
     this->load_from_file(filepath);
   }
+
+  cout << "load " << this->pipelines.size() << " pipelines." << endl;
 }
+
+void PipelineStore::load() { this->load_from_directory(this->dir); }
 
 auto PipelineStore::print() const -> std::string {
   if (serialized.empty()) {

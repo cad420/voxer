@@ -160,8 +160,8 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
   }
 
   if (command_type == "save") {
-    return {Command::Type::Save,
-            make_pair(extract_params(value), Scene::deserialize(params))};
+    return {Command::Type::Save, make_pair(extract_params(string(value, size)),
+                                           Scene::deserialize(params))};
   }
 
   if (command_type == "run") {
@@ -176,7 +176,7 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
 
     string target = it->value.GetString();
     if (target == "dataset") {
-      return {Command::Type::AddDataset, extract_params(value)};
+      return {Command::Type::AddDataset, extract_params(string(value, size))};
     }
 
     throw runtime_error("unsupported add type: " + target);

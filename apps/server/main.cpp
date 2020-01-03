@@ -16,14 +16,13 @@ using namespace voxer;
 struct UserData {};
 
 int main(int argc, const char **argv) {
-  if (argc < 2) {
-    cout << "Usage: " << argv[0] << " </path/to/database.json>" << endl;
-    return 0;
-  }
-
   // prepare datasets
   DatasetStore datasets;
-  datasets.load_from_file(string(argv[1]));
+  if (argc >= 2) {
+    datasets.load_from_file(string(argv[1]));
+  } else {
+    datasets.load();
+  }
 
   // prepare histograms
   map<string, vector<uint32_t>> histograms;
@@ -34,8 +33,9 @@ int main(int argc, const char **argv) {
   // load exist pipelines
   PipelineStore pipelines;
   if (argc >= 3) {
-    // TODO: load ALL exist pipelines
     pipelines.load_from_directory(argv[2]);
+  } else {
+    pipelines.load();
   }
 
   CommandParser parser{};
@@ -52,7 +52,6 @@ int main(int argc, const char **argv) {
   behavior.message = [&datasets, &parser, &pipelines, &histograms,
                       &renderer](uWS::WebSocket<false, true> *ws,
                                  std::string_view message, uWS::OpCode) {
-    assert(ws->getUserData() != nullptr);
     Command command;
     try {
       command = parser.parse(message.data(), message.size());

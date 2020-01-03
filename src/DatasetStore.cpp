@@ -117,18 +117,18 @@ void DatasetStore::load_one(const rapidjson::Value &json) {
       throw JSON_error("dataset.variables[i].path", "string");
     }
 
-    const string path = it->value.GetString();
+    const string dataset_path = it->value.GetString();
     // TODO: handle data type other than uchar
     auto idx = string::npos;
     if (timesteps > 1) {
-      idx = path.find("[step]");
+      idx = dataset_path.find("[step]");
       if (idx == string::npos) {
         throw runtime_error(
             "dataset path should contain [step] when timesteps > 1");
       }
     }
     for (size_t i = 0; i < timesteps; i++) {
-      auto real_path = path;
+      auto real_path = dataset_path;
       if (idx != std::string::npos) {
         // substitue [step]
         real_path.replace(idx, idx + 6, to_string(i));
@@ -240,13 +240,31 @@ auto DatasetStore::print() const -> string {
 void DatasetStore::add_from_json(const char *text, uint32_t size) {
   rapidjson::Document current;
   current.Parse(text, size);
+  if (current.HasParseError()) {
+    throw runtime_error(string("Parsing JSON error, code: ") +
+                        to_string(current.GetParseError()));
+  }
   this->load_one(current);
 
   this->document.PushBack(current, document.GetAllocator());
   rapidjson::StringBuffer buffer{};
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   document.Accept(writer);
-  cout << buffer.GetString() << endl;
+
+  ofstream fs(this->path);
+  fs.write(buffer.GetString(), buffer.GetSize());
+  fs.close();
+}
+
+void DatasetStore::load() {
+  ifstream fs(this->path);
+  if (!fs.good()) {
+    ofstream ofs(this->path);
+    ofs.write("[]", 2);
+    ofs.close();
+  }
+  fs.close();
+  this->load_from_file(this->path);
 }
 
 } // namespace voxer

@@ -13,6 +13,7 @@ class DatasetStore {
   using VariableLookUpTable = std::map<std::string, TimestepLookUpTable>;
 
 public:
+  void load();
   void load_from_file(const std::string &filepath);
   void load_from_json(const char *json, uint32_t size);
   void load_one(const rapidjson::Value &json);
@@ -30,7 +31,7 @@ public:
   [[nodiscard]] auto print() const -> std::string;
 
 private:
-  std::string path;
+  std::string path = "./datasets.json";
   rapidjson::Document document;
   std::vector<voxer::Dataset> datasets;
   std::map<std::string, voxer::Dataset> temp_datasets;

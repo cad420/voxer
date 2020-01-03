@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 #include <cstdint>
 #include <vector>
 
@@ -13,7 +14,8 @@ inline auto conversion(const float *source, size_t size, float max, float min)
   uint8_t max_value = 255;
   for (size_t i = 0; i < size; i++) {
     double range = source[i] - min;
-    data.push_back(range / max_range * 255);
+    auto value = round(range / max_range * max_value);
+    data.push_back(value);
   }
 
   return data;
