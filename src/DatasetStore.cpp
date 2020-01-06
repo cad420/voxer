@@ -238,15 +238,18 @@ auto DatasetStore::print() const -> string {
   return res;
 }
 void DatasetStore::add_from_json(const char *text, uint32_t size) {
-  rapidjson::Document current;
+  rapidjson::Document current{};
   current.Parse(text, size);
   if (current.HasParseError()) {
     throw runtime_error(string("Parsing JSON error, code: ") +
                         to_string(current.GetParseError()));
+  } else if (!current.IsObject()) {
+    throw runtime_error("dataset should be an object");
   }
   this->load_one(current);
 
-  this->document.PushBack(current, document.GetAllocator());
+  this->document.PushBack(current.Move(), document.GetAllocator());
+
   rapidjson::StringBuffer buffer{};
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   document.Accept(writer);

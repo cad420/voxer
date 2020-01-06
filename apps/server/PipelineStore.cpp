@@ -12,6 +12,23 @@
 using namespace std;
 using namespace voxer;
 
+static void save_to_file(const string &id, const string &dir,
+                         const string &text) {
+  string filepath = id + ".json";
+  if (dir[dir.size() - 1] == '/') {
+    filepath = dir + filepath;
+  } else {
+    filepath = dir + "/" + filepath;
+  }
+
+  ofstream fs(filepath);
+  if (!fs.good() || !fs.is_open()) {
+    throw runtime_error("cannot open " + filepath + " to backup pipeline.");
+  }
+
+  fs.write(text.c_str(), text.size());
+  fs.close();
+}
 void PipelineStore::load_from_file(const std::string &filepath) {
   ifstream fs(filepath);
   if (!fs.good() || !fs.is_open()) {
@@ -71,21 +88,8 @@ auto PipelineStore::save(const std::string &json, voxer::Scene scene)
     id = nanoid();
   }
 
-  string filepath = id + ".json";
-  if (this->dir[this->dir.size() - 1] == '/') {
-    filepath = this->dir + filepath;
-  } else {
-    filepath = this->dir + "/" + filepath;
-  }
-
-  ofstream fs(filepath);
-  if (!fs.good() || !fs.is_open()) {
-    throw runtime_error("cannot open " + filepath + " to backup pipeline.");
-  }
-
   auto backup = fmt::format(R"({{"id":"{}","params":{}}})", id, json);
-  fs.write(backup.c_str(), backup.size());
-  fs.close();
+  save_to_file(id, this->dir, backup);
 
   pipelines.emplace(id, move(scene));
   serialized.emplace(id, move(backup));
@@ -134,11 +138,18 @@ void PipelineStore::update(const std::string &id, voxer::Scene scene) {
   }
 
   auto json = scene.serialize();
+  rapidjson::Document pipeline{};
+  pipeline.SetObject();
+  pipeline.AddMember(
+      "id", rapidjson::Value(id.c_str(), pipeline.GetAllocator()).Move(),
+      pipeline.GetAllocator());
+  pipeline.AddMember("params", json, pipeline.GetAllocator());
   rapidjson::StringBuffer buffer{};
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-  document.Accept(writer);
-  string str(buffer.GetString(), buffer.GetSize());
+  pipeline.Accept(writer);
 
-  serialized.emplace(id, move(str));
-  pipelines.emplace(id, move(scene));
+  save_to_file(id, this->dir, buffer.GetString());
+
+  serialized[id] = buffer.GetString();
+  it->second = move(scene);
 }

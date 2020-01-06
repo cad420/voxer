@@ -99,13 +99,11 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
     const auto &volume = scene.volumes[i];
     const auto &tfcn = scene.tfcns[volume.tfcn_idx];
     auto interpolated = interpolate(tfcn);
-    auto osp_opacity_data =
-        ospNewData(interpolated.first.size(), OSP_FLOAT,
-                   interpolated.first.data(), OSP_DATA_SHARED_BUFFER);
+    auto osp_opacity_data = ospNewData(interpolated.first.size(), OSP_FLOAT,
+                                       interpolated.first.data());
     auto osp_colors_data =
         ospNewData(interpolated.second.size(), OSP_FLOAT3,
-                   reinterpret_cast<const void *>(interpolated.second.data()),
-                   OSP_DATA_SHARED_BUFFER);
+                   reinterpret_cast<const void *>(interpolated.second.data()));
     auto osp_tfcn = ospNewTransferFunction("piecewise_linear");
     ospSetData(osp_tfcn, "colors", osp_colors_data);
     ospSetData(osp_tfcn, "opacities", osp_opacity_data);
@@ -134,7 +132,8 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
     ospSet3f(osp_volume, "gridSpacing", volume.spacing[0], volume.spacing[1],
              volume.spacing[2]);
     ospSet1b(osp_volume, "singleShade", 0);
-    ospSet1b(osp_volume, "gradientShadingEnabled", 1);
+    ospSet1b(osp_volume, "gradientShadingEnabled",
+             0); // some kinds of expensive
     if (scene_dataset.clip) {
       // TODO: not safe
       ospSet3f(osp_volume, "volumeClippingBoxLower",
@@ -186,6 +185,10 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
   }
 
   for (auto &isosurface : scene.isosurfaces) {
+    if (!isosurface.render) {
+      continue;
+    }
+
     auto osp_isovalue_data = ospNewData(
         1, OSP_FLOAT, static_cast<const void *>(&(isosurface.value)));
 

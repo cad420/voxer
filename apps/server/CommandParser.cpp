@@ -60,21 +60,17 @@ static auto create_modifier(rapidjson::Value json_)
     it = params.FindMember("tfcns");
     if (it != params.end() && it->value.IsArray()) {
       auto tfcn_json = it->value.GetArray();
-      scene.tfcns.clear();
-      for (auto &item : tfcn_json) {
-        TransferFunction tfcn{};
+      for (size_t i = 0; i < tfcn_json.Size(); i++) {
+        const auto &item = tfcn_json[i];
         if (item.IsArray()) {
-          auto points = item.GetArray();
-          for (auto &point_json : points) {
-            ControlPoint point{};
-            formatter::deserialize(point, point_json);
-            tfcn.emplace_back(point);
-          }
+          auto &tfcn = scene.tfcns[i];
+          tfcn.clear();
+          formatter::deserialize(tfcn, item);
         }
-        scene.tfcns.emplace_back(move(tfcn));
       }
     }
 
+    // TODO: not needed every time
     for (auto &tfcn : scene.tfcns) {
       for (auto &point : tfcn) {
         point.color = hex_color_to_float(point.hex_color);
