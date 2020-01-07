@@ -131,7 +131,8 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
     ospSetObject(osp_volume, "transferFunction", osp_tfcn);
     ospSet3f(osp_volume, "gridSpacing", volume.spacing[0], volume.spacing[1],
              volume.spacing[2]);
-    ospSet1b(osp_volume, "singleShade", 0);
+    ospSet1f(osp_volume, "samplingRate", volume.spacing[2] * 0.125f);
+    ospSet1b(osp_volume, "singleShade", true);
     ospSet1b(osp_volume, "gradientShadingEnabled",
              0); // some kinds of expensive
     if (scene_dataset.clip) {
@@ -224,14 +225,16 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
   ospSetData(osp_renderer, "lights",
              ospNewData(lights.size(), OSP_LIGHT, lights.data()));
   ospSet1i(osp_renderer, "spp", 1);
-  ospSet1i(osp_renderer, "aoSamples", 1);
+  ospSet1i(osp_renderer, "aoSamples", 0);
+  ospSet1i(osp_renderer, "maxDepth", 20);
+  ospSet1f(osp_renderer, "minContribution", 0.01);
   ospSet1f(osp_renderer, "bgColor", 0.0f);
   ospSetObject(osp_renderer, "camera", osp_camera);
   ospSetObject(osp_renderer, "model", osp_model);
   ospCommit(osp_renderer);
 
   // render frame
-  const size_t iteration_times = camera.width == 64 ? 5 : 10;
+  const size_t iteration_times = camera.width == 64 ? 2 : 8;
   auto osp_framebuffer =
       ospNewFrameBuffer(osp::vec2i{static_cast<int>(camera.width),
                                    static_cast<int>(camera.height)},

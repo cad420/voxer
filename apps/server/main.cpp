@@ -42,7 +42,11 @@ int main(int argc, const char **argv) {
   CommandParser parser{};
   OSPRayRenderer renderer{datasets};
 
-  // configure server
+  auto app = uWS::App();
+
+  // TODO: configure http routes
+
+  // configure websocket server
   uWS::App::WebSocketBehavior behavior{uWS::SHARED_COMPRESSOR, 1024 * 1024,
                                        30 * 60, 1024 * 1024 * 1024};
 
@@ -123,7 +127,7 @@ int main(int argc, const char **argv) {
       case Command::Type::Save: {
         auto save = get<pair<string, Scene>>(command.params);
         auto id = pipelines.save(save.first, move(save.second));
-        ws->send(fmt::format(R"({{"command":"save","value":"{}"}})", id));
+        ws->send(fmt::format(R"({{"type":"save","value":"{}"}})", id));
         break;
       }
       case Command::Type::AddDataset: {
@@ -153,6 +157,8 @@ int main(int argc, const char **argv) {
     cout << ws->getRemoteAddress() << "closed" << endl;
   };
 
+  app.ws<UserData>("/*", move(behavior));
+
   // run server
   const auto port = 3000;
   auto on_success = [port](auto *token) {
@@ -162,8 +168,7 @@ int main(int argc, const char **argv) {
     }
     cout << "listening on port " << port << endl;
   };
-  auto server = uWS::App().ws<UserData>("/*", move(behavior));
-  server.listen(port, on_success).run();
+  app.listen(port, on_success).run();
 
   return 0;
 }

@@ -248,7 +248,8 @@ void DatasetStore::add_from_json(const char *text, uint32_t size) {
   }
   this->load_one(current);
 
-  this->document.PushBack(current.Move(), document.GetAllocator());
+  rapidjson::Value value(current, document.GetAllocator());
+  document.PushBack(value, document.GetAllocator());
 
   rapidjson::StringBuffer buffer{};
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);

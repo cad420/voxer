@@ -438,7 +438,7 @@ auto MRCReader::load() -> Dataset {
   const auto elem_size = get_type_size(get_data_type(header));
 
   vector<uint8_t> data_buffer;
-  data_buffer.reserve(header.nx * header.ny * header.nz * elem_size);
+  data_buffer.resize(header.nx * header.ny * header.nz * elem_size);
   fs.read(reinterpret_cast<char *>(data_buffer.data()), count * elem_size);
   const auto readCount = fs.gcount();
   if (readCount != count * elem_size) {
