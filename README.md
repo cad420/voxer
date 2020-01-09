@@ -61,3 +61,18 @@ to build `voxer-server`.
 #### Run the Service
 
 TODO
+
+## Citing
+If you find `voxer` useful in your research, you can consider citing:
+```
+@article{yang2019voxer,
+  title={Voxer—a platform for creating, customizing, and sharing scientific visualizations},
+  author={Yang, Weimin and Tao, Yubo and Lin, Hai},
+  journal={Journal of Visualization},
+  volume={22},
+  number={6},
+  pages={1161--1176},
+  year={2019},
+  publisher={Springer}
+}
+```
