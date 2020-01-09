@@ -78,9 +78,9 @@ struct OSPRayRenderer::Cache {
 
 OSPRayRenderer::OSPRayRenderer(DatasetStore &datasets) : Renderer(datasets) {
   auto osp_device = ospNewDevice();
-  //  ospDeviceSet1i(osp_device, "logLevel", 2);
-  ospDeviceSetString(osp_device, "logOutput", "cout");
-  ospDeviceSetString(osp_device, "errorOutput", "cout");
+  // ospDeviceSet1i(osp_device, "logLevel", 2);
+  // ospDeviceSetString(osp_device, "logOutput", "cout");
+  // ospDeviceSetString(osp_device, "errorOutput", "cout");
   ospDeviceCommit(osp_device);
   ospSetCurrentDevice(osp_device);
 
@@ -134,7 +134,7 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
     ospSet1f(osp_volume, "samplingRate", volume.spacing[2] * 0.125f);
     ospSet1b(osp_volume, "singleShade", true);
     ospSet1b(osp_volume, "gradientShadingEnabled",
-             0); // some kinds of expensive
+             false); // some kinds of expensive
     if (scene_dataset.clip) {
       // TODO: not safe
       ospSet3f(osp_volume, "volumeClippingBoxLower",
@@ -225,7 +225,7 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
   ospSetData(osp_renderer, "lights",
              ospNewData(lights.size(), OSP_LIGHT, lights.data()));
   ospSet1i(osp_renderer, "spp", 1);
-  ospSet1i(osp_renderer, "aoSamples", 0);
+  ospSet1i(osp_renderer, "aoSamples", scene.camera.enable_ao ? 5 : 0);
   ospSet1i(osp_renderer, "maxDepth", 20);
   ospSet1f(osp_renderer, "minContribution", 0.01);
   ospSet1f(osp_renderer, "bgColor", 0.0f);

@@ -127,7 +127,8 @@ int main(int argc, const char **argv) {
       case Command::Type::Save: {
         auto save = get<pair<string, Scene>>(command.params);
         auto id = pipelines.save(save.first, move(save.second));
-        ws->send(fmt::format(R"({{"type":"save","value":"{}"}})", id));
+        ws->send(fmt::format(R"({{"type":"save","value":"{}"}})", id),
+                 uWS::OpCode::TEXT);
         break;
       }
       case Command::Type::AddDataset: {
