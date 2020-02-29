@@ -4,6 +4,7 @@
 #include <rapidjson/document.h>
 #include <stdexcept>
 #include <string>
+#include <voxer/scene/TransferFunction.hpp>
 #include <voxer/utils.hpp>
 
 using namespace voxer;
@@ -65,7 +66,7 @@ static auto create_modifier(rapidjson::Value json_)
         if (item.IsArray()) {
           auto &tfcn = scene.tfcns[i];
           tfcn.clear();
-          formatter::deserialize(tfcn, item);
+          deserialize_tfcn(tfcn, item);
         }
       }
     }

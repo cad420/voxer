@@ -1,11 +1,6 @@
 find_package(ospray REQUIRED)
 # find_package(MPI REQUIRED)
 find_package(Threads REQUIRED)
-find_path(
-    RAPIDJSON_INCLUDE_DIRS
-    NAMES rapidjson/document.h
-    HINTS ${RAPIDJSON_INCLUDE_PATH}
-)
 find_package(fmt CONFIG REQUIRED)
 
 list(
@@ -41,10 +36,11 @@ target_include_directories(
     PUBLIC
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${RAPIDJSON_INCLUDE_DIRS}>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/rapidjson/include/>
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/third_party/seria/include/
 )
 target_link_libraries(
     voxer

@@ -1,6 +1,7 @@
 #pragma once
+#include <array>
+#include <rapidjson/document.h>
 #include <vector>
-#include <voxer/formatter/formatter.hpp>
 
 namespace voxer {
 
@@ -15,6 +16,9 @@ struct ControlPoint {
 };
 
 using TransferFunction = std::vector<ControlPoint>;
+
+void deserialize_tfcn(TransferFunction &tfcn, const rapidjson::Value &json);
+
 // struct TransferFunction {
 //  std::vector<ControlPoint> points;
 //  std::vector<float> stops = {};
@@ -27,19 +31,3 @@ using TransferFunction = std::vector<ControlPoint>;
 //};
 
 } // namespace voxer
-
-namespace formatter {
-
-template <> inline auto registerMembers<voxer::ControlPoint>() {
-  using ControlPoint = voxer::ControlPoint;
-  return std::make_tuple(member("x", &ControlPoint::x),
-                         member("y", &ControlPoint::y),
-                         member("color", &ControlPoint::hex_color));
-}
-//
-// template <> inline auto registerMembers<voxer::TransferFunction>() {
-//  using TransferFunction = voxer::TransferFunction;
-//  return std::make_tuple(member("points", &TransferFunction::points));
-//}
-
-} // namespace formatter

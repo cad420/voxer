@@ -1,9 +1,9 @@
 #pragma once
 #include <cstdint>
 #include <memory>
+#include <rapidjson/document.h>
 #include <string>
 #include <voxer/Dataset.hpp>
-#include <voxer/formatter/formatter.hpp>
 
 namespace voxer {
 
@@ -24,15 +24,3 @@ struct Volume {
 };
 
 } // namespace voxer
-
-namespace formatter {
-
-template <> inline auto registerMembers<voxer::Volume>() {
-  using Volume = voxer::Volume;
-  return std::make_tuple(member("dataset", &Volume::dataset_idx),
-                         member("tfcn", &Volume::tfcn_idx),
-                         member("spacing", &Volume::spacing),
-                         member("render", &Volume::render));
-}
-
-} // namespace formatter

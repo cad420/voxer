@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fmt/format.h>
 #include <fstream>
+#include <iostream>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 #include <sstream>

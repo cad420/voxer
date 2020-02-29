@@ -1,7 +1,7 @@
 #pragma once
 #include <array>
 #include <memory>
-#include <voxer/formatter/formatter.hpp>
+#include <rapidjson/document.h>
 #include <voxer/scene/Volume.hpp>
 
 namespace voxer {
@@ -15,13 +15,3 @@ struct Slice {
 };
 
 } // namespace voxer
-
-namespace formatter {
-
-template <> inline auto registerMembers<voxer::Slice>() {
-  using Slice = voxer::Slice;
-  return std::make_tuple(member("coef", &Slice::coef),
-                         member("volume", &Slice::volume_idx));
-}
-
-} // namespace formatter

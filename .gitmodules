@@ -1,0 +1,6 @@
+[submodule "third_party/seria"]
+	path = third_party/seria
+	url = https://github.com/ukabuer/seria.git
+[submodule "third_party/rapidjson"]
+	path = third_party/rapidjson
+	url = https://github.com/Tencent/rapidjson.git

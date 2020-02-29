@@ -1,12 +1,26 @@
 #include "voxer/scene/Volume.hpp"
 #include "voxer/utils.hpp"
+#include <seria/deserialize.hpp>
+#include <seria/serialize.hpp>
 
 using namespace std;
+
+namespace seria {
+
+template <> inline auto registerObject<voxer::Volume>() {
+  using Volume = voxer::Volume;
+  return std::make_tuple(member("dataset", &Volume::dataset_idx),
+                         member("tfcn", &Volume::tfcn_idx),
+                         member("spacing", &Volume::spacing),
+                         member("render", &Volume::render));
+}
+
+} // namespace seria
 
 namespace voxer {
 
 auto Volume::serialize() -> rapidjson::Document {
-  return formatter::serialize(*this);
+  return seria::serialize(*this);
 }
 
 auto Volume::deserialize(const rapidjson::Value &json) -> Volume {
@@ -15,7 +29,7 @@ auto Volume::deserialize(const rapidjson::Value &json) -> Volume {
   }
 
   Volume volume{};
-  formatter::deserialize(volume, json);
+  seria::deserialize(volume, json);
 
   return volume;
 }
