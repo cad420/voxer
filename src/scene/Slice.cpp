@@ -1,19 +1,7 @@
-#include "voxer/scene/Slice.hpp"
-#include "voxer/utils.hpp"
-#include <seria/deserialize.hpp>
-#include <seria/serialize.hpp>
+#include "Slice.hpp"
+#include <voxer/utils.hpp>
 
 using namespace std;
-
-namespace seria {
-
-template <> inline auto registerObject<voxer::Slice>() {
-  using Slice = voxer::Slice;
-  return std::make_tuple(member("coef", &Slice::coef),
-                         member("volume", &Slice::volume_idx));
-}
-
-} // namespace seria
 
 namespace voxer {
 

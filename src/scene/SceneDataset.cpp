@@ -1,20 +1,7 @@
-#include "voxer/scene/SceneDataset.hpp"
-#include "voxer/utils.hpp"
-#include <seria/deserialize.hpp>
-#include <seria/serialize.hpp>
+#include "SceneDataset.hpp"
+#include <voxer/utils.hpp>
 
 using namespace std;
-
-namespace seria {
-
-template <> inline auto registerObject<voxer::SceneDataset>() {
-  using SceneDataset = voxer::SceneDataset;
-  return std::make_tuple(member("name", &SceneDataset::name),
-                         member("variable", &SceneDataset::variable),
-                         member("timestep", &SceneDataset::timestep));
-}
-
-} // namespace seria
 
 namespace voxer {
 
