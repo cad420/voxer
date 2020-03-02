@@ -1,6 +1,5 @@
 build
 .vscode
-.git
 .idea
 data
 yarn-error.log

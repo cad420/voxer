@@ -1,7 +1,6 @@
 find_package(ospray REQUIRED)
 # find_package(MPI REQUIRED)
 find_package(Threads REQUIRED)
-find_package(fmt CONFIG REQUIRED)
 
 list(
     APPEND
@@ -41,11 +40,11 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/third_party/seria/include/
+    ${PROJECT_SOURCE_DIR}/third_party/fmt/include/
 )
 target_link_libraries(
     voxer
     PUBLIC Threads::Threads ospray::ospray
-    PRIVATE fmt::fmt
 )
 
 if (VOXER_USE_GPU)
