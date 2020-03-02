@@ -15,7 +15,7 @@ RUN wget https://github.com/ospray/OSPRay/releases/download/v1.8.5/ospray-1.8.5.
 
 ADD . /tmp/voxer
 WORKDIR /tmp/voxer
-RUN git submodule update --init --depth 1
+RUN git submodule update --init
 RUN mkdir build && cd build && \
   cmake .. \
   -DCMAKE_BUILD_TYPE=Release \
@@ -28,7 +28,6 @@ RUN cp /usr/lib/x86_64-linux-gnu/libz.so* /opt/voxer/lib/
 
 FROM ubuntu:19.10
 COPY --from=builder /opt/voxer /opt/voxer
-
 EXPOSE 3000
 
 CMD ["/opt/voxer/bin/voxer-server"]
