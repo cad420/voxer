@@ -159,6 +159,9 @@ int main(int argc, const char **argv) {
   };
 
   app.ws<UserData>("/*", move(behavior));
+  app.post("/", [](uWS::HttpResponse<false> *res, uWS::HttpRequest *req) {
+    req->
+  });
 
   // run server
   const auto port = 3000;

@@ -29,7 +29,7 @@ if (VOXER_BUILD_SERVER)
   execute_process(COMMAND cp uSockets.a libuSockets.a WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/third_party/uSockets)
   execute_process(COMMAND cp -r src uwebsockets WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/third_party/uWebSockets)
   add_subdirectory(third_party/fmt)
-  add_subdirectory(apps/server)
+  add_subdirectory(apps/render_server)
 endif ()
 
 option(VOXER_BUILD_TESTS "whether to build tests" OFF)

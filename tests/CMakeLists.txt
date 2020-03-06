@@ -35,12 +35,12 @@ target_compile_features(TestUtils PRIVATE cxx_std_17)
 add_executable(
     TestCommandParser
     ${CMAKE_CURRENT_SOURCE_DIR}/CommandParser.test.cpp
-    ${PROJECT_SOURCE_DIR}/apps/server/CommandParser.cpp
+    ${PROJECT_SOURCE_DIR}/apps/render_server/CommandParser.cpp
 )
 target_include_directories(
     TestCommandParser
     PRIVATE
-    ${PROJECT_SOURCE_DIR}/apps/server
+    ${PROJECT_SOURCE_DIR}/apps/render_server
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}
 )
@@ -56,7 +56,7 @@ add_executable(TestServerUtils ServerUtils.test.cpp)
 target_include_directories(
     TestServerUtils
     PRIVATE
-    ${PROJECT_SOURCE_DIR}/apps/server
+    ${PROJECT_SOURCE_DIR}/apps/render_server
     ${PROJECT_SOURCE_DIR}
 )
 target_link_libraries(
