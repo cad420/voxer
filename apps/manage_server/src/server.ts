@@ -1,12 +1,19 @@
 import express from "express";
 import cors from "cors";
+import { createProxyMiddleware } from "http-proxy-middleware";
 import routes from "./routes";
 import "./models/Dataset";
 
 const app = express();
+const wsProxy = createProxyMiddleware("/render", {
+  target: "ws://localhost:3000/",
+  ws: true
+});
 
+app.use(wsProxy);
 app.use(express.static("public"));
 app.use(cors());
+app.use(express.json());
 app.use(routes);
 
 app.use((req, res, next) => {

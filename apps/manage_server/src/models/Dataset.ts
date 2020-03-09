@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "fs-extra";
 import config from "../config";
 
 export type Dataset = {
@@ -33,6 +33,10 @@ class DatasetStore {
     }
   }
 
+  async save() {
+    await fs.writeFile(this.filepath, JSON.stringify(this.datasets, null, 2));
+  }
+
   get(id: string) {
     return this.datasets[id];
   }
@@ -43,6 +47,7 @@ class DatasetStore {
 
   add(dataset: Dataset) {
     this.datasets[dataset.name] = dataset;
+    this.save();
   }
 }
 

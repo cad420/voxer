@@ -88,10 +88,11 @@ class PipelineStore {
     return this.pipelines;
   }
 
-  async add(pipeline: any): Promise<string> {
+  async add(params: any): Promise<string> {
     // TODO: validate
     const id = nanoid(12);
-    this.pipelines[id] = pipeline as Pipeline;
+    const pipeline = { id, params } as Pipeline;
+    this.pipelines[id] = pipeline;
 
     const filepath = path.join(this.dir, `${id}.json`);
     await fs.writeFile(filepath, JSON.stringify(pipeline, null, 2));
