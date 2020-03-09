@@ -28,12 +28,12 @@ void DatasetStore::load_from_file(const string &filepath) {
 
 void DatasetStore::load_from_json(const char *text, uint32_t size) {
   document.Parse(text, size);
-  if (!document.IsArray()) {
-    throw JSON_error("root", "array");
-  }
-
-  for (auto &item : document.GetArray()) {
-    load_one(item);
+  if (document.IsArray()) {
+    for (auto &item : document.GetArray()) {
+      load_one(item);
+    }
+  } else {
+    load_one(document.GetObject());
   }
 
   fmt::print("load {} datasets.\n", datasets.size());

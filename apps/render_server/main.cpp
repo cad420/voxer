@@ -158,10 +158,13 @@ int main(int argc, const char **argv) {
     cout << ws->getRemoteAddress() << "closed" << endl;
   };
 
-  app.ws<UserData>("/*", move(behavior));
-  app.post("/", [](uWS::HttpResponse<false> *res, uWS::HttpRequest *req) {
-    req->
-  });
+  app.ws<UserData>("/render", move(behavior));
+
+  app.ws<UserData>("/datasets",
+                   {.message = [&datasets](auto *ws, std::string_view message,
+                                           uWS::OpCode opCode) {
+                     datasets.load_from_json(message.data(), message.size());
+                   }});
 
   // run server
   const auto port = 3000;
