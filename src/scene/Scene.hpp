@@ -1,5 +1,6 @@
 #pragma once
 #include "Camera.hpp"
+#include "Isosurface.hpp"
 #include "SceneDataset.hpp"
 #include "Slice.hpp"
 #include "TransferFunction.hpp"
