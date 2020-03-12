@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import routes from "./routes";
-import "./models/Dataset";
 
 const app = express();
 const wsProxy = createProxyMiddleware("/render", {
@@ -16,7 +15,7 @@ app.use(cors());
 app.use(express.json());
 app.use(routes);
 
-app.use((req, res, next) => {
+app.use((req, res) => {
   res.status(404);
   res.end("Not found.");
 });

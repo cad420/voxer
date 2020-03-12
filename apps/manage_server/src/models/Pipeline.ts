@@ -2,57 +2,12 @@ import config from "../config";
 import fs from "fs-extra";
 import path from "path";
 import nanoid from "nanoid";
-
-export namespace voxer {
-  export type Dataset = {};
-
-  export type Volume = {
-    dataset: number;
-    tfcn: number;
-    spacing: [number, number, number];
-    render: boolean;
-  };
-
-  export type Isosurface = {
-    volume: number;
-    isovalue: number;
-    render: boolean;
-  };
-
-  export type Camera = {
-    position: [number, number, number];
-    target: [number, number, number];
-    up: [number, number, number];
-    width: number;
-    height: number;
-  };
-
-  export type TfcnControlPoint = {
-    x: number;
-    y: number;
-    color: number;
-  };
-
-  export type TransferFunction = Array<TfcnControlPoint>;
-
-  export type Pipeline = {
-    id: string;
-    params: {
-      datasets: Dataset;
-      tfcns: Array<TransferFunction>;
-      volumes: Array<Volume>;
-      isosurfaces: Array<Isosurface>;
-      camera: Camera;
-    };
-  };
-}
-
-export type Pipeline = voxer.Pipeline;
+import { Pipeline, Scene } from "./voxer";
 
 class PipelineStore {
   dir: string;
   pipelines: Record<string, Pipeline>;
-  loading: Promise<any>;
+  loading: Promise<void>;
 
   constructor() {
     this.dir = config.pipelines;
@@ -62,7 +17,7 @@ class PipelineStore {
 
   async load() {
     const files = await fs.readdir(this.dir);
-    const tasks: Promise<any>[] = [];
+    const tasks: Promise<void>[] = [];
     files.forEach(file => {
       if (!file.endsWith(".json") || file === "datasets.json") return;
 
@@ -88,7 +43,7 @@ class PipelineStore {
     return this.pipelines;
   }
 
-  async add(params: any): Promise<string> {
+  async add(params: Scene): Promise<string> {
     // TODO: validate
     const id = nanoid(12);
     const pipeline = { id, params } as Pipeline;
@@ -100,9 +55,12 @@ class PipelineStore {
     return id;
   }
 
-  update(id: string, pipeline: Pipeline) {
+  async update(id: string, pipeline: Pipeline) {
     // TODO: validate
     this.pipelines[id] = pipeline;
+
+    const filepath = path.join(this.dir, `${id}.json`);
+    await fs.writeFile(filepath, JSON.stringify(pipeline, null, 2));
   }
 }
 

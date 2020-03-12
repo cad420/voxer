@@ -1,5 +1,6 @@
 import express from "express";
-import store, { Pipeline } from "../models/Pipeline";
+import store from "../models/Pipeline";
+import { Pipeline } from "../models/voxer";
 
 const router = express.Router();
 
@@ -34,6 +35,7 @@ router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const params = req.body;
   const pipeline = await store.get(id);
+
   if (!pipeline) {
     res.send({
       code: 404,
@@ -41,7 +43,8 @@ router.put("/:id", async (req, res) => {
     });
   }
 
-  store.update(id, { id, params: params as Pipeline["params"] });
+  await store.update(id, { id, params: params as Pipeline["params"] });
+
   res.send({
     code: 200
   });

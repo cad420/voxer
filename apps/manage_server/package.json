@@ -1,7 +1,7 @@
 {
-  "name": "manager_server",
+  "name": "voxer_manager_server",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
   "license": "MIT",
   "scripts": {
     "watch": "tsc -w",
@@ -9,13 +9,13 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@types/ws": "^7.2.2",
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "fs-extra": "^8.1.0",
     "http-proxy-middleware": "^1.0.1",
     "multer": "^1.4.2",
     "nanoid": "^2.1.11",
+    "typescript": "^3.8.3",
     "ws": "^7.2.2"
   },
   "devDependencies": {
@@ -24,6 +24,10 @@
     "@types/fs-extra": "^8.1.0",
     "@types/multer": "^1.4.2",
     "@types/nanoid": "^2.1.0",
-    "@types/node": "^13.7.7"
+    "@types/node": "^13.7.7",
+    "@types/ws": "^7.2.2",
+    "@typescript-eslint/eslint-plugin": "^2.23.0",
+    "@typescript-eslint/parser": "^2.23.0",
+    "eslint": "^6.8.0"
   }
 }

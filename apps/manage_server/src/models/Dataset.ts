@@ -1,15 +1,6 @@
 import fs from "fs-extra";
 import config from "../config";
-
-export type Dataset = {
-  name: string;
-  dimensions?: [number, number, number];
-  variables: Array<{
-    name: string;
-    timesteps: number;
-    path: string;
-  }>;
-};
+import { Dataset } from "./voxer";
 
 class DatasetStore {
   filepath: string;
