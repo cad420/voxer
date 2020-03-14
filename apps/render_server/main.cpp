@@ -7,7 +7,7 @@
 #include <uwebsockets/App.h>
 #include <voxer/DatasetStore.hpp>
 #include <voxer/Image.hpp>
-#include <voxer/OSPRayRenderer.hpp>
+#include <voxer/RenderingContext.hpp>
 #include <voxer/filter/histogram.hpp>
 
 using namespace std;
@@ -16,43 +16,19 @@ using namespace voxer;
 struct UserData {};
 
 int main(int argc, const char **argv) {
-  // prepare datasets
   DatasetStore datasets;
-
-  if (argc >= 2) {
-    datasets.load_from_file(string(argv[1]));
-  } else {
-    datasets.load();
-  }
-
-  // prepare histograms
-  map<string, vector<uint32_t>> histograms;
-  for (auto &dataset : datasets.get()) {
-    histograms.emplace(dataset.id, calculate_histogram(dataset));
-  }
-
-  // load exist pipelines
   PipelineStore pipelines;
-  if (argc >= 3) {
-    pipelines.load_from_directory(argv[2]);
-  } else {
-    pipelines.load();
-  }
+
+  map<string, vector<uint32_t>> histograms;
 
   CommandParser parser{};
-  OSPRayRenderer renderer{datasets};
+  RenderingContext renderer(RenderingContext::Type::OSPRay);
 
   auto app = uWS::App();
-
-  // TODO: configure http routes
 
   // configure websocket server
   uWS::App::WebSocketBehavior behavior{uWS::SHARED_COMPRESSOR, 1024 * 1024,
                                        30 * 60, 1024 * 1024 * 1024};
-
-  behavior.open = [](uWS::WebSocket<false, true> *ws, uWS::HttpRequest *) {
-    cout << "connected " << endl;
-  };
 
   behavior.message = [&datasets, &parser, &pipelines, &histograms,
                       &renderer](uWS::WebSocket<false, true> *ws,
@@ -64,7 +40,8 @@ int main(int argc, const char **argv) {
       switch (command.type) {
       case Command::Type::Render: {
         const auto &scene = get<Scene>(command.params);
-        auto image = renderer.render(scene);
+        renderer.render(scene, datasets);
+        auto &image = renderer.get_colors();
         auto compressed = Image::encode(image, Image::Format::JPEG);
         auto size = compressed.data.size();
         ws->send(
@@ -117,7 +94,8 @@ int main(int argc, const char **argv) {
         auto &origin = pipelines.get(save.first);
         auto &modify_scene = save.second;
         auto scene = modify_scene(origin);
-        auto image = renderer.render(scene);
+        renderer.render(scene, datasets);
+        auto &image = renderer.get_colors();
         auto compressed = Image::encode(image, Image::Format::JPEG);
         ws->send(string_view(reinterpret_cast<char *>(compressed.data.data()),
                              compressed.data.size()),
@@ -152,10 +130,6 @@ int main(int argc, const char **argv) {
       ws->send(fmt::format(R"({{"error": "{}"}})", excpetion.what()),
                uWS::OpCode::TEXT);
     }
-  };
-
-  behavior.close = [](uWS::WebSocket<false, true> *ws, int, string_view) {
-    cout << ws->getRemoteAddress() << "closed" << endl;
   };
 
   app.ws<UserData>("/render", move(behavior));

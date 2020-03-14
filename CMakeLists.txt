@@ -7,7 +7,7 @@ endif ()
 
 project(
     voxer
-    LANGUAGES CXX
+    LANGUAGES CXX C
     VERSION 0.1.0
 )
 

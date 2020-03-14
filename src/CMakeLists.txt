@@ -1,6 +1,7 @@
 find_package(ospray REQUIRED)
 # find_package(MPI REQUIRED)
 find_package(Threads REQUIRED)
+find_package(glfw3 REQUIRED)
 
 list(
     APPEND
@@ -8,7 +9,6 @@ list(
     ${CMAKE_CURRENT_SOURCE_DIR}/DatasetStore.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/databases/MRC/MRCReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/databases/Raw/RawReader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/OSPRayRenderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/Scene.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/SceneDataset.cpp
@@ -19,6 +19,10 @@ list(
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/Slice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/filter/differ.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/filter/histogram.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/RenderingContext.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/RenderingContextOpenGL.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OSPRay/RenderingContextOSPRay.cpp
+    ${PROJECT_SOURCE_DIR}/third_party/glad/src/glad.c
 )
 
 if (VOXER_ENABLE_GPU)
@@ -41,10 +45,11 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/third_party/seria/include/
     ${PROJECT_SOURCE_DIR}/third_party/fmt/include/
+    ${PROJECT_SOURCE_DIR}/third_party/glad/include/
 )
 target_link_libraries(
     voxer
-    PUBLIC Threads::Threads ospray::ospray
+    PUBLIC Threads::Threads ospray::ospray glfw
 )
 
 if (VOXER_USE_GPU)

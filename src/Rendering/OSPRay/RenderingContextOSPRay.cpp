@@ -1,8 +1,4 @@
-#include "voxer/OSPRayRenderer.hpp"
-#include "utils/Logger.hpp"
-#include "voxer/filter/differ.hpp"
-#include <chrono>
-#include <memory>
+#include "Rendering/OSPRay/RenderingContextOSPRay.hpp"
 #include <ospray/ospray.h>
 
 using namespace std;
@@ -45,36 +41,7 @@ static auto interpolate(const TransferFunction &tf)
   return make_pair(move(opacities), move(colors));
 }
 
-struct OSPRayRenderer::Cache {
-  explicit Cache(const std::vector<Dataset> &datasets) {
-    // TODO: OSPVolume creation is really expensive
-    // TODO: OSPVolume modification is not thread safe!!!
-    for (auto &dataset : datasets) {
-      this->create_osp_volume(dataset);
-    }
-  }
-  void create_osp_volume(const Dataset &dataset) {
-    auto &info = dataset.info;
-    auto &dimensions = info.dimensions;
-    auto osp_volume = ospNewVolume("block_bricked_volume");
-    ospSet3i(osp_volume, "dimensions", dimensions[0], dimensions[1],
-             dimensions[2]);
-    ospSetString(osp_volume, "voxelType", "uchar");
-    ospSetRegion(
-        osp_volume,
-        reinterpret_cast<void *>(const_cast<uint8_t *>(dataset.buffer.data())),
-        osp::vec3i{0, 0, 0},
-        osp::vec3i{static_cast<int>(dimensions[0]),
-                   static_cast<int>(dimensions[1]),
-                   static_cast<int>(dimensions[2])});
-    ospCommit(osp_volume);
-    osp_volumes.emplace(dataset.id, osp_volume);
-  }
-  // TODO: should be dataset cache
-  std::map<string, OSPVolume> osp_volumes;
-};
-
-OSPRayRenderer::OSPRayRenderer(DatasetStore &datasets) : Renderer(datasets) {
+RenderingContextOSPRay::RenderingContextOSPRay() {
   auto osp_device = ospNewDevice();
   // ospDeviceSet1i(osp_device, "logLevel", 2);
   // ospDeviceSetString(osp_device, "logOutput", "cout");
@@ -82,14 +49,11 @@ OSPRayRenderer::OSPRayRenderer(DatasetStore &datasets) : Renderer(datasets) {
   ospDeviceCommit(osp_device);
   ospSetCurrentDevice(osp_device);
 
-  this->cache = make_unique<OSPRayRenderer::Cache>(datasets.get());
+  this->cache = make_unique<OSPRayRendererCache>();
 }
 
-OSPRayRenderer::~OSPRayRenderer() = default;
-
-auto OSPRayRenderer::render(const Scene &scene) -> Image {
-  auto start = chrono::steady_clock::now();
-
+void RenderingContextOSPRay::render(const Scene &scene,
+                                    DatasetStore &datasets) {
   vector<OSPVolume> osp_volumes;
   vector<uint32_t> render_idxs;
 
@@ -231,7 +195,6 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
   ospSetObject(osp_renderer, "model", osp_model);
   ospCommit(osp_renderer);
 
-  // render frame
   const size_t iteration_times = camera.width == 64 ? 2 : 8;
   auto osp_framebuffer =
       ospNewFrameBuffer(osp::vec2i{static_cast<int>(camera.width),
@@ -246,8 +209,11 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
   // TODO: too ugly
   auto fb = reinterpret_cast<const uint8_t *>(
       ospMapFrameBuffer(osp_framebuffer, OSP_FB_COLOR));
-  Image image{camera.width, camera.height, 4};
+
   vector<unsigned char> data(fb, fb + camera.width * camera.height * 4);
+  image.width = camera.width;
+  image.height = camera.height;
+  image.channels = 4;
   image.data = move(data);
   ospUnmapFrameBuffer(reinterpret_cast<const void *>(fb), osp_framebuffer);
 
@@ -258,12 +224,8 @@ auto OSPRayRenderer::render(const Scene &scene) -> Image {
   }
   ospRelease(osp_framebuffer);
   ospRelease(osp_model);
-
-  const auto delta = chrono::duration_cast<chrono::milliseconds>(
-      chrono::steady_clock::now() - start);
-  logger.info(to_string(delta.count()) + " ms");
-
-  return image;
 }
+
+auto RenderingContextOSPRay::get_colors() -> const Image & { return image; }
 
 } // namespace voxer
