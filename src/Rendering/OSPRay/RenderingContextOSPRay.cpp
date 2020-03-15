@@ -5,42 +5,6 @@ using namespace std;
 
 namespace voxer {
 
-static auto interpolate(const TransferFunction &tf)
-    -> pair<std::vector<float>, vector<array<float, 3>>> {
-  static const size_t total_samples = 200;
-  vector<float> opacities{};
-  opacities.reserve(total_samples);
-  vector<array<float, 3>> colors{};
-  colors.reserve(total_samples);
-
-  for (int32_t i = 0; i < (tf.size() - 1); ++i) {
-    auto start_x = tf[i].x;
-    auto end_x = tf[i + 1].x;
-    auto start_opacity = tf[i].y;
-    auto end_opacity = tf[i + 1].y;
-    auto start_r = tf[i].color[0];
-    auto start_g = tf[i].color[1];
-    auto start_b = tf[i].color[2];
-    auto end_r = tf[i + 1].color[0];
-    auto end_g = tf[i + 1].color[1];
-    auto end_b = tf[i + 1].color[2];
-
-    auto samples = static_cast<uint32_t>(total_samples * (end_x - start_x));
-    auto delta = 1.0f / static_cast<float>(samples);
-    auto step_opacity = delta * (end_opacity - start_opacity);
-    auto step_r = delta * (end_r - start_r);
-    auto step_g = delta * (end_g - start_g);
-    auto step_b = delta * (end_b - start_b);
-    for (auto j = 0; j < samples; j++) {
-      opacities.emplace_back(start_opacity + j * step_opacity);
-      colors.emplace_back(array<float, 3>{
-          start_r + j * step_r, start_g + j * step_g, start_b + j * step_b});
-    }
-  }
-
-  return make_pair(move(opacities), move(colors));
-}
-
 RenderingContextOSPRay::RenderingContextOSPRay() {
   auto osp_device = ospNewDevice();
   // ospDeviceSet1i(osp_device, "logLevel", 2);
@@ -60,7 +24,7 @@ void RenderingContextOSPRay::render(const Scene &scene,
   for (size_t i = 0; i < scene.volumes.size(); i++) {
     const auto &volume = scene.volumes[i];
     const auto &tfcn = scene.tfcns[volume.tfcn_idx];
-    auto interpolated = interpolate(tfcn);
+    auto interpolated = interpolate_tfcn(tfcn);
     auto osp_opacity_data = ospNewData(interpolated.first.size(), OSP_FLOAT,
                                        interpolated.first.data());
     auto osp_colors_data =

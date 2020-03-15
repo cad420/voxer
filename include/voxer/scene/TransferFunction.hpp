@@ -19,6 +19,9 @@ using TransferFunction = std::vector<ControlPoint>;
 
 void deserialize_tfcn(TransferFunction &tfcn, const rapidjson::Value &json);
 
+auto interpolate_tfcn(const TransferFunction &tf)
+    -> std::pair<std::vector<float>, std::vector<std::array<float, 3>>>;
+
 // struct TransferFunction {
 //  std::vector<ControlPoint> points;
 //  std::vector<float> stops = {};

@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/IRenderingContext.hpp"
-#include "glad/glad.h"
+#include "Rendering/OpenGL/GLContext.hpp"
 #include <GLFW/glfw3.h>
 
 namespace voxer {
@@ -18,6 +18,14 @@ private:
   GLFWwindow *window;
   uint32_t width;
   uint32_t height;
+  std::shared_ptr<GLContext> gl;
+
+  GL::GLProgram positionGenerateProgram;
+  GL::GLProgram raycastingProgram;
+  GL::GLProgram screenQuadProgram;
+  GL::GLVertexArray vao;
+  GL::GLBuffer vbo;
+  GL::GLBuffer ebo;
 };
 
 } // namespace voxer

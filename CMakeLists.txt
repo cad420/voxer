@@ -15,6 +15,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 SET(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../lib")
 
+include(cmake/external.cmake)
+
 if (UNIX)
   #  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak -fsanitize=undefined -g")
   #  set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak -fsanitize=undefined -g")
