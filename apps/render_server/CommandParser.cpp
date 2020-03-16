@@ -4,6 +4,7 @@
 #include <rapidjson/document.h>
 #include <stdexcept>
 #include <string>
+#include <voxer/RenderingContext.hpp>
 #include <voxer/scene/TransferFunction.hpp>
 #include <voxer/utils.hpp>
 
@@ -114,6 +115,19 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
   }
   string command_type = it->value.GetString();
 
+  auto engine = EngineType::OSPRay;
+  it = json.FindMember("engine");
+  if (it != json.end() && it->value.IsString()) {
+    auto type = it->value.GetString();
+    if (strcmp(type, "OpenGL") == 0) {
+      engine = RenderingContext::Type::OpenGL;
+    } else if (strcmp(type, "OSPRay") == 0) {
+      engine = RenderingContext::Type::OSPRay;
+    } else {
+      throw runtime_error("Unsupported rendering engine: " + string(type));
+    }
+  }
+
   it = json.FindMember("params");
   if (it == json.end()) {
     throw JSON_error("params", "required");
@@ -121,7 +135,7 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
   auto params = it->value.GetObject();
 
   if (command_type == "render") {
-    return {Command::Type::Render, Scene::deserialize(params)};
+    return {Command::Type::Render, engine, Scene::deserialize(params)};
   }
 
   if (command_type == "query") {
@@ -136,15 +150,16 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
 
     string target = it->value.GetString();
     if (target == "datasets") {
-      return {Command::Type::QueryDatasets, nullptr};
+      return {Command::Type::QueryDatasets, engine, nullptr};
     }
 
     if (target == "pipelines") {
-      return {Command::Type::QueryPipelines, nullptr};
+      return {Command::Type::QueryPipelines, engine, nullptr};
     }
 
     if (target == "dataset") {
-      return {Command::Type::QueryDataset, SceneDataset::deserialize(params)};
+      return {Command::Type::QueryDataset, engine,
+              SceneDataset::deserialize(params)};
     }
 
     if (target == "pipeline") {
@@ -152,17 +167,18 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
       if (it == params.end()) {
         throw JSON_error("params.id", "string when params.target == pipeline");
       }
-      return {Command::Type::QueryPipeline, it->value.GetString()};
+      return {Command::Type::QueryPipeline, engine, it->value.GetString()};
     }
   }
 
   if (command_type == "save") {
-    return {Command::Type::Save, make_pair(extract_params(string(value, size)),
-                                           Scene::deserialize(params))};
+    return {Command::Type::Save, engine,
+            make_pair(extract_params(string(value, size)),
+                      Scene::deserialize(params))};
   }
 
   if (command_type == "run") {
-    return {Command::Type::RunPipeline, create_modifier(move(params))};
+    return {Command::Type::RunPipeline, engine, create_modifier(move(params))};
   }
 
   if (command_type == "modify") {
@@ -171,9 +187,9 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
       throw JSON_error("params.id", "string");
     }
 
-    return {
-        Command::Type::ModifyDataset,
-        make_pair(string(it->value.GetString()), Scene::deserialize(params))};
+    return {Command::Type::ModifyDataset, engine,
+            make_pair(string(it->value.GetString()),
+                      Scene::deserialize(params))};
   }
 
   if (command_type == "add") {
@@ -184,7 +200,8 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
 
     string target = it->value.GetString();
     if (target == "dataset") {
-      return {Command::Type::AddDataset, extract_params(string(value, size))};
+      return {Command::Type::AddDataset, engine,
+              extract_params(string(value, size))};
     }
 
     throw runtime_error("unsupported add type: " + target);

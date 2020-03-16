@@ -22,7 +22,8 @@ int main(int argc, const char **argv) {
   map<string, vector<uint32_t>> histograms;
 
   CommandParser parser{};
-  RenderingContext renderer(RenderingContext::Type::OSPRay);
+  RenderingContext ogl_renderer(RenderingContext::Type::OpenGL);
+  RenderingContext ospray_renderer(RenderingContext::Type::OSPRay);
 
   auto app = uWS::App();
 
@@ -31,11 +32,13 @@ int main(int argc, const char **argv) {
                                        30 * 60, 1024 * 1024 * 1024};
 
   behavior.message = [&datasets, &parser, &pipelines, &histograms,
-                      &renderer](uWS::WebSocket<false, true> *ws,
+                      &ogl_renderer, &ospray_renderer](uWS::WebSocket<false, true> *ws,
                                  std::string_view message, uWS::OpCode) {
     Command command;
     try {
       command = parser.parse(message.data(), message.size());
+
+      auto &renderer = command.engine == EngineType::OSPRay ? ospray_renderer : ogl_renderer;
 
       switch (command.type) {
       case Command::Type::Render: {
