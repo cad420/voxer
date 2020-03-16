@@ -52,6 +52,11 @@ void DatasetStore::load_one(const rapidjson::Value &json) {
   }
   string name = it->value.GetString();
 
+  if (lookup_table.find(name) != lookup_table.end()) {
+    // dataset already loaded
+    return;
+  }
+
   auto &variable_lookup_table = lookup_table[name];
 
   VolumeInfo info{};
@@ -237,6 +242,7 @@ auto DatasetStore::print() const -> string {
   res[res.find_last_of(',')] = ']';
   return res;
 }
+
 void DatasetStore::add_from_json(const char *text, uint32_t size) {
   rapidjson::Document current{};
   current.Parse(text, size);

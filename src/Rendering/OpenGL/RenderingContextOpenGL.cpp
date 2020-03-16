@@ -81,8 +81,11 @@ RenderingContextOpenGL::RenderingContextOpenGL() : width(400), height(400) {
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-  glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  // disable double buffer to remove FPS limit
+  // so the current result can be flushed to default fb immediately
+  glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
+
   window = glfwCreateWindow(width, height, "voxer", nullptr, nullptr);
   glfwHideWindow(window);
 
@@ -195,7 +198,7 @@ RenderingContextOpenGL::RenderingContextOpenGL() : width(400), height(400) {
   // sets location = 0 as result image unit 2
   GL_EXPR(glProgramUniform1i(screenQuadProgram, 0, 2));
 
-  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 RenderingContextOpenGL::~RenderingContextOpenGL() {
@@ -205,9 +208,64 @@ RenderingContextOpenGL::~RenderingContextOpenGL() {
 
 void RenderingContextOpenGL::render(const Scene &scene,
                                     DatasetStore &datasets) {
-  /*Model Matrix*/
+  auto valid = false;
+
+  vector<GL::GLTexture> textures;
+
   Transform ModelTransform;
   ModelTransform.SetIdentity();
+
+  for (auto &volume : scene.volumes) {
+    if (!volume.render)
+      continue;
+
+    valid = true;
+    auto &tfcn = scene.tfcns[volume.tfcn_idx];
+
+    auto interploted = interpolate_tfcn(scene.tfcns[0]);
+    vector<array<float, 4>> tfcn_data(interploted.first.size());
+    // TODO: inefficient
+    for (size_t i = 0; i < tfcn_data.size(); i++) {
+      auto opacity = interploted.first[i];
+      auto &color = interploted.second[i];
+      tfcn_data[i] = {color[0], color[1], color[2], opacity};
+    }
+
+    // Create transfer function texture
+    auto tfcn_texture = gl->CreateTexture(GL_TEXTURE_1D);
+    assert(tfcn_texture.Valid());
+    GL_EXPR(glTextureStorage1D(tfcn_texture, 1, GL_RGBA32F, 256));
+    GL_EXPR(glTextureSubImage1D(tfcn_texture, 0, 0, interploted.first.size(),
+                                GL_RGBA, GL_FLOAT, tfcn_data.data()));
+    GL_EXPR(glBindTextureUnit(0, tfcn_texture));
+
+    textures.emplace_back(move(tfcn_texture));
+
+    // Create Volume Texture
+    auto &scene_dataset = scene.datasets[volume.dataset_idx];
+    auto &dataset = datasets.get_or_create(scene_dataset, scene.datasets);
+    auto &dimensions = dataset.info.dimensions;
+    ModelTransform.SetScale(dimensions[0], dimensions[1], dimensions[2]);
+
+    auto it = volume_cache.find(scene_dataset);
+    if (it != volume_cache.end()) {
+      GL_EXPR(glBindTextureUnit(1, it->second));
+    } else {
+      auto volume_texture = gl->CreateTexture(GL_TEXTURE_3D);
+      assert(volume_texture.Valid());
+      GL_EXPR(glBindTextureUnit(1, volume_texture));
+      GL_EXPR(glTextureStorage3D(volume_texture, 1, GL_R8, dimensions[0],
+                                 dimensions[1], dimensions[2]));
+      GL_EXPR(glTextureSubImage3D(volume_texture, 0, 0, 0, 0, dimensions[0],
+                                  dimensions[1], dimensions[2], GL_RED,
+                                  GL_UNSIGNED_BYTE, dataset.buffer.data()));
+      GL_EXPR(glBindTextureUnit(1, volume_texture));
+
+      volume_cache.emplace(scene_dataset, move(volume_texture));
+    }
+
+    assert(volume_cache[scene_dataset].Valid());
+  }
 
   auto &camera = scene.camera;
   width = camera.width;
@@ -217,20 +275,12 @@ void RenderingContextOpenGL::render(const Scene &scene,
                              {camera.up[0], camera.up[1], camera.up[2]},
                              {0, 0, 0}};
 
-  //[2] Create transfer function texture
-  auto GLTFTexture = gl->CreateTexture(GL_TEXTURE_1D);
-  assert(GLTFTexture.Valid());
-  GL_EXPR(glTextureStorage1D(GLTFTexture, 1, GL_RGBA32F, 256));
-  auto interploted = interpolate_tfcn(scene.tfcns[0]);
-  vector<array<float, 4>> tfcn_data(interploted.first.size());
-  // TODO: inefficient
-  for (size_t i = 0; i < tfcn_data.size(); i++) {
-    auto opacity = interploted.first[i];
-    auto &color = interploted.second[i];
-    tfcn_data[i] = {color[0], color[1], color[2], opacity};
+  glViewport(0, 0, camera.width, camera.height);
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  if (!valid) {
+    return;
   }
-  GL_EXPR(glTextureSubImage1D(GLTFTexture, 0, 0, interploted.first.size(),
-                              GL_RGBA, GL_FLOAT, tfcn_data.data()));
 
   // Create render targets
   auto GLFramebuffer = gl->CreateFramebuffer();
@@ -262,27 +312,7 @@ void RenderingContextOpenGL::render(const Scene &scene,
     exit(-1);
   });
 
-  // Create Volume Texture
-  auto &scene_dataset = scene.datasets[0];
-  auto &dataset = datasets.get_or_create(scene_dataset, scene.datasets);
-  auto &dimensions = dataset.info.dimensions;
-
-  // Create Volume Texture
-  auto volume_tex = gl->CreateTexture(GL_TEXTURE_3D);
-  assert(volume_tex.Valid());
-  GL_EXPR(glBindTextureUnit(1, volume_tex));
-  GL_EXPR(glTextureStorage3D(volume_tex, 1, GL_R8, dimensions[0], dimensions[1],
-                             dimensions[2]));
-  GL_EXPR(glTextureSubImage3D(volume_tex, 0, 0, 0, 0, dimensions[0],
-                              dimensions[1], dimensions[2], GL_RED,
-                              GL_UNSIGNED_BYTE, dataset.buffer.data()));
-  GL_EXPR(glBindTextureUnit(1, volume_tex));
-
-  /* Texture unit and image unit binding*/
-  // [1] binds texture unit : see the raycasting shader for details
-  // binds texture unit 0 for tf texture
-  GL_EXPR(glBindTextureUnit(0, GLTFTexture));
-  // [2] binds image unit : see the raycasting shader for details
+  // binds image unit : see the raycasting shader for details
   // binds image unit 0 for entry texture (read and write)
   GL_EXPR(glBindImageTexture(0, GLEntryPosTexture, 0, GL_FALSE, 0,
                              GL_READ_WRITE, GL_RGBA32F));
@@ -294,7 +324,6 @@ void RenderingContextOpenGL::render(const Scene &scene,
                              GL_RGBA32F));
 
   /* Uniforms binding for program*/
-  //[1] position shader
   // camera-related uniforms for position program
   glCall_CameraUniformUpdate(vm_camera, ModelTransform,
                              positionGenerateProgram);
@@ -309,9 +338,6 @@ void RenderingContextOpenGL::render(const Scene &scene,
   const GLenum drawBuffers[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
   const GLenum allDrawBuffers[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
                                     GL_COLOR_ATTACHMENT2};
-
-  glViewport(0, 0, camera.width, camera.height);
-  glClear(GL_COLOR_BUFFER_BIT);
 
   glEnable(GL_BLEND); // Blend is necessary for ray-casting position generation
   GL_EXPR(glUseProgram(positionGenerateProgram));
@@ -345,7 +371,6 @@ void RenderingContextOpenGL::render(const Scene &scene,
   // Pass [n + 1]: Blit result to default framebuffer
   // prepare to display
   GL_EXPR(glBindFramebuffer(GL_FRAMEBUFFER, 0));
-
   GL_EXPR(glUseProgram(screenQuadProgram));
   // vertex is hard coded in shader
   GL_EXPR(glDrawArrays(GL_TRIANGLE_STRIP, 0, 4));

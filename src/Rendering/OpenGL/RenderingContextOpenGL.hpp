@@ -2,6 +2,7 @@
 #include "Rendering/IRenderingContext.hpp"
 #include "Rendering/OpenGL/GLContext.hpp"
 #include <GLFW/glfw3.h>
+#include <unordered_map>
 
 namespace voxer {
 
@@ -26,6 +27,8 @@ private:
   GL::GLVertexArray vao;
   GL::GLBuffer vbo;
   GL::GLBuffer ebo;
+
+  std::unordered_map<SceneDataset, GL::GLTexture, SceneDatasetHasher> volume_cache;
 };
 
 } // namespace voxer

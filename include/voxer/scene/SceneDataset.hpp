@@ -21,8 +21,29 @@ struct SceneDataset {
   bool transform = false;
   std::array<float, 16> matrix;
 
+  bool operator==(const SceneDataset &other) const {
+    return (name == other.name && variable == other.variable &&
+            timestep == other.timestep);
+  }
+
   auto serialize() -> rapidjson::Document;
   static auto deserialize(const rapidjson::Value &json) -> SceneDataset;
+};
+
+struct SceneDatasetHasher {
+  std::size_t operator()(const SceneDataset &k) const {
+    using std::hash;
+    using std::size_t;
+    using std::string;
+
+    // Compute individual hash values for id, variable and timestep
+    // http://stackoverflow.com/a/1646913/126995
+    size_t res = 17;
+    res = res * 31 + hash<string>()(k.name);
+    res = res * 31 + hash<string>()(k.variable);
+    res = res * 31 + hash<uint32_t>()(k.timestep);
+    return res;
+  }
 };
 
 } // namespace voxer
