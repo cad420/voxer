@@ -1,9 +1,6 @@
-import path from "path";
+export const DATASET_FILE = process.env.DATASET_FILE || "datasets.json";
 
-export default {
-  datasets:
-    process.env.DATASETS_FILE ||
-    path.resolve(__dirname, "../../public/datasets.json"),
-  pipelines:
-    process.env.PIPELINES_DIR || path.resolve(__dirname, "../../public/")
-};
+export const PIPELINE_DIR = process.env.PIPELINE_DIR || process.cwd();
+
+export const RENDER_SERVICE =
+  process.env.RENDER_SERVICE || "ws://localhost:3000";

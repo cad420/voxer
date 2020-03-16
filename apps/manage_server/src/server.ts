@@ -2,10 +2,11 @@ import express from "express";
 import cors from "cors";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import routes from "./routes";
+import { RENDER_SERVICE } from "./config";
 
 const app = express();
 const wsProxy = createProxyMiddleware("/render", {
-  target: "ws://localhost:3000/",
+  target: RENDER_SERVICE,
   ws: true
 });
 

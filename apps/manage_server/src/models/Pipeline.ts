@@ -1,4 +1,4 @@
-import config from "../config";
+import { PIPELINE_DIR } from "../config";
 import fs from "fs-extra";
 import path from "path";
 import nanoid from "nanoid";
@@ -10,7 +10,7 @@ class PipelineStore {
   loading: Promise<void>;
 
   constructor() {
-    this.dir = config.pipelines;
+    this.dir = PIPELINE_DIR;
     this.pipelines = {};
     this.loading = this.load();
   }

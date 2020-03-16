@@ -1,18 +1,7 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
-import WebSocket from "ws";
 import store from "../models/Dataset";
-
-const ws = new WebSocket("ws://localhost:3000/datasets");
-ws.onerror = err => {
-  console.log("Connect to render server error: ", err.message);
-};
-ws.onopen = () => {
-  const datasets = store.getAll();
-  const array = Object.values(datasets);
-  ws.send(JSON.stringify(array));
-};
 
 const router = express.Router();
 
@@ -42,7 +31,6 @@ router.post("/", upload.single("dataset"), (req, res) => {
     ]
   };
   store.add(dataset);
-  ws.send(JSON.stringify(dataset));
 
   res.send({
     code: 200,

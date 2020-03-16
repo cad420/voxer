@@ -1,6 +1,6 @@
 import express from "express";
 import store from "../models/Pipeline";
-import { Pipeline } from "../models/voxer";
+import { Pipeline, Scene } from "../models/voxer";
 
 const router = express.Router();
 
@@ -13,8 +13,8 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const pipeline = req.body as Pipeline;
-  const id = await store.add(pipeline);
+  const scene = req.body as Scene;
+  const id = await store.add(scene);
 
   res.send({
     code: 200,
