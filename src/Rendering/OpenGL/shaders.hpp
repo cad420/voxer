@@ -22,32 +22,32 @@ layout(location = 2) uniform vec3 viewPos;
 //out vec4 fragColor;
 void main()
 {
-	vec3 maxPoint = vec3(ModelMatrix*vec4(0.5,0.5,0.5,1));
-	vec3 minPoint = vec3(ModelMatrix*vec4(-0.5,-0.5,-0.5,1));
+    vec3 maxPoint = vec3(ModelMatrix*vec4(1, 1, 1, 1));
+    vec3 minPoint = vec3(ModelMatrix*vec4(0, 0, 0, 1));
 
-	bool inner = false;
-	vec3 eyePos = viewPos;
-	if(eyePos.x >= minPoint.x && eyePos.x <= maxPoint.x
-	&& eyePos.y >= minPoint.y && eyePos.y <= maxPoint.y
-	&& eyePos.z >= minPoint.z && eyePos.z <= maxPoint.z)
-		inner = true;
+    bool inner = false;
+    vec3 eyePos = viewPos;
+    if (eyePos.x >= minPoint.x && eyePos.x <= maxPoint.x
+        && eyePos.y >= minPoint.y && eyePos.y <= maxPoint.y
+        && eyePos.z >= minPoint.z && eyePos.z <= maxPoint.z) {
+        inner = true;
+    }
 
-	if(gl_FrontFacing)
-	{
-		entryPos = vec4(texCoord,1.0);
-		exitPos = vec4(-0.5,-0.5,-0.5,0);
-	}
-	else
-	{
-		exitPos = vec4(texCoord,1.0);
-		if(inner){
-			eyePos = (eyePos-minPoint)/(maxPoint-minPoint);		// normalized to sample space of [0,1]^3
-			entryPos=vec4(eyePos,0);
-		}else{
-			entryPos=vec4(-0.5,-0.5,-0.5,0);
-		}
-	}
-	return;
+    if (gl_FrontFacing) {
+        entryPos = vec4(texCoord, 1.0);
+        exitPos = vec4(0, 0, 0, 0);
+    }
+    else
+    {
+        exitPos = vec4(texCoord, 1.0);
+        if (inner){
+            eyePos = (eyePos-minPoint)/(maxPoint-minPoint);// normalized to sample space of [0,1]^3
+            entryPos=vec4(eyePos, 0);
+        } else {
+            entryPos=vec4(0, 0, 0, 0);
+        }
+    }
+    return;
 }
 )";
 
@@ -62,17 +62,14 @@ out vec3 texCoord;
 void main()
 {
 	gl_Position = MVPMatrix * vec4(VertexPosition,1.0);
-	texCoord = TexturePosition;            //(0,0,0)<--->(1,1,1)
+	texCoord = TexturePosition; //(0,0,0)<--->(1,1,1)
 })";
 
 const char *screenquad_v = R"(#version 430 core
 const vec2 screenQuadVertexCoord[4]={vec2(-1.0,-1.0),vec2(1.0,-1.0),vec2(-1.0,1.0),vec2(1.0,1.0)};
-const vec2 screenQuadTexCoord[4]={vec2(0,0),vec2(1,0),vec2(0,1.0),vec2(1.0,1.0)};
-out vec2 screenCoord;
 void main()
 {
     gl_Position = vec4(screenQuadVertexCoord[gl_VertexID].x,screenQuadVertexCoord[gl_VertexID].y,0.0,1.0);
-    screenCoord = screenQuadTexCoord[gl_VertexID];
 })";
 
 const char *naiveraycast_f = R"(#version 430 core
@@ -82,7 +79,6 @@ layout(location = 1,rgba32f) uniform volatile image2D exitPosTexture;
 layout(location = 2,rgba32f) uniform volatile image2D resutlTexture;
 layout(location = 3) uniform sampler1D texTransfunc;
 layout(location = 4) uniform sampler3D volumeTexture;
-
 
 in vec2 screenCoord;
 out vec4 fragColor;
@@ -121,10 +117,10 @@ void main()
 const char *screenquad_f = R"(#version 430 core
 layout(location = 0,rgba32f) uniform volatile image2D screenQuadTexture;
 out vec4 fragColor;
+
 void main()
 {
     fragColor = imageLoad(screenQuadTexture,ivec2(gl_FragCoord)).xyzw;
-    //fragColor = vec4(screenCoord.x,screenCoord.y,0,1);
 })";
 
 } // namespace shader

@@ -186,7 +186,7 @@ inline GLenum PrintGLErrorMsg(const char *file, int line) {
       if (iCounter > 100)                                                      \
         break;                                                                 \
     }                                                                          \
-  } while (0);
+  } while (0)
 
 #define GL_CHECK                                                               \
   do {                                                                         \
@@ -382,7 +382,7 @@ public:
 
   GLVertexArray CreateVertexArray() {
     uint32_t handle = 0;
-    GL_EXPR(glCreateVertexArrays(1, &handle))
+    GL_EXPR(glCreateVertexArrays(1, &handle));
     return GLVertexArray(this->shared_from_this(), handle);
   }
 

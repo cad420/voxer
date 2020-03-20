@@ -13,9 +13,7 @@ using namespace std;
 
 namespace {
 
-Bound3f bound({-0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, 0.5f});
-Point3f CubeVertices[8];
-Point3f CubeTexCoords[8];
+const Bound3f bound({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f});
 
 unsigned int CubeVertexIndices[] = {0, 2, 1, 1, 2, 3, 4, 5, 6, 5, 7, 6,
                                     0, 1, 4, 1, 5, 4, 2, 6, 3, 3, 6, 7,
@@ -51,25 +49,6 @@ void glCall_LinkProgramAndCheckHelper(GL::GLProgram &program) {
   }
 }
 
-void glCall_CameraUniformUpdate(ViewingTransform &camera,
-                                Transform &modelMatrix,
-                                GL::GLProgram &positionGenerateProgram) {
-  // camera
-  const auto mvpTransform =
-      camera.GetPerspectiveMatrix() * camera.GetViewMatrixWrapper().LookAt();
-  const auto viewTransform = camera.GetViewMatrixWrapper().LookAt();
-  const auto viewPos = camera.GetViewMatrixWrapper().GetPosition();
-  assert(positionGenerateProgram.Valid());
-  GL_EXPR(glProgramUniformMatrix4fv(
-      positionGenerateProgram, 0, 1, GL_TRUE,
-      mvpTransform.Matrix().FlatData())); // location = 0 is MVPMatrix
-  GL_EXPR(glProgramUniformMatrix4fv(
-      positionGenerateProgram, 1, 1, GL_TRUE,
-      modelMatrix.Matrix().FlatData())); // location = 1 is ModelMatrix
-  GL_EXPR(glProgramUniform3fv(positionGenerateProgram, 2, 1,
-                              viewPos.ConstData())); // location = 1 is viewPos
-}
-
 } // namespace
 
 namespace voxer {
@@ -94,6 +73,9 @@ RenderingContextOpenGL::RenderingContextOpenGL() : width(400), height(400) {
   if (!gladLoadGL()) {
     throw runtime_error("failed to load gl");
   }
+
+  Point3f CubeVertices[8];
+  Point3f CubeTexCoords[8];
 
   for (int i = 0; i < 8; i++) {
     CubeVertices[i] = bound.Corner(i);
@@ -245,7 +227,8 @@ void RenderingContextOpenGL::render(const Scene &scene,
     auto &scene_dataset = scene.datasets[volume.dataset_idx];
     auto &dataset = datasets.get_or_create(scene_dataset, scene.datasets);
     auto &dimensions = dataset.info.dimensions;
-    ModelTransform.SetScale(dimensions[0], dimensions[1], dimensions[2]);
+    ModelTransform = Scale(dimensions[0], dimensions[1], dimensions[2]) *
+                     Translate(-0.5f, -0.5f, -0.5f);
 
     auto it = volume_cache.find(scene_dataset);
     if (it != volume_cache.end()) {
@@ -274,7 +257,9 @@ void RenderingContextOpenGL::render(const Scene &scene,
   ViewingTransform vm_camera{{camera.pos[0], camera.pos[1], camera.pos[2]},
                              {camera.up[0], camera.up[1], camera.up[2]},
                              {0, 0, 0}};
-
+  vm_camera.SetAspectRatio(static_cast<float>(width) / height);
+  vm_camera.SetFov(45);
+  vm_camera.SetFarPlane(100000.0f);
   glViewport(0, 0, camera.width, camera.height);
   glClear(GL_COLOR_BUFFER_BIT);
 
@@ -325,8 +310,20 @@ void RenderingContextOpenGL::render(const Scene &scene,
 
   /* Uniforms binding for program*/
   // camera-related uniforms for position program
-  glCall_CameraUniformUpdate(vm_camera, ModelTransform,
-                             positionGenerateProgram);
+  const auto mvpTransform = vm_camera.GetPerspectiveMatrix() *
+                            vm_camera.GetViewMatrixWrapper().LookAt() *
+                            ModelTransform;
+  const auto viewPos = vm_camera.GetViewMatrixWrapper().GetPosition();
+  assert(positionGenerateProgram.Valid());
+  // location = 0 is MVPMatrix
+  GL_EXPR(glProgramUniformMatrix4fv(positionGenerateProgram, 0, 1, GL_TRUE,
+                                    mvpTransform.Matrix().FlatData()));
+  // location = 1 is ModelMatrix
+  GL_EXPR(glProgramUniformMatrix4fv(positionGenerateProgram, 1, 1, GL_TRUE,
+                                    ModelTransform.Matrix().FlatData()));
+  // location = 1 is viewPos
+  GL_EXPR(
+      glProgramUniform3fv(positionGenerateProgram, 2, 1, viewPos.ConstData()));
 
   /*Configuration rendering state*/
   const float zeroRGBA[] = {0.f, 0.f, 0.f, 0.f};
@@ -339,14 +336,15 @@ void RenderingContextOpenGL::render(const Scene &scene,
   const GLenum allDrawBuffers[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
                                     GL_COLOR_ATTACHMENT2};
 
-  glEnable(GL_BLEND); // Blend is necessary for ray-casting position generation
+  // Blend is necessary for ray-casting position generation
+  glEnable(GL_BLEND);
   GL_EXPR(glUseProgram(positionGenerateProgram));
   GL_EXPR(glBindFramebuffer(GL_FRAMEBUFFER, GLFramebuffer));
 
   /**
-   * @brief Clearing framebuffer by using the non-DSA api because commented DSA
-   * version above has no effect on intel GPU. Maybe it's a graphics driver bug.
-   * see
+   * @brief Clearing framebuffer by using the non-DSA api because commented
+   * DSA version above has no effect on intel GPU. Maybe it's a graphics
+   * driver bug. see
    * https://software.intel.com/en-us/forums/graphics-driver-bug-reporting/topic/740117
    */
   GL_EXPR(glDrawBuffers(3, allDrawBuffers));
