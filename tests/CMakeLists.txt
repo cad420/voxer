@@ -1,5 +1,4 @@
 find_package(Threads REQUIRED)
-find_package(fmt CONFIG REQUIRED)
 
 add_executable(TestDataStore DatasetStore.test.cpp)
 target_include_directories(
@@ -13,7 +12,6 @@ target_link_libraries(
     PRIVATE
     voxer
     Threads::Threads
-    fmt::fmt
 )
 target_compile_features(TestDataStore PRIVATE cxx_std_17)
 
@@ -28,7 +26,6 @@ target_link_libraries(
     TestUtils
     PRIVATE
     Threads::Threads
-    fmt::fmt
 )
 target_compile_features(TestUtils PRIVATE cxx_std_17)
 
@@ -48,7 +45,6 @@ target_link_libraries(
     TestCommandParser
     PRIVATE
     voxer
-    fmt::fmt
 )
 target_compile_features(TestCommandParser PRIVATE cxx_std_17)
 
@@ -63,7 +59,6 @@ target_link_libraries(
     TestServerUtils
     PRIVATE
     Threads::Threads
-    fmt::fmt
 )
 target_compile_features(TestServerUtils PRIVATE cxx_std_14)
 

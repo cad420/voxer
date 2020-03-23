@@ -1,9 +1,14 @@
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
+
+execute_process(
+    COMMAND make && cp uSockets.a libuSockets.a
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/uWebSockets/uSockets
+)
 find_library(
     USOCKETS_LIBRARY
     NAMES uSockets
-    HINTS ${PROJECT_SOURCE_DIR}/third_party/uSockets
+    HINTS ${PROJECT_SOURCE_DIR}/third_party/uWebSockets/uSockets
 )
 
 add_executable(
@@ -18,9 +23,8 @@ target_include_directories(
     ${USOCKETS_INCLUDE_DIR}
     ${UWEBSOCKET_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/third_party/fmt/include
-    ${PROJECT_SOURCE_DIR}/third_party/uSockets/src
-    ${PROJECT_SOURCE_DIR}/third_party/uWebSockets/
+    ${PROJECT_SOURCE_DIR}/third_party/
+    ${PROJECT_SOURCE_DIR}/third_party/uWebSockets/uSockets/src
 )
 target_link_libraries(
     voxer-server

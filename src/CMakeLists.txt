@@ -3,7 +3,45 @@ find_package(ospray REQUIRED)
 find_package(Threads REQUIRED)
 find_package(glfw3 REQUIRED)
 
+include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
+include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
 vm_external_module(GIT_REPOSITORY https://github.com/cad420/VMCore.git GIT_TAG master)
+
+file(
+    READ
+    Rendering/OpenGL/shaders/position_f.glsl
+    POSITION_FRAGMENT_SHADER
+)
+file(
+    READ
+    Rendering/OpenGL/shaders/position_v.glsl
+    POSITION_VERTEX_SHADER
+)
+file(
+    READ
+    Rendering/OpenGL/shaders/screenquad_f.glsl
+    SCREENQUAD_FRAGMENT_SHADER
+)
+file(
+    READ
+    Rendering/OpenGL/shaders/screenquad_v.glsl
+    SCREENQUAD_VERTEX_SHADER
+)
+file(
+    READ
+    Rendering/OpenGL/shaders/naiveraycast_f.glsl
+    NAIVERAYCAST_FRAGMENT_SHADER
+)
+set_property(
+    DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "Rendering/OpenGL/shaders/naiveraycast_f.glsl;Rendering/OpenGL/shaders/screenquad_v.glsl;Rendering/OpenGL/shaders/screenquad_f.glsl;Rendering/OpenGL/shaders/position_f.glsl;Rendering/OpenGL/shaders/position_f.glsl"
+)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/shaders.hpp.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/shaders.hpp
+    ESCAPE_QUOTES
+    NEWLINE_STYLE LF
+)
 
 # TODO: split ospray and opengl implmentation
 
@@ -43,25 +81,16 @@ target_include_directories(
     PUBLIC
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/third_party/rapidjson/include/>
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/third_party/seria/include/
-    ${PROJECT_SOURCE_DIR}/third_party/fmt/include/
     ${PROJECT_SOURCE_DIR}/third_party/glad/include/
 )
 target_link_libraries(
     voxer
-    PUBLIC Threads::Threads ospray::ospray glfw
+    PUBLIC Threads::Threads ospray::ospray glfw seria::seria fmt::fmt
     PRIVATE vmcore
 )
-
-if (VOXER_USE_GPU)
-  find_package(VTK REQUIRED COMPONENTS vtkRenderingVolumeOpenGL2 vtkIOImage)
-  include(${VTK_USE_FILE})
-  target_link_libraries(voxer PRIVATE ${VTK_LIBRARIES})
-endif ()
 
 target_compile_options(voxer PRIVATE -Werror)
 target_compile_features(voxer PRIVATE cxx_std_14)
