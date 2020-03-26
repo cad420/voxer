@@ -2,15 +2,13 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import store from "../models/Dataset";
+import { PUBLIC_PATH } from "../config";
 
 const router = express.Router();
 
-const target =
-  process.env.UPLOAD_PATH || path.resolve(process.cwd(), "./public/");
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, target);
+    cb(null, PUBLIC_PATH);
   },
   filename: (req, file, cb) => {
     cb(null, file.originalname);
@@ -26,7 +24,7 @@ router.post("/", upload.single("dataset"), (req, res) => {
       {
         name: "default",
         timesteps: 1,
-        path: path.resolve(target, name)
+        path: path.resolve(PUBLIC_PATH, name)
       }
     ]
   };

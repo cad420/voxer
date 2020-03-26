@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import routes from "./routes";
-import { RENDER_SERVICE } from "./config";
+import { PUBLIC_PATH, RENDER_SERVICE } from "./config";
 
 const app = express();
 const wsProxy = createProxyMiddleware("/render", {
@@ -11,7 +11,7 @@ const wsProxy = createProxyMiddleware("/render", {
 });
 
 app.use(wsProxy);
-app.use(express.static("public"));
+app.use(express.static(PUBLIC_PATH));
 app.use(cors());
 app.use(express.json());
 app.use(routes);
