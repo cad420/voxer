@@ -2,7 +2,11 @@ find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 
 execute_process(
-    COMMAND make && cp uSockets.a libuSockets.a
+    COMMAND make
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/uWebSockets/uSockets
+)
+execute_process(
+    COMMAND cp uSockets.a libuSockets.a
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/uWebSockets/uSockets
 )
 find_library(

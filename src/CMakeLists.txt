@@ -1,7 +1,7 @@
 find_package(ospray REQUIRED)
 # find_package(MPI REQUIRED)
 find_package(Threads REQUIRED)
-find_package(glfw3 REQUIRED)
+find_package(OpenGL REQUIRED COMPONENTS OpenGL EGL)
 
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
@@ -88,24 +88,27 @@ target_include_directories(
 )
 target_link_libraries(
     voxer
-    PUBLIC Threads::Threads ospray::ospray glfw seria::seria fmt::fmt
+    PUBLIC Threads::Threads ospray::ospray OpenGL::OpenGL OpenGL::EGL seria::seria fmt::fmt ${CMAKE_DL_LIBS}
     PRIVATE vmcore
 )
 
 target_compile_options(voxer PRIVATE -Werror)
 target_compile_features(voxer PRIVATE cxx_std_14)
 
+get_target_property(OSPRAY_LOCATION ospray::ospray LOCATION)
+message(STATUS ${OSPRAY_LOCATION})
+
+install(
+    TARGETS voxer
+    DESTINATION lib
+    EXPORT voxer-targets
+)
+install(
+    DIRECTORY ${PROJECT_SOURCE_DIR}/include/voxer
+    DESTINATION include
+)
 #install(
-#    TARGETS voxer
-#    DESTINATION lib
-#    EXPORT voxer-target
-#)
-#install(
-#    DIRECTORY ${PROJECT_SOURCE_DIR}/include/voxer
-#    DESTINATION include
-#)
-#install(
-#    EXPORT voxer-target
+#    EXPORT voxer-targets
 #    FILE VoxerTargets.cmake
 #    NAMESPACE voxer::
 #    DESTINATION lib/cmake/voxer
@@ -131,7 +134,7 @@ target_compile_features(voxer PRIVATE cxx_std_14)
 #    DESTINATION lib/cmake/voxer
 #)
 #export(
-#    EXPORT voxer-target
+#    EXPORT voxer-targets
 #    NAMESPACE voxer::
 #    FILE "${CMAKE_CURRENT_BINARY_DIR}/VoxerTargets.cmake"
-#)w
+#)

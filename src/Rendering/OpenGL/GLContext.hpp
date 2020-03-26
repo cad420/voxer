@@ -148,7 +148,7 @@ inline GLenum PrintGLErrorMsg(const char *file, int line) {
 #ifdef NDEBUG
 #define GL_REPORT void(0);
 #define GL_ASSERT void(0);
-#define GL_EXPR(stmt) stmt;
+#define GL_EXPR(stmt) stmt
 #define GL_CHECK void(0);
 #else
 #define GL_REPORT PrintGLErrorMsg(__FILE__, __LINE__);

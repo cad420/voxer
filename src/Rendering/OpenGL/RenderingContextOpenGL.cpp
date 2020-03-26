@@ -1,5 +1,6 @@
 #include "Rendering/OpenGL/RenderingContextOpenGL.hpp"
 #include "Rendering/OpenGL/shaders.hpp"
+#include <EGL/eglext.h>
 #include <VMFoundation/pluginloader.h>
 #include <VMGraphics/camera.h>
 #include <VMUtils/cmdline.hpp>
@@ -12,6 +13,27 @@ using namespace vm;
 using namespace std;
 
 namespace {
+
+const EGLint configAttribs[] = {EGL_SURFACE_TYPE,
+                                EGL_PBUFFER_BIT,
+                                EGL_BLUE_SIZE,
+                                8,
+                                EGL_GREEN_SIZE,
+                                8,
+                                EGL_RED_SIZE,
+                                8,
+                                EGL_DEPTH_SIZE,
+                                8,
+                                EGL_RENDERABLE_TYPE,
+                                EGL_OPENGL_BIT,
+                                EGL_NONE};
+
+const int pbufferWidth = 800;
+const int pbufferHeight = 800;
+
+const EGLint pbufferAttribs[] = {
+    EGL_WIDTH, pbufferWidth, EGL_HEIGHT, pbufferHeight, EGL_NONE,
+};
 
 const Bound3f bound({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f});
 
@@ -49,30 +71,71 @@ void glCall_LinkProgramAndCheckHelper(GL::GLProgram &program) {
   }
 }
 
+void EGLCheck(const char *fn) {
+  EGLint error = eglGetError();
+
+  if (error != EGL_SUCCESS) {
+    throw runtime_error(fn + to_string(error));
+  }
+}
+
 } // namespace
 
 namespace voxer {
 
 RenderingContextOpenGL::RenderingContextOpenGL() : width(400), height(400) {
-  if (!glfwInit()) {
-    throw runtime_error("create window failed");
-  }
+  static const int MAX_DEVICES = 4;
+  EGLDeviceEXT eglDevs[MAX_DEVICES];
+  EGLint numDevices;
 
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  // disable double buffer to remove FPS limit
-  // so the current result can be flushed to default fb immediately
-  glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
+  auto eglQueryDevicesEXT =
+      (PFNEGLQUERYDEVICESEXTPROC)eglGetProcAddress("eglQueryDevicesEXT");
+  eglQueryDevicesEXT(4, eglDevs, &numDevices);
 
-  window = glfwCreateWindow(width, height, "voxer", nullptr, nullptr);
-  glfwHideWindow(window);
+  cout << "Detected " << numDevices << " devices" << endl;
 
-  glfwMakeContextCurrent(window);
+  auto eglGetPlatformDisplayEXT =
+      (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress(
+          "eglGetPlatformDisplayEXT");
 
-  if (!gladLoadGL()) {
+  eglDpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[0], 0);
+  EGLCheck("eglGetDisplay");
+
+  EGLint major, minor;
+  eglInitialize(eglDpy, &major, &minor);
+  EGLCheck("eglInitialize");
+
+  EGLint numConfigs;
+  EGLConfig eglCfg;
+
+  eglChooseConfig(eglDpy, configAttribs, &eglCfg, 1, &numConfigs);
+  EGLCheck("eglChooseConfig");
+
+  EGLSurface eglSurf = eglCreatePbufferSurface(eglDpy, eglCfg, pbufferAttribs);
+  EGLCheck("eglCreatePbufferSurface");
+
+  eglBindAPI(EGL_OPENGL_API);
+  EGLCheck("eglBindAPI");
+
+  const EGLint context_attri[] = {EGL_CONTEXT_MAJOR_VERSION,
+                                  4,
+                                  EGL_CONTEXT_MINOR_VERSION,
+                                  6,
+                                  EGL_CONTEXT_OPENGL_PROFILE_MASK,
+                                  EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
+                                  EGL_NONE};
+  EGLContext eglCtx =
+      eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT, context_attri);
+  EGLCheck("eglCreateContext");
+
+  eglMakeCurrent(eglDpy, eglSurf, eglSurf, eglCtx);
+  EGLCheck("eglMakeCurrent");
+
+  if (!gladLoadGLLoader((void *(*)(const char *))(&eglGetProcAddress))) {
     throw runtime_error("failed to load gl");
   }
+
+  cout << "GL Version: " << GLVersion.major << "." << GLVersion.minor << endl;
 
   Point3f CubeVertices[8];
   Point3f CubeTexCoords[8];
@@ -184,8 +247,9 @@ RenderingContextOpenGL::RenderingContextOpenGL() : width(400), height(400) {
 }
 
 RenderingContextOpenGL::~RenderingContextOpenGL() {
-  glfwDestroyWindow(window);
-  glfwTerminate();
+  eglTerminate(eglDpy);
+  //  glfwDestroyWindow(window);
+  //  glfwTerminate();
 }
 
 void RenderingContextOpenGL::render(const Scene &scene,
@@ -202,9 +266,9 @@ void RenderingContextOpenGL::render(const Scene &scene,
       continue;
 
     valid = true;
-    auto &tfcn = scene.tfcns[volume.tfcn_idx];
 
-    auto interploted = interpolate_tfcn(scene.tfcns[0]);
+    auto &tfcn = scene.tfcns[volume.tfcn_idx];
+    auto interploted = interpolate_tfcn(tfcn);
     vector<array<float, 4>> tfcn_data(interploted.first.size());
     // TODO: inefficient
     for (size_t i = 0; i < tfcn_data.size(); i++) {

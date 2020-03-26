@@ -1,7 +1,8 @@
 #pragma once
+#define None None
 #include "Rendering/IRenderingContext.hpp"
 #include "Rendering/OpenGL/GLContext.hpp"
-#include <GLFW/glfw3.h>
+#include <EGL/egl.h>
 #include <unordered_map>
 
 namespace voxer {
@@ -16,7 +17,7 @@ public:
 
 private:
   Image image;
-  GLFWwindow *window;
+  EGLDisplay eglDpy;
   uint32_t width;
   uint32_t height;
   std::shared_ptr<GLContext> gl;
@@ -28,7 +29,8 @@ private:
   GL::GLBuffer vbo;
   GL::GLBuffer ebo;
 
-  std::unordered_map<SceneDataset, GL::GLTexture, SceneDatasetHasher> volume_cache;
+  std::unordered_map<SceneDataset, GL::GLTexture, SceneDatasetHasher>
+      volume_cache;
 };
 
 } // namespace voxer
