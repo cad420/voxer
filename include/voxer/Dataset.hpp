@@ -38,8 +38,12 @@ struct VolumeInfo {
 
 struct Dataset {
   std::string id = "";
+  std::string name = "";
+  std::string variable = "";
+  uint32_t timestep = 0;
   VolumeInfo info{};
   std::vector<uint8_t> buffer{};
+  std::vector<uint32_t> histogram{};
 
   template <typename T> auto get() -> T * {
     return reinterpret_cast<T *>(buffer.data());
@@ -48,6 +52,8 @@ struct Dataset {
   template <typename T> auto get(uint32_t index) -> T {
     return reinterpret_cast<T *>(buffer.data())[index];
   }
+
+  std::string serialize() const;
 };
 
 } // namespace voxer

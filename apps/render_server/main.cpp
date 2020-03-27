@@ -8,7 +8,6 @@
 #include <voxer/DatasetStore.hpp>
 #include <voxer/Image.hpp>
 #include <voxer/RenderingContext.hpp>
-#include <voxer/filter/histogram.hpp>
 
 using namespace std;
 using namespace voxer;
@@ -18,8 +17,6 @@ struct UserData {};
 int main(int argc, const char **argv) {
   DatasetStore datasets;
   PipelineStore pipelines;
-
-  map<string, vector<uint32_t>> histograms;
 
   CommandParser parser{};
   RenderingContext ogl_renderer(RenderingContext::Type::OpenGL);
@@ -31,14 +28,15 @@ int main(int argc, const char **argv) {
   uWS::App::WebSocketBehavior behavior{uWS::SHARED_COMPRESSOR, 1024 * 1024,
                                        30 * 60, 1024 * 1024 * 1024};
 
-  behavior.message = [&datasets, &parser, &pipelines, &histograms,
-                      &ogl_renderer, &ospray_renderer](uWS::WebSocket<false, true> *ws,
-                                 std::string_view message, uWS::OpCode) {
+  behavior.message = [&datasets, &parser, &pipelines, &ogl_renderer,
+                      &ospray_renderer](uWS::WebSocket<false, true> *ws,
+                                        std::string_view message, uWS::OpCode) {
     Command command;
     try {
       command = parser.parse(message.data(), message.size());
 
-      auto &renderer = command.engine == EngineType::OSPRay ? ospray_renderer : ogl_renderer;
+      auto &renderer =
+          command.engine == EngineType::OSPRay ? ospray_renderer : ogl_renderer;
 
       switch (command.type) {
       case Command::Type::Render: {
@@ -64,14 +62,9 @@ int main(int argc, const char **argv) {
         // TODO: what about differed dataset?
         auto &dataset = datasets.get(scene_dataset.name, scene_dataset.variable,
                                      scene_dataset.timestep);
-        auto item = histograms.find(dataset.id);
-        if (item == histograms.end()) {
-          histograms.emplace(dataset.id, calculate_histogram(dataset));
-          item = histograms.find(dataset.id);
-        }
         auto msg =
             fmt::format(R"({{"type":"query","target":"dataset","data":{}}})",
-                        histogram_to_json(item->second));
+                        dataset.serialize());
         ws->send(msg, uWS::OpCode::TEXT);
         break;
       }
@@ -137,11 +130,16 @@ int main(int argc, const char **argv) {
 
   app.ws<UserData>("/render", move(behavior));
 
-  app.ws<UserData>("/datasets",
-                   {.message = [&datasets](auto *ws, std::string_view message,
-                                           uWS::OpCode opCode) {
-                     datasets.load_from_json(message.data(), message.size());
-                   }});
+  app.ws<UserData>(
+      "/datasets",
+      {.message = [&datasets](uWS::WebSocket<false, true> *ws,
+                              std::string_view message, uWS::OpCode opCode) {
+        datasets.load_from_json(message.data(), message.size());
+        auto &items = datasets.get();
+        for (auto &item : items) {
+          ws->send(item.serialize(), uWS::OpCode::TEXT);
+        }
+      }});
 
   // run server
   const auto port = 3000;

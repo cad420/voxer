@@ -2,6 +2,7 @@
 #include "databases/MRC/MRCReader.hpp"
 #include "databases/Raw/RawReader.hpp"
 #include "voxer/filter/differ.hpp"
+#include "voxer/filter/histogram.hpp"
 #include "voxer/utils.hpp"
 #include <cassert>
 #include <fmt/core.h>
@@ -154,6 +155,10 @@ void DatasetStore::load_one(const rapidjson::Value &json) {
       } else {
         throw runtime_error("unknown dataset format: " + ext);
       }
+      dataset.name = name;
+      dataset.variable = variable_name;
+      dataset.timestep = i;
+      dataset.histogram = calculate_histogram(dataset);
       datasets.emplace_back(move(dataset));
       timestep_lookup_table[i] = datasets.size() - 1;
     }
@@ -209,7 +214,12 @@ auto DatasetStore::get_or_create(const SceneDataset &scene_dataset,
   }
 
   auto differed_buffer = differ(parent_dataset.buffer, another_dataset.buffer);
-  Dataset dataset{move(id), parent_dataset.info, move(differed_buffer)};
+  Dataset dataset{move(id),
+                  parent_dataset.name + "-" + another.name + "-differed",
+                  "default",
+                  0,
+                  parent_dataset.info,
+                  move(differed_buffer)};
   temp_datasets.emplace(id, dataset);
   return temp_datasets.at(id);
 }

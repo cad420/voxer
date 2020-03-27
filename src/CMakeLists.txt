@@ -48,6 +48,7 @@ configure_file(
 list(
     APPEND
     VOXER_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Dataset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DatasetStore.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/databases/MRC/MRCReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/databases/Raw/RawReader.cpp
