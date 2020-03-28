@@ -246,11 +246,7 @@ RenderingContextOpenGL::RenderingContextOpenGL() : width(400), height(400) {
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-RenderingContextOpenGL::~RenderingContextOpenGL() {
-  eglTerminate(eglDpy);
-  //  glfwDestroyWindow(window);
-  //  glfwTerminate();
-}
+RenderingContextOpenGL::~RenderingContextOpenGL() { eglTerminate(eglDpy); }
 
 void RenderingContextOpenGL::render(const Scene &scene,
                                     DatasetStore &datasets) {
@@ -325,7 +321,6 @@ void RenderingContextOpenGL::render(const Scene &scene,
   vm_camera.SetFov(45);
   vm_camera.SetFarPlane(100000.0f);
   glViewport(0, 0, camera.width, camera.height);
-  glClear(GL_COLOR_BUFFER_BIT);
 
   if (!valid) {
     return;
@@ -400,6 +395,7 @@ void RenderingContextOpenGL::render(const Scene &scene,
   const GLenum allDrawBuffers[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
                                     GL_COLOR_ATTACHMENT2};
 
+  glClear(GL_COLOR_BUFFER_BIT);
   // Blend is necessary for ray-casting position generation
   glEnable(GL_BLEND);
   GL_EXPR(glUseProgram(positionGenerateProgram));

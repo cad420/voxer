@@ -127,25 +127,6 @@ void RenderingContextOSPRay::render(const Scene &scene,
     ospAddGeometry(osp_model, osp_isosurface);
   }
 
-  auto triangle = ospNewGeometry("triangles");
-  vector<float> vertex_data = {
-      -128.0, -128.0, 0.0, 0.0, 128.0, 0.0, 128.0, -128.0, 0.0,
-  };
-  auto vertices =
-      ospNewData(vertex_data.size() / 3, OSP_FLOAT3,
-                 reinterpret_cast<const void *>(vertex_data.data()));
-  vector<int32_t> index_data = {0, 1, 2};
-  auto indices = ospNewData(1, OSP_INT3,
-                            reinterpret_cast<const void *>(index_data.data()));
-  vector<float> color_data = {1.0f, 0.0f, 0.0f, 1.0f};
-  auto color = ospNewData(1, OSP_FLOAT4,
-                          reinterpret_cast<const void *>(color_data.data()));
-  ospSetData(triangle, "vertex", vertices);
-  ospSetData(triangle, "index", indices);
-  ospSetData(triangle, "vertex.color", color);
-  ospCommit(triangle);
-  ospAddGeometry(osp_model, triangle);
-
   ospCommit(osp_model);
 
   vector<OSPLight> lights;
