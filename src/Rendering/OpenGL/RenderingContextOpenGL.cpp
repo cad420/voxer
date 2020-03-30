@@ -250,25 +250,28 @@ RenderingContextOpenGL::~RenderingContextOpenGL() { eglTerminate(eglDpy); }
 
 void RenderingContextOpenGL::render(const Scene &scene,
                                     DatasetStore &datasets) {
-  auto valid = false;
+  auto render_volume = false;
+  auto render_isosurface = false;
 
   vector<GL::GLTexture> textures;
 
   Transform ModelTransform;
   ModelTransform.SetIdentity();
 
-  for (auto &volume : scene.volumes) {
-    if (!volume.render)
+  for (auto &isosurface : scene.isosurfaces) {
+    if (!isosurface.render || render_isosurface) {
       continue;
+    }
+    render_isosurface = true;
 
-    valid = true;
+    auto &volume = scene.volumes[isosurface.volume_idx];
 
     auto &tfcn = scene.tfcns[volume.tfcn_idx];
     auto interploted = interpolate_tfcn(tfcn);
     vector<array<float, 4>> tfcn_data(interploted.first.size());
     // TODO: inefficient
     for (size_t i = 0; i < tfcn_data.size(); i++) {
-      auto opacity = interploted.first[i];
+      auto opacity = i > 0 && i < 2 ? 0.8f : 0.0f;
       auto &color = interploted.second[i];
       tfcn_data[i] = {color[0], color[1], color[2], opacity};
     }
@@ -310,6 +313,61 @@ void RenderingContextOpenGL::render(const Scene &scene,
     assert(volume_cache[scene_dataset].Valid());
   }
 
+  if (!render_isosurface) {
+    for (auto &volume : scene.volumes) {
+      if (!volume.render)
+        continue;
+
+      render_volume = true;
+
+      auto &tfcn = scene.tfcns[volume.tfcn_idx];
+      auto interploted = interpolate_tfcn(tfcn);
+      vector<array<float, 4>> tfcn_data(interploted.first.size());
+      // TODO: inefficient
+      for (size_t i = 0; i < tfcn_data.size(); i++) {
+        auto opacity = interploted.first[i];
+        auto &color = interploted.second[i];
+        tfcn_data[i] = {color[0], color[1], color[2], opacity};
+      }
+
+      // Create transfer function texture
+      auto tfcn_texture = gl->CreateTexture(GL_TEXTURE_1D);
+      assert(tfcn_texture.Valid());
+      GL_EXPR(glTextureStorage1D(tfcn_texture, 1, GL_RGBA32F, 256));
+      GL_EXPR(glTextureSubImage1D(tfcn_texture, 0, 0, interploted.first.size(),
+                                  GL_RGBA, GL_FLOAT, tfcn_data.data()));
+      GL_EXPR(glBindTextureUnit(0, tfcn_texture));
+
+      textures.emplace_back(move(tfcn_texture));
+
+      // Create Volume Texture
+      auto &scene_dataset = scene.datasets[volume.dataset_idx];
+      auto &dataset = datasets.get_or_create(scene_dataset, scene.datasets);
+      auto &dimensions = dataset.info.dimensions;
+      ModelTransform = Scale(dimensions[0], dimensions[1], dimensions[2]) *
+                       Translate(-0.5f, -0.5f, -0.5f);
+
+      auto it = volume_cache.find(scene_dataset);
+      if (it != volume_cache.end()) {
+        GL_EXPR(glBindTextureUnit(1, it->second));
+      } else {
+        auto volume_texture = gl->CreateTexture(GL_TEXTURE_3D);
+        assert(volume_texture.Valid());
+        GL_EXPR(glBindTextureUnit(1, volume_texture));
+        GL_EXPR(glTextureStorage3D(volume_texture, 1, GL_R8, dimensions[0],
+                                   dimensions[1], dimensions[2]));
+        GL_EXPR(glTextureSubImage3D(volume_texture, 0, 0, 0, 0, dimensions[0],
+                                    dimensions[1], dimensions[2], GL_RED,
+                                    GL_UNSIGNED_BYTE, dataset.buffer.data()));
+        GL_EXPR(glBindTextureUnit(1, volume_texture));
+
+        volume_cache.emplace(scene_dataset, move(volume_texture));
+      }
+
+      assert(volume_cache[scene_dataset].Valid());
+    }
+  }
+
   auto &camera = scene.camera;
   width = camera.width;
   height = camera.height;
@@ -322,7 +380,7 @@ void RenderingContextOpenGL::render(const Scene &scene,
   vm_camera.SetFarPlane(100000.0f);
   glViewport(0, 0, camera.width, camera.height);
 
-  if (!valid) {
+  if (!render_volume && !render_isosurface) {
     return;
   }
 
