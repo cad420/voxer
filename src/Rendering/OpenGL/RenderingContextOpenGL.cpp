@@ -267,21 +267,20 @@ void RenderingContextOpenGL::render(const Scene &scene,
     auto &volume = scene.volumes[isosurface.volume_idx];
 
     auto &tfcn = scene.tfcns[volume.tfcn_idx];
-    auto interploted = interpolate_tfcn(tfcn);
-    vector<array<float, 4>> tfcn_data(interploted.first.size());
+    vector<array<float, 4>> tfcn_data(256);
     // TODO: inefficient
     for (size_t i = 0; i < tfcn_data.size(); i++) {
-      auto opacity = i > 0 && i < 2 ? 0.8f : 0.0f;
-      auto &color = interploted.second[i];
+      auto opacity = i == 1 ? 1.0f : 0.0f;
+      const auto &color = tfcn[0].color;
       tfcn_data[i] = {color[0], color[1], color[2], opacity};
     }
 
     // Create transfer function texture
     auto tfcn_texture = gl->CreateTexture(GL_TEXTURE_1D);
     assert(tfcn_texture.Valid());
-    GL_EXPR(glTextureStorage1D(tfcn_texture, 1, GL_RGBA32F, 256));
-    GL_EXPR(glTextureSubImage1D(tfcn_texture, 0, 0, interploted.first.size(),
-                                GL_RGBA, GL_FLOAT, tfcn_data.data()));
+    GL_EXPR(glTextureStorage1D(tfcn_texture, 1, GL_RGBA32F, tfcn_data.size()));
+    GL_EXPR(glTextureSubImage1D(tfcn_texture, 0, 0, tfcn_data.size(), GL_RGBA,
+                                GL_FLOAT, tfcn_data.data()));
     GL_EXPR(glBindTextureUnit(0, tfcn_texture));
 
     textures.emplace_back(move(tfcn_texture));
@@ -333,7 +332,8 @@ void RenderingContextOpenGL::render(const Scene &scene,
       // Create transfer function texture
       auto tfcn_texture = gl->CreateTexture(GL_TEXTURE_1D);
       assert(tfcn_texture.Valid());
-      GL_EXPR(glTextureStorage1D(tfcn_texture, 1, GL_RGBA32F, 256));
+      GL_EXPR(
+          glTextureStorage1D(tfcn_texture, 1, GL_RGBA32F, tfcn_data.size()));
       GL_EXPR(glTextureSubImage1D(tfcn_texture, 0, 0, interploted.first.size(),
                                   GL_RGBA, GL_FLOAT, tfcn_data.data()));
       GL_EXPR(glBindTextureUnit(0, tfcn_texture));
