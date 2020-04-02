@@ -15,7 +15,7 @@ struct Camera {
   Type type = Type::PERSPECTIVE;
   std::array<float, 3> pos = {0.0f, 0.0f, 0.1f};
   std::array<float, 3> up = {0.0f, 1.0f, 0.0f};
-  std::array<float, 3> dir = {0.0f, 0.0f, -1.0f};
+  std::array<float, 3> target = {0.0f, 0.0f, 0.0f};
   bool enable_ao = false;
 
   auto serialize() -> rapidjson::Document;

@@ -144,7 +144,8 @@ void RenderingContextOSPRay::render(const Scene &scene,
                static_cast<float>(camera.height));
   ospSet3f(osp_camera, "pos", camera.pos[0], camera.pos[1], camera.pos[2]);
   ospSet3f(osp_camera, "up", camera.up[0], camera.up[1], camera.up[2]);
-  ospSet3f(osp_camera, "dir", camera.dir[0], camera.dir[1], camera.dir[2]);
+  ospSet3f(osp_camera, "dir", camera.target[0] - camera.pos[0],
+           camera.target[1] - camera.pos[1], camera.target[2] - camera.pos[2]);
   ospCommit(osp_camera);
 
   // create renderer

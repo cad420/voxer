@@ -45,7 +45,7 @@ static auto create_modifier(rapidjson::Value json_)
 
       array<const char *, 3> keys = {"pos", "dir", "up"};
       array<array<float, 3> *, 3> targets = {
-          &(scene.camera.pos), &(scene.camera.dir), &(scene.camera.up)};
+          &(scene.camera.pos), &(scene.camera.target), &(scene.camera.up)};
       for (size_t i = 0; i < keys.size(); i++) {
         it = camera_params.FindMember(keys[i]);
         if (it != camera_params.end() && it->value.IsArray()) {

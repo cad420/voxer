@@ -372,9 +372,10 @@ void RenderingContextOpenGL::render(const Scene &scene,
   width = camera.width;
   height = camera.height;
 
-  ViewingTransform vm_camera{{camera.pos[0], camera.pos[1], camera.pos[2]},
-                             {camera.up[0], camera.up[1], camera.up[2]},
-                             {0, 0, 0}};
+  ViewingTransform vm_camera{
+      {camera.pos[0], camera.pos[1], camera.pos[2]},
+      {camera.up[0], camera.up[1], camera.up[2]},
+      {camera.target[0], camera.target[1], camera.target[2]}};
   vm_camera.SetAspectRatio(static_cast<float>(width) / height);
   vm_camera.SetFov(45);
   vm_camera.SetFarPlane(100000.0f);
@@ -408,11 +409,8 @@ void RenderingContextOpenGL::render(const Scene &scene,
                                     GLResultTexture, 0));
   // Depth and stencil attachments are not necessary in Ray Casting.
 
-  GL_EXPR(if (glCheckNamedFramebufferStatus(GLFramebuffer, GL_FRAMEBUFFER) !=
-              GL_FRAMEBUFFER_COMPLETE) {
-    cout << "Framebuffer object is not complete." << endl;
-    exit(-1);
-  });
+  assert(glCheckNamedFramebufferStatus(GLFramebuffer, GL_FRAMEBUFFER) ==
+         GL_FRAMEBUFFER_COMPLETE);
 
   // binds image unit : see the raycasting shader for details
   // binds image unit 0 for entry texture (read and write)
