@@ -26,6 +26,7 @@ target_link_libraries(
     TestUtils
     PRIVATE
     Threads::Threads
+    voxer
 )
 target_compile_features(TestUtils PRIVATE cxx_std_17)
 
