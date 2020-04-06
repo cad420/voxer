@@ -23,26 +23,12 @@ $ docker run --rm -p 3000:3000 --mount type=bind,source="$(pwd)/data",target=/tm
 
 #### Prerequisites
 1. Any c++ compiler supporting **C++17**
-1. CMake v3.10 or newer
-1. [OSPRay](http://www.ospray.org) v1.8.5 or newer
-1. optional: [vcpkg](https://github.com/microsoft/vcpkg) to install the following packages
-1. [RapidJSON](https://github.com/Tencent/rapidjson)
-1. [uSockets](https://github.com/uNetworking/uSockets)
-1. [uWebSockets](https://github.com/uNetworking/uWebSockets)
+1. CMake v3.11 or newer
+1. [OSPRay](http://www.ospray.org) >= v1.8.5. (v2.0.0 not supported)
 1. zlib
-1. [fmt](https://github.com/fmtlib/fmt)
-
-You can install the dependencies except OSPRay with `vcpkg` using the following command:
-```
-$ vcpkg install usockets uwebsockets zlib fmt rapidjson
-``` 
-
-If you prefer to install dependencies manually, refer to the `Dockerfile` in the project,
-which contains the commands to install dependencies and build the project.
+1. NodeJS & npm
 
 #### Compiling on Linux
-
-With the enviroment variable `VCPKG_ROOT` set, you can run
 
 ``` shell
 $ cd voxer
@@ -52,8 +38,7 @@ $ cmake .. \
   -DCMAKE_INSTALL_PREFIX=/target/directory \
   -Dospray_DIR=/path/to/ospray-config.cmake \
 $ cmake --build . -j 4
-$ # cmake --install . # install the building result (require CMake >= 3.15)
-$ # cmake --build . --target install # install command before CMake 3.15
+$ cmake --build . --target install # install command 
 ```
 
 to build `voxer-server`.

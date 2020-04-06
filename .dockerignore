@@ -3,5 +3,5 @@ build
 .idea
 data
 yarn-error.log
-web/node_modules
+apps/manage_server/node_modules
 Dockerfile

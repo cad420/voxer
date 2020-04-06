@@ -13,11 +13,10 @@ project(
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-SET(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../lib")
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
+SET(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../lib")
 
 include(cmake/utils.cmake)
-include(cmake/external.cmake)
 
 add_subdirectory(src)
 

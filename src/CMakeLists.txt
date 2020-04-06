@@ -1,5 +1,4 @@
 find_package(ospray REQUIRED)
-# find_package(MPI REQUIRED)
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED COMPONENTS OpenGL EGL)
 
