@@ -8,7 +8,8 @@ namespace seria {
 template <> inline auto registerObject<voxer::Isosurface>() {
   using Isosurface = voxer::Isosurface;
   return std::make_tuple(member("value", &Isosurface::value),
-                         member("volume", &Isosurface::volume_idx),
+                         member("dataset", &Isosurface::dataset_idx),
+                         member("color", &Isosurface::color),
                          member("render", &Isosurface::render));
 }
 

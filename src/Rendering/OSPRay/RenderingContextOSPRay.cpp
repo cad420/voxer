@@ -1,114 +1,83 @@
 #include "Rendering/OSPRay/RenderingContextOSPRay.hpp"
 #include <ospray/ospray.h>
+#include <ospray/ospray_util.h>
+#include <voxer/utils.hpp>
 
 using namespace std;
 
 namespace voxer {
 
 RenderingContextOSPRay::RenderingContextOSPRay() {
-  auto osp_device = ospNewDevice();
-  // ospDeviceSet1i(osp_device, "logLevel", 2);
-  // ospDeviceSetString(osp_device, "logOutput", "cout");
-  // ospDeviceSetString(osp_device, "errorOutput", "cout");
+  vector<const char *> argvs{};
+  auto argc = static_cast<int>(argvs.size());
+  auto error = ospInit(&argc, argvs.data());
+  if (error != OSP_NO_ERROR) {
+    throw runtime_error("Initialize OSPRay failed.");
+  }
+#ifndef NDEBUG
+  auto osp_device = ospGetCurrentDevice();
+  ospDeviceSetParam(osp_device, "logLevel", OSP_STRING, "warning");
+  ospDeviceSetParam(osp_device, "logOutput", OSP_STRING, "cout");
+  ospDeviceSetParam(osp_device, "errorOutput", OSP_STRING, "cerr");
   ospDeviceCommit(osp_device);
-  ospSetCurrentDevice(osp_device);
-
-  this->cache = make_unique<OSPRayRendererCache>();
+#endif
 }
 
 void RenderingContextOSPRay::render(const Scene &scene,
                                     DatasetStore &datasets) {
-  vector<OSPVolume> osp_volumes;
-  vector<uint32_t> render_idxs;
+  vector<OSPInstance> osp_instances;
 
-  for (size_t i = 0; i < scene.volumes.size(); i++) {
-    const auto &volume = scene.volumes[i];
+  for (auto &volume : scene.volumes) {
+    if (!volume.render) {
+      continue;
+    }
+
     const auto &tfcn = scene.tfcns[volume.tfcn_idx];
     auto interpolated = interpolate_tfcn(tfcn);
-    auto osp_opacity_data = ospNewData(interpolated.first.size(), OSP_FLOAT,
-                                       interpolated.first.data());
-    auto osp_colors_data =
-        ospNewData(interpolated.second.size(), OSP_FLOAT3,
-                   reinterpret_cast<const void *>(interpolated.second.data()));
-    auto osp_tfcn = ospNewTransferFunction("piecewise_linear");
-    ospSetData(osp_tfcn, "colors", osp_colors_data);
-    ospSetData(osp_tfcn, "opacities", osp_opacity_data);
-    ospSet2f(osp_tfcn, "valueRange", 0.0f, 255.0f);
+
+    auto tmp = ospNewSharedData(interpolated.first.data(), OSP_FLOAT,
+                                interpolated.first.size());
+    auto osp_opacity_data = ospNewData(OSP_FLOAT, interpolated.first.size());
+    ospCopyData(tmp, osp_opacity_data);
+    ospRelease(tmp);
+    ospCommit(osp_opacity_data);
+
+    tmp = ospNewSharedData(interpolated.second.data(), OSP_VEC3F,
+                           interpolated.second.size());
+    auto osp_colors_data = ospNewData(OSP_VEC3F, interpolated.second.size());
+    ospCopyData(tmp, osp_colors_data);
+    ospRelease(tmp);
+    ospCommit(osp_colors_data);
+
+    auto osp_tfcn = ospNewTransferFunction("piecewiseLinear");
+    ospSetObject(osp_tfcn, "color", osp_colors_data);
+    ospSetObject(osp_tfcn, "opacity", osp_opacity_data);
+    ospSetVec2f(osp_tfcn, "valueRange", 0.0f, 255.0f);
     ospCommit(osp_tfcn);
 
-    auto &scene_dataset = scene.datasets[volume.dataset_idx];
-    // TODO: if dataset is created  by clipping, differing, find then in the
-    // local cache
+    auto &osp_volume =
+        this->get_osp_volume(volume.dataset_idx, scene.datasets, datasets);
 
-    const auto &dataset = datasets.get_or_create(scene_dataset, scene.datasets);
-    auto &info = dataset.info;
-    auto &dimensions = info.dimensions;
-    auto it = this->cache->osp_volumes.find(dataset.id);
-    if (it == this->cache->osp_volumes.end()) {
-      this->cache->create_osp_volume(dataset);
-      it = this->cache->osp_volumes.find(dataset.id);
-    }
-    auto &osp_volume = it->second;
-    ospSet2f(osp_volume, "voxelRange", 0.0f, 255.0f);
-    ospSet3f(osp_volume, "gridOrigin",
-             -static_cast<float>(dimensions[0] * volume.spacing[0]) / 2.0f,
-             -static_cast<float>(dimensions[1] * volume.spacing[1]) / 2.0f,
-             -static_cast<float>(dimensions[2] * volume.spacing[2]) / 2.0f);
-    ospSetObject(osp_volume, "transferFunction", osp_tfcn);
-    ospSet3f(osp_volume, "gridSpacing", volume.spacing[0], volume.spacing[1],
-             volume.spacing[2]);
-    ospSet1f(osp_volume, "samplingRate", volume.spacing[2] * 0.125f);
-    ospSet1b(osp_volume, "singleShade", true);
-    ospSet1b(osp_volume, "gradientShadingEnabled",
-             false); // some kinds of expensive
-    if (scene_dataset.clip) {
-      // TODO: not safe
-      ospSet3f(osp_volume, "volumeClippingBoxLower",
-               scene_dataset.clip_box.lower[0], scene_dataset.clip_box.lower[1],
-               scene_dataset.clip_box.lower[2]);
-      ospSet3f(osp_volume, "volumeClippingBoxLower",
-               scene_dataset.clip_box.upper[0], scene_dataset.clip_box.upper[1],
-               scene_dataset.clip_box.upper[2]);
-    }
-    ospCommit(osp_volume);
+    auto osp_volume_model = ospNewVolumetricModel(osp_volume);
+    ospSetParam(osp_volume_model, "transferFunction", OSP_TRANSFER_FUNCTION,
+                &osp_tfcn);
+    ospCommit(osp_volume_model);
 
-    osp_volumes.push_back(osp_volume);
-    if (volume.render) {
-      render_idxs.push_back(i);
-    }
-  }
+    // TODO: handle clip
+    auto group = ospNewGroup();
+    ospSetObjectAsData(group, "volume", OSP_VOLUMETRIC_MODEL, osp_volume_model);
+    ospCommit(group);
 
-  auto osp_model = ospNewModel();
+    // TODO: handle scale
+    auto osp_instance = ospNewInstance(group);
+    ospCommit(osp_instance);
+    osp_instances.emplace_back(osp_instance);
 
-  for (auto idx : render_idxs) {
-    // https://github.com/ospray/ospray/issues/159#issuecomment-444155750
-    // https://github.com/ospray/ospray/pull/165
-    // https://github.com/ospray/ospray/issues/159#issuecomment-443847715
-    // volume.set("xfm.l.vx", vec3f{0.01, 0.0, 0.0});
-    // volume.set("xfm.l.vy", vec3f{0.0, 1.0, 0.0});
-    // volume.set("xfm.l.vz", vec3f{0.0, 0.0, 1.0});
-    // volume.set("xfm.p", vec3f{0.0, 0.0, 0.0});
-    // volume.commit();
-    /*
-        ospSet3f(osp_volume, "volumeClippingBoxLower", volume.clipBoxLower[0],
-                 volume.clipBoxLower[1], volume.clipBoxLower[2]);
-        ospSet3f(osp_volume, "volumeClippingBoxUpper", volume.clipBoxUpper[0],
-                 volume.clipBoxUpper[1], volume.clipBoxUpper[2]);
-        ospCommit(osp_volume);*/
-    const auto &osp_volume = osp_volumes[idx];
-    ospAddVolume(osp_model, osp_volume);
-  }
-
-  for (auto &slice : scene.slices) {
-    auto osp_planes_data =
-        ospNewData(1, OSP_FLOAT4, static_cast<const void *>(slice.coef.data()));
-
-    auto osp_slice = ospNewGeometry("slices");
-    ospSetData(osp_slice, "planes", osp_planes_data);
-    ospSetObject(osp_slice, "volume", osp_volumes[slice.volume_idx]);
-    ospCommit(osp_slice);
-
-    ospAddGeometry(osp_model, osp_slice);
+    ospRelease(osp_opacity_data);
+    ospRelease(osp_colors_data);
+    ospRelease(osp_tfcn);
+    ospRelease(osp_volume_model);
+    ospRelease(group);
   }
 
   for (auto &isosurface : scene.isosurfaces) {
@@ -116,66 +85,104 @@ void RenderingContextOSPRay::render(const Scene &scene,
       continue;
     }
 
-    auto osp_isovalue_data = ospNewData(
-        1, OSP_FLOAT, static_cast<const void *>(&(isosurface.value)));
+    array<float, 2> opacity{1.0f, 1.0f};
+    auto tmp = ospNewSharedData(opacity.data(), OSP_FLOAT, opacity.size());
+    auto osp_opacity_data = ospNewData(OSP_FLOAT, opacity.size());
+    ospCopyData(tmp, osp_opacity_data);
+    ospRelease(tmp);
+    ospCommit(osp_opacity_data);
 
-    auto osp_isosurface = ospNewGeometry("isosurfaces");
-    ospSetData(osp_isosurface, "isovalues", osp_isovalue_data);
-    ospSetObject(osp_isosurface, "volume", osp_volumes[isosurface.volume_idx]);
+    auto color = hex_color_to_float(isosurface.color);
+    array<decltype(color), 2> colors{color, color};
+    tmp = ospNewSharedData(colors.data(), OSP_VEC3F, colors.size());
+    auto osp_colors_data = ospNewData(OSP_VEC3F, colors.size());
+    ospCopyData(tmp, osp_colors_data);
+    ospRelease(tmp);
+    ospCommit(osp_colors_data);
+
+    auto osp_tfcn = ospNewTransferFunction("piecewiseLinear");
+    ospSetObject(osp_tfcn, "color", osp_colors_data);
+    ospSetObject(osp_tfcn, "opacity", osp_opacity_data);
+    ospSetVec2f(osp_tfcn, "valueRange", 0.0f, 255.0f);
+    ospCommit(osp_tfcn);
+
+    auto &osp_volume =
+        this->get_osp_volume(isosurface.dataset_idx, scene.datasets, datasets);
+    auto osp_volume_model = ospNewVolumetricModel(osp_volume);
+    ospSetParam(osp_volume_model, "transferFunction", OSP_TRANSFER_FUNCTION,
+                &osp_tfcn);
+    ospCommit(osp_volume_model);
+
+    auto osp_isosurface = ospNewGeometry("isosurface");
+    ospSetFloat(osp_isosurface, "isovalue", isosurface.value);
+    ospSetParam(osp_isosurface, "volume", OSP_VOLUMETRIC_MODEL,
+                &osp_volume_model);
     ospCommit(osp_isosurface);
 
-    ospAddGeometry(osp_model, osp_isosurface);
+    auto osp_isosurface_model = ospNewGeometricModel(osp_isosurface);
+    ospCommit(osp_isosurface_model);
+
+    auto osp_group = ospNewGroup();
+    ospSetObjectAsData(osp_group, "geometry", OSP_GEOMETRIC_MODEL,
+                       osp_isosurface_model);
+    ospCommit(osp_group);
+
+    auto osp_instance = ospNewInstance(osp_group);
+    ospCommit(osp_instance);
+
+    osp_instances.emplace_back(osp_instance);
+
+    ospRelease(osp_tfcn);
+    ospRelease(osp_volume_model);
+    ospRelease(osp_isosurface);
+    ospRelease(osp_isosurface_model);
+    ospRelease(osp_group);
   }
 
-  ospCommit(osp_model);
-
-  vector<OSPLight> lights;
-  auto osp_light = ospNewLight3("ambient");
-  ospSet1f(osp_light, "intensity", 1.25f);
+  auto osp_light = ospNewLight("ambient");
   ospCommit(osp_light);
 
-  lights.push_back(osp_light);
+  auto osp_world = ospNewWorld();
+  auto osp_instance_data = ospNewSharedData1D(
+      osp_instances.data(), OSP_INSTANCE, osp_instances.size());
+  ospSetObject(osp_world, "instance", osp_instance_data);
+  ospSetObjectAsData(osp_world, "light", OSP_LIGHT, osp_light);
+  ospCommit(osp_world);
 
   auto &camera = scene.camera;
   auto osp_camera = ospNewCamera("perspective");
-  ospSet1f(osp_camera, "fovy", 45.0f);
-  ospSet1f(osp_camera, "aspect",
-           static_cast<float>(camera.width) /
-               static_cast<float>(camera.height));
-  ospSet3f(osp_camera, "pos", camera.pos[0], camera.pos[1], camera.pos[2]);
-  ospSet3f(osp_camera, "up", camera.up[0], camera.up[1], camera.up[2]);
-  ospSet3f(osp_camera, "dir", camera.target[0] - camera.pos[0],
-           camera.target[1] - camera.pos[1], camera.target[2] - camera.pos[2]);
+  ospSetFloat(osp_camera, "fovy", 45.0f);
+  ospSetFloat(osp_camera, "aspect",
+              static_cast<float>(camera.width) /
+                  static_cast<float>(camera.height));
+  ospSetVec3f(osp_camera, "position", camera.pos[0], camera.pos[1],
+              camera.pos[2]);
+  ospSetVec3f(osp_camera, "up", camera.up[0], camera.up[1], camera.up[2]);
+  ospSetVec3f(osp_camera, "direction", camera.target[0] - camera.pos[0],
+              camera.target[1] - camera.pos[1],
+              camera.target[2] - camera.pos[2]);
   ospCommit(osp_camera);
 
-  // create renderer
   auto osp_renderer = ospNewRenderer("scivis");
-  ospSetData(osp_renderer, "lights",
-             ospNewData(lights.size(), OSP_LIGHT, lights.data()));
-  ospSet1i(osp_renderer, "spp", 1);
-  ospSet1i(osp_renderer, "aoSamples", scene.camera.enable_ao ? 5 : 0);
-  ospSet1i(osp_renderer, "maxDepth", 20);
-  ospSet1f(osp_renderer, "minContribution", 0.01);
-  ospSet1f(osp_renderer, "bgColor", 0.0f);
-  ospSetObject(osp_renderer, "camera", osp_camera);
-  ospSetObject(osp_renderer, "model", osp_model);
+  ospSetInt(osp_renderer, "pixelSamples", 1);
+  ospSetInt(osp_renderer, "aoSamples", 0);
+  ospSetFloat(osp_renderer, "volumeSamplingRate", 0.125f);
+  ospSetFloat(osp_renderer, "minContribution", 0.01f);
+  ospSetFloat(osp_renderer, "backgroundColor", 0.0f);
   ospCommit(osp_renderer);
 
-  const size_t iteration_times = camera.width == 64 ? 2 : 8;
-  auto osp_framebuffer =
-      ospNewFrameBuffer(osp::vec2i{static_cast<int>(camera.width),
-                                   static_cast<int>(camera.height)},
-                        OSP_FB_SRGBA, OSP_FB_COLOR | OSP_FB_ACCUM);
-  ospFrameBufferClear(osp_framebuffer, OSP_FB_COLOR | OSP_FB_ACCUM);
-  for (int frames = 0; frames < iteration_times; frames++) {
-    ospRenderFrame(osp_framebuffer, osp_renderer, OSP_FB_COLOR | OSP_FB_ACCUM);
+  const size_t iteration_times = camera.width == 64 ? 1 : 8;
+  auto osp_framebuffer = ospNewFrameBuffer(
+      camera.width, camera.height, OSP_FB_SRGBA, OSP_FB_COLOR | OSP_FB_ACCUM);
+  ospResetAccumulation(osp_framebuffer);
+  for (size_t frames = 0; frames < iteration_times; frames++) {
+    ospRenderFrameBlocking(osp_framebuffer, osp_renderer, osp_camera,
+                           osp_world);
   }
 
-  // get frame data
-  // TODO: too ugly
   auto fb = reinterpret_cast<const uint8_t *>(
       ospMapFrameBuffer(osp_framebuffer, OSP_FB_COLOR));
-
+  // TODO: better way to get framebuffer data
   vector<unsigned char> data(fb, fb + camera.width * camera.height * 4);
   image.width = camera.width;
   image.height = camera.height;
@@ -183,15 +190,53 @@ void RenderingContextOSPRay::render(const Scene &scene,
   image.data = move(data);
   ospUnmapFrameBuffer(reinterpret_cast<const void *>(fb), osp_framebuffer);
 
+  for (auto &osp_instance : osp_instances) {
+    ospRelease(osp_instance);
+  }
+  ospRelease(osp_light);
+  ospRelease(osp_instance_data);
   ospRelease(osp_renderer);
   ospRelease(osp_camera);
-  for (auto &light : lights) {
-    ospRelease(light);
-  }
   ospRelease(osp_framebuffer);
-  ospRelease(osp_model);
+  ospRelease(osp_world);
 }
 
 auto RenderingContextOSPRay::get_colors() -> const Image & { return image; }
+
+void RenderingContextOSPRay::create_osp_volume(const Dataset &dataset) {
+  auto &info = dataset.info;
+  auto &dimensions = info.dimensions;
+
+  // TODO: handle datasets created by differing
+  auto osp_volume_data =
+      ospNewSharedData(dataset.buffer.data(), OSP_UCHAR, dimensions[0], 0,
+                       dimensions[1], 0, dimensions[2], 0);
+  ospCommit(osp_volume_data);
+
+  auto osp_volume = ospNewVolume("structuredRegular");
+  ospSetParam(osp_volume, "data", OSP_DATA, &osp_volume_data);
+  ospSetVec3f(osp_volume, "gridOrigin",
+              -static_cast<float>(dimensions[0]) / 2.0f,
+              -static_cast<float>(dimensions[1]) / 2.0f,
+              -static_cast<float>(dimensions[2]) / 2.0f);
+  // TODO: handle customized spacing
+  ospSetVec3f(osp_volume, "gridSpacing", 1.0f, 1.0f, 1.0f);
+  ospCommit(osp_volume);
+
+  osp_volume_cache.emplace(dataset.id, osp_volume);
+}
+
+OSPVolume &RenderingContextOSPRay::get_osp_volume(
+    uint32_t idx, const vector<SceneDataset> &scene_datasets,
+    DatasetStore &datasets) {
+  auto &scene_dataset = scene_datasets[idx];
+  const auto &dataset = datasets.get_or_create(scene_dataset, scene_datasets);
+  auto it = this->osp_volume_cache.find(dataset.id);
+  if (it == this->osp_volume_cache.end()) {
+    this->create_osp_volume(dataset);
+    it = this->osp_volume_cache.find(dataset.id);
+  }
+  return it->second;
+}
 
 } // namespace voxer

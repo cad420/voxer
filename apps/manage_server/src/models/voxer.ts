@@ -17,7 +17,8 @@ export type Volume = {
 };
 
 export type Isosurface = {
-  volume: number;
+  color: string;
+  dataset: number;
   isovalue: number;
   render: boolean;
 };

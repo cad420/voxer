@@ -8,6 +8,7 @@
 #include <VMUtils/ref.hpp>
 #include <VMat/geometry.h>
 #include <stdexcept>
+#include <voxer/utils.hpp>
 
 using namespace vm;
 using namespace std;
@@ -264,20 +265,18 @@ void RenderingContextOpenGL::render(const Scene &scene,
     }
     render_isosurface = true;
 
-    auto &volume = scene.volumes[isosurface.volume_idx];
-
-    auto &tfcn = scene.tfcns[volume.tfcn_idx];
+    auto color = hex_color_to_float(isosurface.color);
     vector<array<float, 4>> tfcn_data(256);
     // TODO: inefficient
     for (size_t i = 0; i < tfcn_data.size(); i++) {
-      auto opacity = i == 1 ? 1.0f : 0.0f;
-      const auto &color = tfcn[0].color;
+      auto opacity = i == 0 ? 1.0f : 0.0f;
       tfcn_data[i] = {color[0], color[1], color[2], opacity};
     }
 
     // Create transfer function texture
     auto tfcn_texture = gl->CreateTexture(GL_TEXTURE_1D);
     assert(tfcn_texture.Valid());
+    GL_EXPR(glTexParameteri(tfcn_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     GL_EXPR(glTextureStorage1D(tfcn_texture, 1, GL_RGBA32F, tfcn_data.size()));
     GL_EXPR(glTextureSubImage1D(tfcn_texture, 0, 0, tfcn_data.size(), GL_RGBA,
                                 GL_FLOAT, tfcn_data.data()));
@@ -286,7 +285,7 @@ void RenderingContextOpenGL::render(const Scene &scene,
     textures.emplace_back(move(tfcn_texture));
 
     // Create Volume Texture
-    auto &scene_dataset = scene.datasets[volume.dataset_idx];
+    auto &scene_dataset = scene.datasets[isosurface.dataset_idx];
     auto &dataset = datasets.get_or_create(scene_dataset, scene.datasets);
     auto &dimensions = dataset.info.dimensions;
     ModelTransform = Scale(dimensions[0], dimensions[1], dimensions[2]) *
@@ -299,6 +298,12 @@ void RenderingContextOpenGL::render(const Scene &scene,
       auto volume_texture = gl->CreateTexture(GL_TEXTURE_3D);
       assert(volume_texture.Valid());
       GL_EXPR(glBindTextureUnit(1, volume_texture));
+      GL_EXPR(
+          glTexParameteri(volume_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+      GL_EXPR(
+          glTexParameteri(volume_texture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
+      GL_EXPR(
+          glTexParameteri(volume_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
       GL_EXPR(glTextureStorage3D(volume_texture, 1, GL_R8, dimensions[0],
                                  dimensions[1], dimensions[2]));
       GL_EXPR(glTextureSubImage3D(volume_texture, 0, 0, 0, 0, dimensions[0],
@@ -354,6 +359,12 @@ void RenderingContextOpenGL::render(const Scene &scene,
         auto volume_texture = gl->CreateTexture(GL_TEXTURE_3D);
         assert(volume_texture.Valid());
         GL_EXPR(glBindTextureUnit(1, volume_texture));
+        GL_EXPR(glTexParameteri(volume_texture, GL_TEXTURE_WRAP_S,
+                                GL_CLAMP_TO_EDGE));
+        GL_EXPR(glTexParameteri(volume_texture, GL_TEXTURE_WRAP_R,
+                                GL_CLAMP_TO_EDGE));
+        GL_EXPR(glTexParameteri(volume_texture, GL_TEXTURE_WRAP_T,
+                                GL_CLAMP_TO_EDGE));
         GL_EXPR(glTextureStorage3D(volume_texture, 1, GL_R8, dimensions[0],
                                    dimensions[1], dimensions[2]));
         GL_EXPR(glTextureSubImage3D(volume_texture, 0, 0, 0, 0, dimensions[0],

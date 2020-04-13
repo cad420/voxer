@@ -1,7 +1,9 @@
-find_package(ospray REQUIRED)
+# precompiled dependencies
+find_package(ospray 2.0.0 REQUIRED)
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED COMPONENTS OpenGL EGL)
 
+# dependencies from source
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/vmcore.cmake)
@@ -67,14 +69,6 @@ list(
     ${PROJECT_SOURCE_DIR}/third_party/glad/src/glad.c
 )
 
-if (VOXER_ENABLE_GPU)
-  list(
-      APPPEND
-      VOXER_SRCS
-      ${CMAKE_CURRENT_SOURCE_DIR}/VTKRenderer.cpp
-  )
-endif ()
-
 add_library(voxer STATIC ${VOXER_SRCS})
 target_include_directories(
     voxer
@@ -92,21 +86,18 @@ target_link_libraries(
     PRIVATE vmcore
 )
 
-target_compile_options(voxer PRIVATE -Werror)
+target_compile_options(voxer PRIVATE -Wall -Wextra)
 target_compile_features(voxer PRIVATE cxx_std_14)
-
-get_target_property(OSPRAY_LOCATION ospray::ospray LOCATION)
-message(STATUS ${OSPRAY_LOCATION})
-
-install(
-    TARGETS voxer
-    DESTINATION lib
-    EXPORT voxer-targets
-)
-install(
-    DIRECTORY ${PROJECT_SOURCE_DIR}/include/voxer
-    DESTINATION include
-)
+#
+#install(
+#    TARGETS voxer vmcore fmt
+#    DESTINATION lib
+#    EXPORT voxer-targets
+#)
+#install(
+#    DIRECTORY ${PROJECT_SOURCE_DIR}/include/voxer
+#    DESTINATION include
+#)
 #install(
 #    EXPORT voxer-targets
 #    FILE VoxerTargets.cmake
