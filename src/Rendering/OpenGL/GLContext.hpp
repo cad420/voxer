@@ -88,13 +88,6 @@ inline GLenum PrintGLErrorMsg(const char *file, int line) {
 #define GL_CHECK void(0);
 #else
 #define GL_REPORT PrintGLErrorMsg(__FILE__, __LINE__);
-//{												\
-	//	GLenum err;									\
-	//	while((err = glGetError()) != GL_NO_ERROR)	\
-	//	{											\
-	//		ysl::Warning("OpenGL Error Code:{}. File:{}, Line:{}. \n",err,__FILE__,__LINE__);\
-	//	}											\
-	//}
 
 #define GL_ASSERT assert(glGetError() == GL_NO_ERROR);
 

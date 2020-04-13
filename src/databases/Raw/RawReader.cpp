@@ -42,8 +42,11 @@ auto RawReader::load() -> Dataset {
   return dataset;
 }
 
-auto RawReader::load_region(const std::array<uint16_t, 3> &begin,
+auto RawReader::load_region(__attribute__((unused))
+                            const std::array<uint16_t, 3> &begin,
+                            __attribute__((unused))
                             const std::array<uint16_t, 3> &end) -> Dataset {
+  // TODO: load subregion
   throw runtime_error("not support loading subregion");
 }
 

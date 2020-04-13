@@ -33,7 +33,7 @@ auto interpolate_tfcn(const TransferFunction &tf)
   vector<array<float, 3>> colors{};
   colors.reserve(total_samples);
 
-  for (int32_t i = 0; i < (tf.size() - 1); ++i) {
+  for (size_t i = 0; i < (tf.size() - 1); ++i) {
     auto start_x = tf[i].x;
     auto end_x = tf[i + 1].x;
     auto start_opacity = tf[i].y;
@@ -51,7 +51,7 @@ auto interpolate_tfcn(const TransferFunction &tf)
     auto step_r = delta * (end_r - start_r);
     auto step_g = delta * (end_g - start_g);
     auto step_b = delta * (end_b - start_b);
-    for (auto j = 0; j < samples; j++) {
+    for (uint32_t j = 0; j < samples; j++) {
       opacities.emplace_back(start_opacity + j * step_opacity);
       colors.emplace_back(array<float, 3>{
           start_r + j * step_r, start_g + j * step_g, start_b + j * step_b});

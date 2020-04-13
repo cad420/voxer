@@ -440,7 +440,7 @@ auto MRCReader::load() -> Dataset {
   vector<uint8_t> data_buffer;
   data_buffer.resize(header.nx * header.ny * header.nz * elem_size);
   fs.read(reinterpret_cast<char *>(data_buffer.data()), count * elem_size);
-  const auto readCount = fs.gcount();
+  const size_t readCount = fs.gcount();
   if (readCount != count * elem_size) {
     throw runtime_error("Runtime Error: Reading size error.>>>" +
                         to_string(__LINE__));
@@ -450,14 +450,14 @@ auto MRCReader::load() -> Dataset {
     // big endian
     if (MRC_MODE_FLOAT == header.mode) {
       auto d = reinterpret_cast<float *>(data_buffer.data());
-      for (int i = 0; i < count; i++) {
+      for (size_t i = 0; i < count; i++) {
         d[i] = reverseEndian(d[i]);
       }
     } else if (MRC_MODE_SHORT == header.mode ||
                MRC_MODE_USHORT == header.mode) {
       // big endian
       auto d = reinterpret_cast<uint16_t *>(data_buffer.data());
-      for (int i = 0; i < count; i++) {
+      for (size_t i = 0; i < count; i++) {
         d[i] = reverseByte(static_cast<uint16_t>(d[i]));
       }
     }
@@ -484,8 +484,11 @@ auto MRCReader::load() -> Dataset {
   return dataset;
 }
 
-auto MRCReader::load_region(const std::array<uint16_t, 3> &begin,
+auto MRCReader::load_region(__attribute__((unused))
+                            const std::array<uint16_t, 3> &begin,
+                            __attribute__((unused))
                             const std::array<uint16_t, 3> &end) -> Dataset {
+  // TODO: load subregion
   throw runtime_error("not support loading subregion");
 }
 
