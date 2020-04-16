@@ -7,7 +7,7 @@
 
 namespace voxer {
 
-class RenderingContextOpenGL : public IRenderingContext {
+class RenderingContextOpenGL final : public IRenderingContext {
 public:
   RenderingContextOpenGL();
   ~RenderingContextOpenGL() final;
@@ -16,6 +16,8 @@ public:
   auto get_colors() -> const Image & final;
 
 private:
+  GL::GLTexture create_volume(const Dataset &dataset);
+
   Image image;
   EGLDisplay eglDpy;
   uint32_t width;
