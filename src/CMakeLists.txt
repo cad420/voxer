@@ -85,47 +85,46 @@ target_link_libraries(
     PUBLIC Threads::Threads ospray::ospray OpenGL::OpenGL OpenGL::EGL seria::seria fmt::fmt ${CMAKE_DL_LIBS}
     PRIVATE vmcore
 )
-
 target_compile_options(voxer PRIVATE -Wall -Wextra)
 target_compile_features(voxer PRIVATE cxx_std_14)
-#
-#install(
-#    TARGETS voxer vmcore fmt
-#    DESTINATION lib
-#    EXPORT voxer-targets
-#)
-#install(
-#    DIRECTORY ${PROJECT_SOURCE_DIR}/include/voxer
-#    DESTINATION include
-#)
-#install(
-#    EXPORT voxer-targets
-#    FILE VoxerTargets.cmake
-#    NAMESPACE voxer::
-#    DESTINATION lib/cmake/voxer
-#)
-#
-#include(CMakePackageConfigHelpers)
-#configure_package_config_file(
-#    ${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in
-#    "${CMAKE_CURRENT_BINARY_DIR}/VoxerConfig.cmake"
-#    INSTALL_DESTINATION "lib/cmake/voxer"
-#    NO_SET_AND_CHECK_MACRO
-#    NO_CHECK_REQUIRED_COMPONENTS_MACRO
-#)
-#write_basic_package_version_file(
-#    "${CMAKE_CURRENT_BINARY_DIR}/VoxerConfigVersion.cmake"
-#    VERSION ${PACKAGE_VERSION}
-#    COMPATIBILITY AnyNewerVersion
-#)
-#install(
-#    FILES
-#    ${CMAKE_CURRENT_BINARY_DIR}/VoxerConfig.cmake
-#    ${CMAKE_CURRENT_BINARY_DIR}/VoxerConfigVersion.cmake
-#    DESTINATION lib/cmake/voxer
-#)
-#export(
-#    EXPORT voxer-targets
-#    NAMESPACE voxer::
-#    FILE "${CMAKE_CURRENT_BINARY_DIR}/VoxerTargets.cmake"
-#)
+
+install(
+    TARGETS voxer fmt vmcore
+    DESTINATION lib
+    EXPORT voxer-targets
+)
+install(
+    DIRECTORY ${PROJECT_SOURCE_DIR}/include/voxer
+    DESTINATION include
+)
+install(
+    EXPORT voxer-targets
+    FILE VoxerTargets.cmake
+    NAMESPACE voxer::
+    DESTINATION lib/cmake/voxer
+)
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+    ${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/VoxerConfig.cmake"
+    INSTALL_DESTINATION "lib/cmake/voxer"
+    NO_SET_AND_CHECK_MACRO
+    NO_CHECK_REQUIRED_COMPONENTS_MACRO
+)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/VoxerConfigVersion.cmake"
+    VERSION ${PACKAGE_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+install(
+    FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/VoxerConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/VoxerConfigVersion.cmake
+    DESTINATION lib/cmake/voxer
+)
+export(
+    EXPORT voxer-targets
+    NAMESPACE voxer::
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/VoxerTargets.cmake"
+)
