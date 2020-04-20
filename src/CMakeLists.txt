@@ -8,40 +8,15 @@ include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/vmcore.cmake)
 
-file(
-    READ
-    Rendering/OpenGL/shaders/position_f.glsl
-    POSITION_FRAGMENT_SHADER
-)
-file(
-    READ
-    Rendering/OpenGL/shaders/position_v.glsl
-    POSITION_VERTEX_SHADER
-)
-file(
-    READ
-    Rendering/OpenGL/shaders/screenquad_f.glsl
-    SCREENQUAD_FRAGMENT_SHADER
-)
-file(
-    READ
-    Rendering/OpenGL/shaders/screenquad_v.glsl
-    SCREENQUAD_VERTEX_SHADER
-)
-file(
-    READ
-    Rendering/OpenGL/shaders/naiveraycast_f.glsl
-    NAIVERAYCAST_FRAGMENT_SHADER
-)
-set_property(
-    DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-    "Rendering/OpenGL/shaders/naiveraycast_f.glsl;Rendering/OpenGL/shaders/screenquad_v.glsl;Rendering/OpenGL/shaders/screenquad_f.glsl;Rendering/OpenGL/shaders/position_f.glsl;Rendering/OpenGL/shaders/position_f.glsl"
-)
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/shaders.hpp.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/shaders.hpp
-    ESCAPE_QUOTES
-    NEWLINE_STYLE LF
+embed_shaders(
+    CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/shaders.hpp.in
+    TARGET ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/shaders.hpp
+    SRCS
+      Rendering/OpenGL/shaders/position_v.glsl
+      Rendering/OpenGL/shaders/position_f.glsl
+      Rendering/OpenGL/shaders/screenquad_v.glsl
+      Rendering/OpenGL/shaders/screenquad_f.glsl
+      Rendering/OpenGL/shaders/naiveraycast_f.glsl
 )
 
 # TODO: split ospray and opengl implmentation
@@ -87,44 +62,59 @@ target_link_libraries(
 )
 target_compile_options(voxer PRIVATE -Wall -Wextra)
 target_compile_features(voxer PRIVATE cxx_std_14)
+if (UNIX)
+  set_target_properties(
+    voxer
+    PROPERTIES
+    CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined"
+  )
+  set_target_properties(
+    voxer
+    PROPERTIES
+    CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined"
+  )
+endif()
 
-install(
-    TARGETS voxer fmt vmcore
-    DESTINATION lib
-    EXPORT voxer-targets
-)
-install(
-    DIRECTORY ${PROJECT_SOURCE_DIR}/include/voxer
-    DESTINATION include
-)
-install(
-    EXPORT voxer-targets
-    FILE VoxerTargets.cmake
-    NAMESPACE voxer::
-    DESTINATION lib/cmake/voxer
-)
+option(VOXER_INSTALL "install voxer library and headers" ON)
+if (VOXER_INSTALL)
+  install(
+      TARGETS voxer fmt vmcore
+      DESTINATION lib
+      EXPORT voxer-targets
+  )
+  install(
+      DIRECTORY ${PROJECT_SOURCE_DIR}/include/voxer
+      DESTINATION include
+  )
+  install(
+      EXPORT voxer-targets
+      FILE VoxerTargets.cmake
+      NAMESPACE voxer::
+      DESTINATION lib/cmake/voxer
+  )
 
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    ${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in
-    "${CMAKE_CURRENT_BINARY_DIR}/VoxerConfig.cmake"
-    INSTALL_DESTINATION "lib/cmake/voxer"
-    NO_SET_AND_CHECK_MACRO
-    NO_CHECK_REQUIRED_COMPONENTS_MACRO
-)
-write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/VoxerConfigVersion.cmake"
-    VERSION ${PACKAGE_VERSION}
-    COMPATIBILITY AnyNewerVersion
-)
-install(
-    FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/VoxerConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/VoxerConfigVersion.cmake
-    DESTINATION lib/cmake/voxer
-)
-export(
-    EXPORT voxer-targets
-    NAMESPACE voxer::
-    FILE "${CMAKE_CURRENT_BINARY_DIR}/VoxerTargets.cmake"
-)
+  include(CMakePackageConfigHelpers)
+  configure_package_config_file(
+      ${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in
+      "${CMAKE_CURRENT_BINARY_DIR}/VoxerConfig.cmake"
+      INSTALL_DESTINATION "lib/cmake/voxer"
+      NO_SET_AND_CHECK_MACRO
+      NO_CHECK_REQUIRED_COMPONENTS_MACRO
+  )
+  write_basic_package_version_file(
+      "${CMAKE_CURRENT_BINARY_DIR}/VoxerConfigVersion.cmake"
+      VERSION ${PACKAGE_VERSION}
+      COMPATIBILITY AnyNewerVersion
+  )
+  install(
+      FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/VoxerConfig.cmake
+      ${CMAKE_CURRENT_BINARY_DIR}/VoxerConfigVersion.cmake
+      DESTINATION lib/cmake/voxer
+  )
+  export(
+      EXPORT voxer-targets
+      NAMESPACE voxer::
+      FILE "${CMAKE_CURRENT_BINARY_DIR}/VoxerTargets.cmake"
+  )
+endif ()
