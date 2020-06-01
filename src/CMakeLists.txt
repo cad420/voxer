@@ -11,12 +11,7 @@ include(${PROJECT_SOURCE_DIR}/third_party/vmcore.cmake)
 embed_shaders(
     CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/shaders.hpp.in
     TARGET ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/shaders.hpp
-    SRCS
-      Rendering/OpenGL/shaders/position_v.glsl
-      Rendering/OpenGL/shaders/position_f.glsl
-      Rendering/OpenGL/shaders/screenquad_v.glsl
-      Rendering/OpenGL/shaders/screenquad_f.glsl
-      Rendering/OpenGL/shaders/naiveraycast_f.glsl
+    DIR ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/shaders/
 )
 
 # TODO: split ospray and opengl implmentation
