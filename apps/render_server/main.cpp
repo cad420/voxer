@@ -1,7 +1,6 @@
 #include "CommandParser.hpp"
 #include "PipelineStore.hpp"
-#include "uWebSockets/src/App.h"
-#include "utils.hpp"
+#include "uWebSockets/App.h"
 #include <fmt/format.h>
 #include <iostream>
 #include <utility>
