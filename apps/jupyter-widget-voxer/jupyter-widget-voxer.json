@@ -1,0 +1,5 @@
+{
+  "load_extensions": {
+    "jupyter-widget-voxer/extension": true
+  }
+}
