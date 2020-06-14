@@ -3,8 +3,7 @@ import {
   DOMWidgetView,
   ISerializers,
 } from "@jupyter-widgets/base";
-
-import { MODULE_NAME, MODULE_VERSION } from "./version";
+import { name, version } from "./version";
 
 export class ExampleModel extends DOMWidgetModel {
   defaults() {
@@ -26,11 +25,11 @@ export class ExampleModel extends DOMWidgetModel {
   };
 
   static model_name = "ExampleModel";
-  static model_module = MODULE_NAME;
-  static model_module_version = MODULE_VERSION;
+  static model_module = name;
+  static model_module_version = version;
   static view_name = "ExampleView"; // Set to null if no view
-  static view_module = MODULE_NAME; // Set to null if no view
-  static view_module_version = MODULE_VERSION;
+  static view_module = name; // Set to null if no view
+  static view_module_version = version;
 }
 
 export class ExampleView extends DOMWidgetView {
@@ -45,3 +44,8 @@ export class ExampleView extends DOMWidgetView {
     this.el.textContent = this.model.get("value");
   }
 }
+
+export default {
+  ExampleModel,
+  ExampleView,
+};

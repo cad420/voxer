@@ -6,47 +6,60 @@ import json from "@rollup/plugin-json";
 
 const mode = process.env.NODE_ENV;
 
+const plugins = [
+  replace({
+    "process.env.browser": true,
+    "process.env.NODE_ENV": mode,
+  }),
+  typescript(),
+  json(),
+  resolve({
+    browser: true,
+  }),
+  commonjs(),
+];
+
 export default [
   {
     input: "src/extension.ts",
     output: {
-      file: "jupyter-widget-voxer/nbextension/static/index.js",
+      file: "jupyter-widget-voxer/static/extension.js",
       format: "amd",
     },
-    plugins: [
-      replace({
-        "process.env.browser": true,
-        "process.env.NODE_ENV": mode,
-      }),
-      typescript(),
-      json(),
-      resolve({
-        browser: true,
-      }),
-      commonjs(),
-    ],
+    plugins,
     external: ["@jupyter-widgets/base"],
   },
   {
-    input: "src/index.ts",
+    input: "src/notebook.ts",
+    output: [
+      {
+        file: "jupyter-widget-voxer/static/index.js",
+        format: "amd",
+      },
+    ],
+    plugins,
+    external: ["@jupyter-widgets/base"],
+  },
+  {
+    input: "src/embed.ts",
     output: [
       {
         file: "dist/index.js",
         format: "amd",
       },
     ],
-    plugins: [
-      replace({
-        "process.env.browser": true,
-        "process.env.NODE_ENV": mode,
-      }),
-      typescript(),
-      json(),
-      resolve({
-        browser: true,
-      }),
-      commonjs(),
+    plugins,
+    external: ["@jupyter-widgets/base"],
+  },
+  {
+    input: "src/jupyterlab-plugin.ts",
+    output: [
+      {
+        file: "dist/jupyterlab-plugin.js",
+        format: "amd",
+      },
     ],
+    plugins,
     external: ["@jupyter-widgets/base"],
   },
 ];

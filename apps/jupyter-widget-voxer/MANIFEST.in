@@ -1,21 +1,4 @@
-include LICENSE.txt
-include README.md
-
-include setupbase.py
-
-include tsconfig.json
+recursive-include jupyter-widget-voxer/static *.*
+include jupyter-widget-voxer.json
+include *tgz
 include package.json
-include rollup.config.js
-include jupyter-widget-voxer/labextension/*.tgz
-
-# Javascript files
-graft jupyter-widget-voxer/nbextension
-graft src
-prune **/node_modules
-
-# Patterns to exclude from any directory
-global-exclude *~
-global-exclude *.pyc
-global-exclude *.pyo
-global-exclude .git
-global-exclude .ipynb_checkpoints

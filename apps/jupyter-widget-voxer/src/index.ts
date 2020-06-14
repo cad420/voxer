@@ -1,2 +1,4 @@
+import widget from "./widget";
+
 export * from "./version";
-export * from "./widget";
+export default widget;
