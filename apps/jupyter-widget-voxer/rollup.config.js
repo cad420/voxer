@@ -23,7 +23,7 @@ export default [
   {
     input: "src/extension.ts",
     output: {
-      file: "jupyter-widget-voxer/static/extension.js",
+      file: "jupyter_widget_voxer/static/extension.js",
       format: "amd",
     },
     plugins,
@@ -33,7 +33,7 @@ export default [
     input: "src/notebook.ts",
     output: [
       {
-        file: "jupyter-widget-voxer/static/index.js",
+        file: "jupyter_widget_voxer/static/index.js",
         format: "amd",
       },
     ],

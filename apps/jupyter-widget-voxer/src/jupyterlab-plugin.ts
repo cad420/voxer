@@ -1,5 +1,5 @@
 import base from "@jupyter-widgets/base";
-import widget, { version } from "./index";
+import widget, { ModuleVersion } from "./index";
 
 export default {
   id: "jupyter.extensions.jupyter-widget-voxer",
@@ -7,7 +7,7 @@ export default {
   activate: (app: any, widgets: any) => {
     widgets.registerWidget({
       name: "jupyter-widget-voxer",
-      version,
+      version: ModuleVersion,
       exports: widget,
     });
   },

@@ -145,13 +145,13 @@ $RECYCLE.BIN/
 # ----
 
 **/node_modules/
-pyvoxer/nbextension/static/index.*
-pyvoxer/labextension/*.tgz
+jupyter_widget_voxer/static/*
+*.tgz
 
 # Coverage data
 # -------------
 **/coverage/
 
 # Packed lab extensions
-pyvoxer/labextension
+jupyter_widget_voxer/labextension
 *.tgz

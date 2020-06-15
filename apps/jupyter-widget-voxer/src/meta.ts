@@ -6,9 +6,9 @@ import data from "../package.json";
  * The html widget manager assumes that this is the same as the npm package
  * version number.
  */
-export const version = data.version;
+export const ModuleVersion = data.version;
 
 /*
  * The current package name.
  */
-export const name = data.name;
+export const ModuleName = data.name;

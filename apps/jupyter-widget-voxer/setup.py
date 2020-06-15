@@ -59,7 +59,7 @@ def get_data_files():
     tgz = '%s-%s.tgz' % (package_json['name'], package_json['version'])
 
     return [
-        ('share/jupyter/nbextensions/jupyter-widget-voxer', glob('jupyter-widget-voxer/static/*')),
+        ('share/jupyter/nbextensions/jupyter-widget-voxer', glob('jupyter_widget_voxer/static/*')),
         ('etc/jupyter/nbconfig/notebook.d', ['jupyter-widget-voxer.json']),
         ('share/jupyter/lab/extensions', [tgz]),
     ]
@@ -81,8 +81,8 @@ class NPM(Command):
     node_modules = os.path.join(here, 'node_modules')
 
     targets = [
-        os.path.join(here, 'jupyter-widget-voxer', 'static', 'extension.js'),
-        os.path.join(here, 'jupyter-widget-voxer', 'static', 'index.js')
+        os.path.join(here, 'jupyter_widget_voxer', 'static', 'extension.js'),
+        os.path.join(here, 'jupyter_widget_voxer', 'static', 'index.js')
     ]
 
     def initialize_options(self):
@@ -109,6 +109,7 @@ class NPM(Command):
         if self.has_npm():
             log.info("Installing build dependencies with npm.  This may take a while...")
             check_call(['npm', 'install'], cwd=node_root, stdout=sys.stdout, stderr=sys.stderr)
+            check_call(['npm', 'run', 'build'], cwd=node_root, stdout=sys.stdout, stderr=sys.stderr)
             check_call(['npm', 'pack'], cwd=node_root, stdout=sys.stdout, stderr=sys.stderr)
 
         for t in self.targets:
@@ -122,11 +123,11 @@ class NPM(Command):
         update_package_data(self.distribution)
 
 version_ns = {}
-with open(os.path.join(here, 'jupyter-widget-voxer', '_version.py')) as f:
+with open(os.path.join(here, 'jupyter_widget_voxer', '_meta.py')) as f:
     exec(f.read(), {}, version_ns)
 
 setup_args = {
-    'name': 'jupyter-widget-voxer',
+    'name': 'jupyter_widget_voxer',
     'version': version_ns['__version__'],
     'description': 'A Jupyter widget for voxer',
     'long_description': LONG_DESCRIPTION,

@@ -3,18 +3,18 @@ import {
   DOMWidgetView,
   ISerializers,
 } from "@jupyter-widgets/base";
-import { name, version } from "./version";
+import { ModuleName, ModuleVersion } from "./meta";
 
-export class ExampleModel extends DOMWidgetModel {
+export class VoxerModel extends DOMWidgetModel {
   defaults() {
     return {
       ...super.defaults(),
-      _model_name: ExampleModel.model_name,
-      _model_module: ExampleModel.model_module,
-      _model_module_version: ExampleModel.model_module_version,
-      _view_name: ExampleModel.view_name,
-      _view_module: ExampleModel.view_module,
-      _view_module_version: ExampleModel.view_module_version,
+      _model_name: VoxerModel.model_name,
+      _model_module: VoxerModel.model_module,
+      _model_module_version: VoxerModel.model_module_version,
+      _view_name: VoxerModel.view_name,
+      _view_module: VoxerModel.view_module,
+      _view_module_version: VoxerModel.view_module_version,
       value: "Hello World",
     };
   }
@@ -24,15 +24,15 @@ export class ExampleModel extends DOMWidgetModel {
     // Add any extra serializers here
   };
 
-  static model_name = "ExampleModel";
-  static model_module = name;
-  static model_module_version = version;
-  static view_name = "ExampleView"; // Set to null if no view
-  static view_module = name; // Set to null if no view
-  static view_module_version = version;
+  static model_name = "VoxerModel";
+  static model_module = ModuleName;
+  static model_module_version = ModuleVersion;
+  static view_name = "VoxerView"; // Set to null if no view
+  static view_module = ModuleName; // Set to null if no view
+  static view_module_version = ModuleVersion;
 }
 
-export class ExampleView extends DOMWidgetView {
+export class VoxerView extends DOMWidgetView {
   render() {
     this.el.classList.add("custom-widget");
 
@@ -46,6 +46,6 @@ export class ExampleView extends DOMWidgetView {
 }
 
 export default {
-  ExampleModel,
-  ExampleView,
+  VoxerModel,
+  VoxerView,
 };

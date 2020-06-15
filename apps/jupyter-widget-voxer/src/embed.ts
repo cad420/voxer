@@ -1,4 +1,6 @@
-import widget, { version } from "./index";
+import Widget, { ModuleVersion as version } from "./index";
 
-export { version };
-export default widget;
+export default {
+  ...Widget,
+  version,
+};
