@@ -4,48 +4,73 @@ import {
   ISerializers,
 } from "@jupyter-widgets/base";
 import { ModuleName, ModuleVersion } from "./meta";
+import LinearPieceWiseEditor from "./LinearPisewide";
 
-export class VoxerModel extends DOMWidgetModel {
+class TransferFunctionModel extends DOMWidgetModel {
+  static model_name = "TransferFunctionModel";
+  static model_module = ModuleName;
+  static model_module_version = ModuleVersion;
+  static view_name = "TransferFunctionView";
+  static view_module = ModuleName;
+  static view_module_version = ModuleVersion;
+  static serializers: ISerializers = {
+    ...DOMWidgetModel.serializers,
+  };
+
   defaults() {
     return {
       ...super.defaults(),
-      _model_name: VoxerModel.model_name,
-      _model_module: VoxerModel.model_module,
-      _model_module_version: VoxerModel.model_module_version,
-      _view_name: VoxerModel.view_name,
-      _view_module: VoxerModel.view_module,
-      _view_module_version: VoxerModel.view_module_version,
-      value: "Hello World",
+      _model_name: TransferFunctionModel.model_name,
+      _model_module: TransferFunctionModel.model_module,
+      _model_module_version: TransferFunctionModel.model_module_version,
+      _view_name: TransferFunctionModel.view_name,
+      _view_module: TransferFunctionModel.view_module,
+      _view_module_version: TransferFunctionModel.view_module_version,
+      value: {
+        data: [
+          {
+            x: 0,
+            y: 0,
+            color: "#333333",
+          },
+          {
+            x: 1,
+            y: 1,
+            color: "#333333",
+          },
+        ],
+      },
     };
   }
-
-  static serializers: ISerializers = {
-    ...DOMWidgetModel.serializers,
-    // Add any extra serializers here
-  };
-
-  static model_name = "VoxerModel";
-  static model_module = ModuleName;
-  static model_module_version = ModuleVersion;
-  static view_name = "VoxerView"; // Set to null if no view
-  static view_module = ModuleName; // Set to null if no view
-  static view_module_version = ModuleVersion;
 }
 
-export class VoxerView extends DOMWidgetView {
+class TransferFunctionView extends DOMWidgetView {
+  canvas: HTMLCanvasElement;
+  editor: LinearPieceWiseEditor;
+
+  constructor(options) {
+    super(options);
+    this.canvas = document.createElement("canvas");
+    this.editor = new LinearPieceWiseEditor(this.canvas);
+  }
+
   render() {
-    this.el.classList.add("custom-widget");
+    const el = this.el as HTMLElement;
+    el.classList.add("custom-widget");
+    el.appendChild(this.canvas);
 
     this.value_changed();
-    this.model.on("change:value", this.value_changed, this);
+    this.model.on("change:control_points", this.value_changed, this);
   }
 
   value_changed() {
-    this.el.textContent = this.model.get("value");
+    const points = this.model.get("control_points");
+    this.editor.setControlPoints(points);
+    this.editor.render();
   }
 }
 
 export default {
-  VoxerModel,
-  VoxerView,
+  TransferFunctionModel,
+  TransferFunctionView,
 };

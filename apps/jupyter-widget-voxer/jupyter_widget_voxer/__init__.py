@@ -1,6 +1,6 @@
- 
 from .voxer import *
-from .meta import __version__, version_info, module_name
+from ._meta import __version__, version_info, module_name
+
 
 def _jupyter_nbextension_paths():
     return [{

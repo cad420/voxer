@@ -25,6 +25,7 @@ export default [
     output: {
       file: "jupyter_widget_voxer/static/extension.js",
       format: "amd",
+      sourcemap: true,
     },
     plugins,
     external: ["@jupyter-widgets/base"],
@@ -35,6 +36,7 @@ export default [
       {
         file: "jupyter_widget_voxer/static/index.js",
         format: "amd",
+        sourcemap: true,
       },
     ],
     plugins,
@@ -46,6 +48,7 @@ export default [
       {
         file: "dist/index.js",
         format: "amd",
+        sourcemap: true,
       },
     ],
     plugins,
@@ -57,6 +60,7 @@ export default [
       {
         file: "dist/jupyterlab-plugin.js",
         format: "amd",
+        sourcemap: true,
       },
     ],
     plugins,
