@@ -21,11 +21,17 @@ include(cmake/utils.cmake)
 add_subdirectory(src)
 
 option(VOXER_BUILD_SERVER "whether to build voxer server" ON)
+option(VOXER_BUILD_PYBIND "whether to build python binding" OFF)
+option(VOXER_BUILD_TESTS "whether to build tests" OFF)
+
 if (VOXER_BUILD_SERVER)
   add_subdirectory(apps/render_server)
 endif ()
 
-option(VOXER_BUILD_TESTS "whether to build tests" OFF)
+if (VOXER_BUILD_PYBIND)
+  add_subdirectory(apps/pyvoxer)
+endif ()
+
 if (VOXER_BUILD_TESTS)
   add_subdirectory(tests)
 endif ()
