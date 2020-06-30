@@ -1,6 +1,8 @@
-from ipywidgets import (Widget, DOMWidget, widget_serialization)
+from ipywidgets import (Widget, DOMWidget, widget_serialization, Image)
+from IPython.display import display
 from traitlets import HasTraits, Unicode, Dict, List, Float, Instance
 from ._meta import module_name
+import pyvoxer
 
 
 class TransferFunction(DOMWidget):
@@ -16,14 +18,19 @@ class TransferFunction(DOMWidget):
         x=1, y=1, color='#333333')]).tag(sync=True)
 
 
-class Camera(HasTraits):
-    position = List([0, 0, 3])
-    target = List([0, 0, 0])
-    up = List([0, 1, 0])
-
-
 class Renderer(HasTraits):
-    camera = Instance(Camera, default_value=Camera())
+    renderer = Instance(pyvoxer.RenderingContext)
 
-    def render(self):
-        print('render...')
+    def __init__(self):
+        self.renderer = pyvoxer.RenderingContext(pyvoxer.RenderingContext.Type.OSPRay)
+
+    def render(self, scene, datasets):
+        self.renderer.render(scene, datasets)
+        raw_image = self.renderer.get_colors()
+        jpeg = pyvoxer.Image.encode(
+            raw_image, pyvoxer.Image.Format.JPEG, pyvoxer.Image.Quality.HIGH)
+        image = Image(format='jpg', width=jpeg.width,
+                      height=jpeg.height)
+        image.value = bytes(jpeg.data)
+        display(image)
+
