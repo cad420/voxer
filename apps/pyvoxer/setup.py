@@ -47,7 +47,7 @@ class CMakeBuild(build_ext):
                 cmake_args += ['-A', 'x64']
             build_args += ['--', '/m']
         else:
-            cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg, '-DVoxer_DIR=/home/ukabuer/Downloads/Library/voxer/lib/cmake/voxer/', '-Dseria_DIR=/home/ukabuer/Downloads/Library/voxer/lib/cmake/seria/', '-Dospray_DIR=/home/ukabuer/Downloads/Library/voxer/lib/cmake/ospray-2.1.1/']
+            cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
             build_args += ['--', '-j2']
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
@@ -64,7 +64,7 @@ setup(
     author_email='ukabuer@live.com',
     description='Python binding to voxer',
     long_description='',
-    ext_modules=[CMakeExtension('pyvoxer')],
-    cmdclass=dict(build_ext=CMakeBuild),
+#     ext_modules=[CMakeExtension('pyvoxer')],
+#     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
 )

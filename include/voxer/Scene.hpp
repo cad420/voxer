@@ -20,7 +20,7 @@ struct Scene {
   std::vector<Light> lights;
   Camera camera;
 
-  auto serialize() -> rapidjson::Document;
+  auto serialize() const -> rapidjson::Document;
   static auto deserialize(const rapidjson::Value &json) -> Scene;
 };
 

@@ -1,11 +1,13 @@
 #include "Scene.hpp"
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 #include <voxer/utils.hpp>
 
 using namespace std;
 
 namespace voxer {
 
-auto Scene::serialize() -> rapidjson::Document {
+auto Scene::serialize() const -> rapidjson::Document {
   return seria::serialize(*this);
 }
 

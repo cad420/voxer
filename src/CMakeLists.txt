@@ -69,11 +69,12 @@ if (UNIX)
     CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined"
   )
 endif()
+add_library(voxer::voxer ALIAS voxer)
 
 option(VOXER_INSTALL "install voxer library and headers" ON)
 if (VOXER_INSTALL)
   install(
-      TARGETS voxer fmt vmcore
+      TARGETS voxer fmt vmcore seria
       DESTINATION lib
       EXPORT voxer-targets
   )
@@ -83,33 +84,33 @@ if (VOXER_INSTALL)
   )
   install(
       EXPORT voxer-targets
-      FILE VoxerTargets.cmake
+      FILE voxer-targets.cmake
       NAMESPACE voxer::
       DESTINATION lib/cmake/voxer
   )
 
   include(CMakePackageConfigHelpers)
   configure_package_config_file(
-      ${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in
-      "${CMAKE_CURRENT_BINARY_DIR}/VoxerConfig.cmake"
+      ${PROJECT_SOURCE_DIR}/cmake/config.cmake.in
+      "${CMAKE_CURRENT_BINARY_DIR}/voxer-config.cmake"
       INSTALL_DESTINATION "lib/cmake/voxer"
       NO_SET_AND_CHECK_MACRO
       NO_CHECK_REQUIRED_COMPONENTS_MACRO
   )
   write_basic_package_version_file(
-      "${CMAKE_CURRENT_BINARY_DIR}/VoxerConfigVersion.cmake"
+      "${CMAKE_CURRENT_BINARY_DIR}/voxer-config-version.cmake"
       VERSION ${PACKAGE_VERSION}
       COMPATIBILITY AnyNewerVersion
   )
   install(
       FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/VoxerConfig.cmake
-      ${CMAKE_CURRENT_BINARY_DIR}/VoxerConfigVersion.cmake
+      ${CMAKE_CURRENT_BINARY_DIR}/voxer-config.cmake
+      ${CMAKE_CURRENT_BINARY_DIR}/voxer-config-version.cmake
       DESTINATION lib/cmake/voxer
   )
   export(
       EXPORT voxer-targets
       NAMESPACE voxer::
-      FILE "${CMAKE_CURRENT_BINARY_DIR}/VoxerTargets.cmake"
+      FILE "${CMAKE_CURRENT_BINARY_DIR}/voxer-targets.cmake"
   )
 endif ()

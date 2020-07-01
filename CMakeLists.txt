@@ -25,7 +25,7 @@ option(VOXER_BUILD_PYBIND "whether to build python binding" OFF)
 option(VOXER_BUILD_TESTS "whether to build tests" OFF)
 
 if (VOXER_BUILD_SERVER)
-  add_subdirectory(apps/render_server)
+  add_subdirectory(apps/VoxerRemote)
 endif ()
 
 if (VOXER_BUILD_PYBIND)

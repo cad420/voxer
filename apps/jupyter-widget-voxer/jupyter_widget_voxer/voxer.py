@@ -1,7 +1,9 @@
 from ipywidgets import (Widget, DOMWidget, widget_serialization, Image)
-from IPython.display import display
 from traitlets import HasTraits, Unicode, Dict, List, Float, Instance
+from io import BytesIO
+from PIL import Image
 from ._meta import module_name
+import matplotlib.pyplot as plt
 import pyvoxer
 
 
@@ -29,8 +31,9 @@ class Renderer(HasTraits):
         raw_image = self.renderer.get_colors()
         jpeg = pyvoxer.Image.encode(
             raw_image, pyvoxer.Image.Format.JPEG, pyvoxer.Image.Quality.HIGH)
-        image = Image(format='jpg', width=jpeg.width,
-                      height=jpeg.height)
-        image.value = bytes(jpeg.data)
-        display(image)
-
+        image = Image.open(BytesIO(bytes(jpeg.data)))
+        ax = plt.axes([0,0,1,1], frameon=False)
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+        plt.autoscale(tight=True)
+        plt.imshow(image)
