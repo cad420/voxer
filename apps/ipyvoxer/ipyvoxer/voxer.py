@@ -24,7 +24,8 @@ class Renderer(HasTraits):
     renderer = Instance(pyvoxer.RenderingContext)
 
     def __init__(self):
-        self.renderer = pyvoxer.RenderingContext(pyvoxer.RenderingContext.Type.OSPRay)
+        self.renderer = pyvoxer.RenderingContext(
+            pyvoxer.RenderingContext.Type.OSPRay)
 
     def render(self, scene, datasets):
         self.renderer.render(scene, datasets)
@@ -32,7 +33,7 @@ class Renderer(HasTraits):
         jpeg = pyvoxer.Image.encode(
             raw_image, pyvoxer.Image.Format.JPEG, pyvoxer.Image.Quality.HIGH)
         image = Image.open(BytesIO(bytes(jpeg.data)))
-        ax = plt.axes([0,0,1,1], frameon=False)
+        ax = plt.axes([0, 0, 1, 1], frameon=False)
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
         plt.autoscale(tight=True)

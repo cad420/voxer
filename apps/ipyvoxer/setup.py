@@ -26,6 +26,7 @@ log.info('$PATH=%s' % os.environ['PATH'])
 
 LONG_DESCRIPTION = 'A Jupyter widget for voxer'
 
+
 def js_prerelease(command, strict=False):
     """Decorator for building minified js/css prior to another command."""
     class DecoratedCommand(command):
@@ -59,7 +60,7 @@ def get_data_files():
     tgz = '%s-%s.tgz' % (package_json['name'], package_json['version'])
 
     return [
-        ('share/jupyter/nbextensions/jupyter-widget-voxer', glob('jupyter_widget_voxer/static/*')),
+        ('share/jupyter/nbextensions/jupyter-widget-voxer', glob('ipyvoxer/static/*')),
         ('etc/jupyter/nbconfig/notebook.d', ['jupyter-widget-voxer.json']),
         ('share/jupyter/lab/extensions', [tgz]),
     ]
@@ -81,8 +82,8 @@ class NPM(Command):
     node_modules = os.path.join(here, 'node_modules')
 
     targets = [
-        os.path.join(here, 'jupyter_widget_voxer', 'static', 'extension.js'),
-        os.path.join(here, 'jupyter_widget_voxer', 'static', 'index.js')
+        os.path.join(here, 'ipyvoxer', 'static', 'extension.js'),
+        os.path.join(here, 'ipyvoxer', 'static', 'index.js')
     ]
 
     def initialize_options(self):
@@ -101,16 +102,21 @@ class NPM(Command):
     def run(self):
         has_npm = self.has_npm()
         if not has_npm:
-            log.error("`npm` unavailable.  If you're running this command using sudo, make sure `npm` is available to sudo")
+            log.error(
+                "`npm` unavailable.  If you're running this command using sudo, make sure `npm` is available to sudo")
 
         env = os.environ.copy()
         env['PATH'] = npm_path
 
         if self.has_npm():
-            log.info("Installing build dependencies with npm.  This may take a while...")
-            check_call(['npm', 'install'], cwd=node_root, stdout=sys.stdout, stderr=sys.stderr)
-            check_call(['npm', 'run', 'build'], cwd=node_root, stdout=sys.stdout, stderr=sys.stderr)
-            check_call(['npm', 'pack'], cwd=node_root, stdout=sys.stdout, stderr=sys.stderr)
+            log.info(
+                "Installing build dependencies with npm.  This may take a while...")
+            check_call(['npm', 'install'], cwd=node_root,
+                       stdout=sys.stdout, stderr=sys.stderr)
+            check_call(['npm', 'run', 'build'], cwd=node_root,
+                       stdout=sys.stdout, stderr=sys.stderr)
+            check_call(['npm', 'pack'], cwd=node_root,
+                       stdout=sys.stdout, stderr=sys.stderr)
 
         for t in self.targets:
             if not os.path.exists(t):
@@ -122,12 +128,13 @@ class NPM(Command):
         # update package data in case this created new files
         update_package_data(self.distribution)
 
+
 version_ns = {}
-with open(os.path.join(here, 'jupyter_widget_voxer', '_meta.py')) as f:
+with open(os.path.join(here, 'ipyvoxer', '_meta.py')) as f:
     exec(f.read(), {}, version_ns)
 
 setup_args = {
-    'name': 'jupyter_widget_voxer',
+    'name': 'ipyvoxer',
     'version': version_ns['__version__'],
     'description': 'A Jupyter widget for voxer',
     'long_description': LONG_DESCRIPTION,
@@ -138,6 +145,7 @@ setup_args = {
         'ipywidgets>=7.5.0,<8',
         'traittypes>=0.2.1,<3',
         'branca>=0.3.1,<0.4',
+        'pyvoxer',
     ],
     'packages': find_packages(),
     'zip_safe': False,

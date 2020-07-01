@@ -23,7 +23,7 @@ export default [
   {
     input: "src/extension.ts",
     output: {
-      file: "jupyter_widget_voxer/static/extension.js",
+      file: "ipyvoxer/static/extension.js",
       format: "amd",
       sourcemap: true,
     },
@@ -34,7 +34,7 @@ export default [
     input: "src/notebook.ts",
     output: [
       {
-        file: "jupyter_widget_voxer/static/index.js",
+        file: "ipyvoxer/static/index.js",
         format: "amd",
         sourcemap: true,
       },

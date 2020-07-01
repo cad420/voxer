@@ -1,4 +1,0 @@
-recursive-include jupyter_widget_voxer/static *.*
-include jupyter-widget-voxer.json
-include *tgz
-include package.json

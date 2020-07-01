@@ -2,7 +2,7 @@ if (window.require) {
   (window.require as any).config({
     map: {
       "*": {
-        "jupyter-widget-voxer": "nbextensions/jupyter-widget-voxer/index",
+        ipyvoxer: "nbextensions/ipyvoxer/index",
       },
     },
   });

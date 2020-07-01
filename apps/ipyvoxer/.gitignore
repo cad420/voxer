@@ -145,7 +145,7 @@ $RECYCLE.BIN/
 # ----
 
 **/node_modules/
-jupyter_widget_voxer/static/*
+ipyvoxer/static/*
 *.tgz
 
 # Coverage data
@@ -153,5 +153,5 @@ jupyter_widget_voxer/static/*
 **/coverage/
 
 # Packed lab extensions
-jupyter_widget_voxer/labextension
+ipyvoxer/labextension
 *.tgz
