@@ -3,6 +3,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 #include <voxer/RenderingContext.hpp>
+#include <voxer/utils.hpp>
 
 using namespace std;
 using namespace voxer;
@@ -37,7 +38,12 @@ PYBIND11_MODULE(pyvoxer, m) {
       .def_readwrite("x", &ControlPoint::x)
       .def_readwrite("y", &ControlPoint::y)
       .def_readwrite("hex_color", &ControlPoint::hex_color)
-      .def_readwrite("color", &ControlPoint::color);
+      .def_property(
+          "color", [](ControlPoint &point) { return point.hex_color; },
+          [](ControlPoint &point, const string &value) {
+            point.hex_color = value;
+            point.color = hex_color_to_float(value);
+          });
 
   py::bind_vector<vector<ControlPoint>>(m, "TransferFunction");
 

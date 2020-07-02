@@ -3,6 +3,7 @@ import commonjs from "@rollup/plugin-commonjs";
 import replace from "@rollup/plugin-replace";
 import resolve from "@rollup/plugin-node-resolve";
 import json from "@rollup/plugin-json";
+import styles from "rollup-plugin-styles";
 
 const mode = process.env.NODE_ENV;
 
@@ -17,6 +18,7 @@ const plugins = [
     browser: true,
   }),
   commonjs(),
+  styles(),
 ];
 
 export default [
@@ -29,6 +31,7 @@ export default [
     },
     plugins,
     external: ["@jupyter-widgets/base"],
+    cache: true,
   },
   {
     input: "src/notebook.ts",
@@ -41,6 +44,7 @@ export default [
     ],
     plugins,
     external: ["@jupyter-widgets/base"],
+    cache: true,
   },
   {
     input: "src/embed.ts",
@@ -53,6 +57,7 @@ export default [
     ],
     plugins,
     external: ["@jupyter-widgets/base"],
+    cache: true,
   },
   {
     input: "src/jupyterlab-plugin.ts",
@@ -65,5 +70,6 @@ export default [
     ],
     plugins,
     external: ["@jupyter-widgets/base"],
+    cache: true,
   },
 ];
