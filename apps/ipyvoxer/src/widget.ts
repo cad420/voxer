@@ -3,10 +3,12 @@ import {
   DOMWidgetView,
   ISerializers,
 } from "@jupyter-widgets/base";
+import Pickr from "@simonwep/pickr";
 import { ModuleName, ModuleVersion } from "./meta";
 import LinearPieceWiseEditor from "./LinearPisewide";
-import Pickr from "@simonwep/pickr";
+import TrackballControl from "./utils/TrackballControl";
 import "./style.css";
+import Vector3 from "./utils/Vector3";
 
 class TransferFunctionModel extends DOMWidgetModel {
   static model_name = "TransferFunctionModel";
@@ -138,9 +140,126 @@ class TransferFunctionView extends DOMWidgetView {
   }
 }
 
-class RendererModel extends DOMWidgetModel {}
+class RendererModel extends DOMWidgetModel {
+  static model_name = "RendererModel";
+  static model_module = ModuleName;
+  static model_module_version = ModuleVersion;
+  static view_name = "RendererView";
+  static view_module = ModuleName;
+  static view_module_version = ModuleVersion;
+  static serializers: ISerializers = {
+    ...DOMWidgetModel.serializers,
+  };
 
-class RendererView extends DOMWidgetView {}
+  defaults() {
+    return {
+      ...super.defaults(),
+      _model_name: RendererModel.model_name,
+      _model_module: RendererModel.model_module,
+      _model_module_version: RendererModel.model_module_version,
+      _view_name: RendererModel.view_name,
+      _view_module: RendererModel.view_module,
+      _view_module_version: RendererModel.view_module_version,
+    };
+  }
+}
+
+class RendererView extends DOMWidgetView {
+  image: HTMLImageElement;
+  controller: TrackballControl | null;
+  tickId: number;
+  count: 0;
+  save: {
+    pos: Vector3;
+    up: Vector3;
+    target: Vector3;
+  };
+
+  constructor(options) {
+    super(options);
+    this.image = document.createElement("img");
+    this.controller = null;
+    this.tickId = 0;
+    this.count = 0;
+    this.save = {
+      pos: new Vector3(),
+      up: new Vector3(),
+      target: new Vector3(),
+    };
+    this.model.on("msg:custom", (data) => {
+      if (!this.controller) {
+        return;
+      }
+      this.controller.position.copyArray(data.pos);
+      this.controller.target.copyArray(data.target);
+      this.controller.up.copyArray(data.up);
+    });
+  }
+
+  render() {
+    const el = this.el as HTMLElement;
+    el.classList.add("ipyvoxer-image");
+    el.appendChild(this.image);
+
+    const pos = this.model.get("pos");
+    const target = this.model.get("target");
+    const up = this.model.get("up");
+    this.save.pos.copyArray(pos);
+    this.save.target.copyArray(target);
+    this.save.up.copyArray(up);
+
+    this.image_changed();
+    this.image.addEventListener("load", () => {
+      if (!this.controller) {
+        (window as any).C = this.controller = new TrackballControl(this.image);
+        this.controller.position.copyArray(pos);
+        this.controller.target.copyArray(target);
+        this.controller.up.copyArray(up);
+        this.controller.staticMoving = true;
+        this.tickId = window.requestAnimationFrame(this.tick);
+      }
+    });
+    this.model.on("change:image", this.image_changed, this);
+  }
+
+  image_changed() {
+    const arrayBuffer = this.model.get("image");
+    const blob = new Blob([arrayBuffer]);
+    const url = URL.createObjectURL(blob);
+    this.image.src = url;
+  }
+
+  tick = () => {
+    if (this.controller) {
+      this.controller.update();
+      if (this.count <= 2) {
+        this.count += 1;
+        this.tickId = window.requestAnimationFrame(this.tick);
+        return;
+      }
+
+      this.count = 0;
+
+      const { position, target, up } = this.controller;
+      if (
+        !position.equals(this.save.pos) ||
+        !target.equals(this.save.target) ||
+        !up.equals(this.save.up)
+      ) {
+        this.save.pos.copy(position);
+        this.save.target.copy(target);
+        this.save.up.copy(up);
+        this.model.set({
+          pos: position.toArray(),
+          target: target.toArray(),
+          up: up.toArray(),
+        });
+        this.model.save_changes();
+      }
+    }
+    this.tickId = window.requestAnimationFrame(this.tick);
+  };
+}
 
 export default {
   TransferFunctionModel,
