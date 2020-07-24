@@ -3,9 +3,9 @@
 #include <voxer/Image.hpp>
 #include <voxer/Scene.hpp>
 
-namespace voxer {
+class VoxerIRenderingContext;
 
-class IRenderingContext;
+namespace voxer {
 
 class RenderingContext {
 public:
@@ -18,7 +18,7 @@ public:
   auto get_colors() -> const Image &;
 
 private:
-  std::unique_ptr<IRenderingContext> impl;
+  std::unique_ptr<VoxerIRenderingContext> impl;
 };
 
 } // namespace voxer

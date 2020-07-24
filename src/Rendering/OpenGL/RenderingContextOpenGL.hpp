@@ -1,13 +1,16 @@
 #pragma once
 #define None None
+#include "GLContext.hpp"
 #include "Rendering/IRenderingContext.hpp"
-#include "Rendering/OpenGL/GLContext.hpp"
 #include <EGL/egl.h>
 #include <unordered_map>
+#include <voxer/DatasetStore.hpp>
+#include <voxer/Image.hpp>
+#include <voxer/Scene.hpp>
 
 namespace voxer {
 
-class RenderingContextOpenGL final : public IRenderingContext {
+class RenderingContextOpenGL final : public VoxerIRenderingContext {
 public:
   RenderingContextOpenGL();
   ~RenderingContextOpenGL() final;
@@ -36,3 +39,9 @@ private:
 };
 
 } // namespace voxer
+
+extern "C" {
+VoxerIRenderingContext *voxer_get_backend() {
+  return new voxer::RenderingContextOpenGL();
+}
+}

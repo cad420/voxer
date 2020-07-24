@@ -3,14 +3,11 @@
 #include <voxer/Image.hpp>
 #include <voxer/Scene.hpp>
 
-namespace voxer {
-
-class IRenderingContext {
+class VoxerIRenderingContext {
 public:
-  virtual void render(const Scene &scene, DatasetStore &datasets) = 0;
-  virtual auto get_colors() -> const Image & = 0;
+  virtual void render(const voxer::Scene &scene,
+                      voxer::DatasetStore &datasets) = 0;
+  virtual auto get_colors() -> const voxer::Image & = 0;
 
-  virtual ~IRenderingContext() = default;
+  virtual ~VoxerIRenderingContext() = default;
 };
-
-} // namespace voxer

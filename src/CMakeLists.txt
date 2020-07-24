@@ -1,24 +1,14 @@
 # precompiled dependencies
-find_package(ospray 2.0.0 REQUIRED)
 find_package(Threads REQUIRED)
-find_package(OpenGL REQUIRED COMPONENTS OpenGL EGL)
 
 # dependencies from source
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/vmcore.cmake)
 
-embed_shaders(
-    CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/shaders.hpp.in
-    TARGET ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/shaders.hpp
-    DIR ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/shaders/
-)
-
-# TODO: split ospray and opengl implmentation
-
 list(
     APPEND
-    VOXER_SRCS
+    VOXER_CORE_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/Dataset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DatasetStore.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/databases/MRC/MRCReader.cpp
@@ -34,14 +24,12 @@ list(
     ${CMAKE_CURRENT_SOURCE_DIR}/filter/differ.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/filter/histogram.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/RenderingContext.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OpenGL/RenderingContextOpenGL.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OSPRay/RenderingContextOSPRay.cpp
-    ${PROJECT_SOURCE_DIR}/third_party/glad/src/glad.c
 )
 
-add_library(voxer STATIC ${VOXER_SRCS})
+add_library(voxer_core STATIC ${VOXER_CORE_SRCS})
+add_library(voxer::voxer_core ALIAS voxer_core)
 target_include_directories(
-    voxer
+    voxer_core
     PUBLIC
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -51,30 +39,29 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}/third_party/glad/include/
 )
 target_link_libraries(
-    voxer
-    PUBLIC Threads::Threads ospray::ospray OpenGL::OpenGL OpenGL::EGL seria::seria fmt::fmt ${CMAKE_DL_LIBS}
-    PRIVATE vmcore
+    voxer_core
+    PUBLIC Threads::Threads seria::seria fmt::fmt ${CMAKE_DL_LIBS}
+    PRIVATE vmcore -static-libstdc++
 )
-target_compile_options(voxer PRIVATE -Wall -Wextra)
-target_compile_features(voxer PRIVATE cxx_std_14)
+target_compile_options(voxer_core PRIVATE -Wall -Wextra)
+target_compile_features(voxer_core PRIVATE cxx_std_14)
 if (UNIX)
+  set(SANITIZER "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined")
   set_target_properties(
-    voxer
-    PROPERTIES
-    CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined"
+      voxer_core
+      PROPERTIES
+      CMAKE_CXX_FLAGS_DEBUG ${SANITIZER}
   )
   set_target_properties(
-    voxer
-    PROPERTIES
-    CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined"
+      voxer_core
+      PROPERTIES
+      CMAKE_LINKER_FLAGS_DEBUG ${SANITIZER}
   )
 endif()
-add_library(voxer::voxer ALIAS voxer)
 
-option(VOXER_INSTALL "install voxer library and headers" ON)
 if (VOXER_INSTALL)
   install(
-      TARGETS voxer fmt vmcore seria
+      TARGETS voxer_core fmt vmcore seria
       DESTINATION lib
       EXPORT voxer-targets
   )
@@ -113,4 +100,12 @@ if (VOXER_INSTALL)
       NAMESPACE voxer::
       FILE "${CMAKE_CURRENT_BINARY_DIR}/voxer-targets.cmake"
   )
+endif ()
+
+if (VOXER_BUILD_BACKEND_OSPRAY)
+  add_subdirectory(Rendering/OSPRay)
+endif ()
+
+if (VOXER_BUILD_BACKEND_GL)
+  add_subdirectory(Rendering/OpenGL)
 endif ()

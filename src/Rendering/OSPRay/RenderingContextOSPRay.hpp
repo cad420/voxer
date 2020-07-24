@@ -4,7 +4,7 @@
 
 namespace voxer {
 
-class RenderingContextOSPRay : public IRenderingContext {
+class RenderingContextOSPRay : public VoxerIRenderingContext {
 public:
   RenderingContextOSPRay();
 
@@ -22,3 +22,9 @@ private:
 };
 
 } // namespace voxer
+
+extern "C" {
+VoxerIRenderingContext *voxer_get_backend() {
+  return new voxer::RenderingContextOSPRay();
+}
+}

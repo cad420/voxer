@@ -1,8 +1,8 @@
 #include "Rendering/IRenderingContext.hpp"
-#include "Rendering/OSPRay/RenderingContextOSPRay.hpp"
-#include "Rendering/OpenGL/RenderingContextOpenGL.hpp"
 #include "utils/Logger.hpp"
 #include <chrono>
+#include <dlfcn.h>
+#include <functional>
 #include <memory>
 #include <voxer/RenderingContext.hpp>
 
@@ -12,18 +12,34 @@ namespace voxer {
 
 static Logger logger("renderer");
 
+using GetRenderingBackend = VoxerIRenderingContext *(*)();
+
 RenderingContext::~RenderingContext() = default;
 
 RenderingContext::RenderingContext(RenderingContext::Type type) {
+  void *lib = nullptr;
   switch (type) {
   case Type::OSPRay: {
-    impl = make_unique<RenderingContextOSPRay>();
+    lib = dlopen("libvoxer_backend_ospray.so", RTLD_NOW | RTLD_GLOBAL);
     break;
   }
   case Type::OpenGL: {
-    impl = make_unique<RenderingContextOpenGL>();
+    lib = dlopen("libvoxer_backend_gl.so", RTLD_NOW | RTLD_GLOBAL);
   }
   }
+  if (lib == nullptr) {
+    throw runtime_error(dlerror());
+  }
+
+  void *symbol = dlsym(lib, "voxer_get_backend");
+  if (symbol == nullptr) {
+    throw runtime_error("Cannot find symbol `voxer_get_backend`");
+  }
+
+  std::function<VoxerIRenderingContext *()> get_backend =
+      reinterpret_cast<GetRenderingBackend>(symbol);
+  auto context = get_backend();
+  impl.reset(context);
 }
 
 void RenderingContext::render(const Scene &scene, DatasetStore &datasets) {
@@ -41,7 +57,6 @@ void RenderingContext::render(const Scene &scene, DatasetStore &datasets) {
 }
 
 auto RenderingContext::get_colors() -> const Image & {
-
   return this->impl->get_colors();
 }
 

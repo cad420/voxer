@@ -20,7 +20,7 @@ target_include_directories(
 target_link_libraries(
     VoxerRemote
     PRIVATE
-    voxer::voxer
+    voxer::voxer_core
     Threads::Threads
     ZLIB::ZLIB
     uWebSockets

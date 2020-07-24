@@ -5,7 +5,7 @@
 
 namespace seria {
 
-template <> inline auto registerObject<voxer::Camera>() {
+template <> auto registerObject<voxer::Camera>() {
   using Camera = voxer::Camera;
   return std::make_tuple(
       member("width", &Camera::width), member("height", &Camera::height),
