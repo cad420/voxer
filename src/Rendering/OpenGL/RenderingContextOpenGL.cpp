@@ -515,4 +515,8 @@ GL::GLTexture RenderingContextOpenGL::create_volume(const Dataset &dataset) {
   return volume_texture;
 }
 
+auto RenderingContextOpenGL::render_slice(const Dataset &dataset) -> Image {
+  return Image{};
+}
+
 } // namespace voxer

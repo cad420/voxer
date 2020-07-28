@@ -1,7 +1,4 @@
-# precompiled dependencies
 find_package(Threads REQUIRED)
-
-# dependencies from source
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/vmcore.cmake)
@@ -57,7 +54,15 @@ if (UNIX)
       PROPERTIES
       CMAKE_LINKER_FLAGS_DEBUG ${SANITIZER}
   )
-endif()
+endif ()
+
+if (VOXER_BUILD_BACKEND_OSPRAY)
+  add_subdirectory(Rendering/OSPRay)
+endif ()
+
+if (VOXER_BUILD_BACKEND_GL)
+  add_subdirectory(Rendering/OpenGL)
+endif ()
 
 if (VOXER_INSTALL)
   install(
@@ -100,12 +105,4 @@ if (VOXER_INSTALL)
       NAMESPACE voxer::
       FILE "${CMAKE_CURRENT_BINARY_DIR}/voxer-targets.cmake"
   )
-endif ()
-
-if (VOXER_BUILD_BACKEND_OSPRAY)
-  add_subdirectory(Rendering/OSPRay)
-endif ()
-
-if (VOXER_BUILD_BACKEND_GL)
-  add_subdirectory(Rendering/OpenGL)
 endif ()

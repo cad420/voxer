@@ -16,6 +16,7 @@ public:
   ~RenderingContextOpenGL() final;
 
   void render(const Scene &scene, DatasetStore &datasets) final;
+  auto render_slice(const Dataset &dataset) -> Image final;
   auto get_colors() -> const Image & final;
 
 private:

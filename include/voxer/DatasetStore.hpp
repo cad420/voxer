@@ -18,9 +18,8 @@ public:
   void load_from_json(const char *json, uint32_t size);
   void load_one(const rapidjson::Value &json);
   void add_from_json(const char *text, uint32_t size);
-  [[nodiscard]] auto get(const std::string &name,
-                         const std::string &variable = "",
-                         uint32_t timestep = 0) const -> const voxer::Dataset &;
+  auto get(const std::string &name, const std::string &variable = "",
+           uint32_t timestep = 0) const -> const voxer::Dataset &;
   [[nodiscard]] auto
   get_or_create(const SceneDataset &scene_dataset,
                 const std::vector<SceneDataset> &scene_datasets)

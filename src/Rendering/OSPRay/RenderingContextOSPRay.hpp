@@ -4,12 +4,14 @@
 
 namespace voxer {
 
-class RenderingContextOSPRay : public VoxerIRenderingContext {
+class RenderingContextOSPRay final : public VoxerIRenderingContext {
 public:
   RenderingContextOSPRay();
 
   void render(const Scene &scene, DatasetStore &datasets) final;
   auto get_colors() -> const Image & final;
+
+  auto render_slice(const Dataset &dataset) -> Image;
 
 private:
   void create_osp_volume(const Dataset &dataset);

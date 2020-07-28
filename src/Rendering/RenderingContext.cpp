@@ -17,19 +17,24 @@ using GetRenderingBackend = VoxerIRenderingContext *(*)();
 RenderingContext::~RenderingContext() = default;
 
 RenderingContext::RenderingContext(RenderingContext::Type type) {
+  std::cout << "Load Plugins" << std::endl;
+
   void *lib = nullptr;
   switch (type) {
   case Type::OSPRay: {
-    lib = dlopen("libvoxer_backend_ospray.so", RTLD_NOW | RTLD_GLOBAL);
+    lib = dlopen("libvoxer_backend_ospray.so", RTLD_NOW);
     break;
   }
   case Type::OpenGL: {
-    lib = dlopen("libvoxer_backend_gl.so", RTLD_NOW | RTLD_GLOBAL);
+    lib = dlopen("libvoxer_backend_gl.so", RTLD_NOW);
+    break;
   }
   }
   if (lib == nullptr) {
     throw runtime_error(dlerror());
   }
+
+  std::cout << "Load Plugins end" << std::endl;
 
   void *symbol = dlsym(lib, "voxer_get_backend");
   if (symbol == nullptr) {

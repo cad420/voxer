@@ -13,8 +13,6 @@ target_link_libraries(
     voxer::voxer_core
     ospray::ospray
     ${CMAKE_DL_LIBS}
-    PRIVATE
-    -static-libstdc++
 )
 target_include_directories(
     voxer_backend_ospray
@@ -23,3 +21,9 @@ target_include_directories(
 )
 target_compile_options(voxer_backend_ospray PRIVATE -Wall -Wextra)
 target_compile_features(voxer_backend_ospray PRIVATE cxx_std_14)
+
+install(
+    TARGETS voxer_backend_ospray
+    DESTINATION lib
+    EXPORT voxer-targets
+)

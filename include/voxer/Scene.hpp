@@ -16,7 +16,6 @@ struct Scene {
   std::vector<TransferFunction> tfcns;
   std::vector<Volume> volumes;
   std::vector<Isosurface> isosurfaces;
-  std::vector<Slice> slices;
   std::vector<Light> lights;
   Camera camera;
 

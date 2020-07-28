@@ -33,3 +33,9 @@ target_include_directories(
 )
 target_compile_options(voxer_backend_gl PRIVATE -Wall -Wextra)
 target_compile_features(voxer_backend_gl PRIVATE cxx_std_14)
+
+install(
+    TARGETS voxer_backend_gl
+    DESTINATION lib
+    EXPORT voxer-targets
+)

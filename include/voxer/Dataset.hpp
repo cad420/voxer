@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <voxer/Image.hpp>
 
 namespace voxer {
 
@@ -45,6 +46,8 @@ struct Dataset {
   std::vector<uint8_t> buffer{};
   std::vector<uint32_t> histogram{};
 
+  enum struct Axis : uint_fast8_t { X, Y, Z };
+
   template <typename T> auto get() -> T * {
     return reinterpret_cast<T *>(buffer.data());
   }
@@ -52,6 +55,8 @@ struct Dataset {
   template <typename T> auto get(uint32_t index) -> T {
     return reinterpret_cast<T *>(buffer.data())[index];
   }
+
+  Image get_slice(Axis axis, uint32_t slice) const;
 
   std::string serialize() const;
 };

@@ -10,6 +10,10 @@ using namespace voxer;
 namespace py = pybind11;
 
 PYBIND11_MODULE(pyvoxer, m) {
+  py::class_<Dataset>(m, "Dataset")
+      .def(py::init())
+      .def("get_slice", &Dataset::get_slice);
+
   py::class_<DatasetStore>(m, "DatasetStore")
       .def(py::init())
       .def("load", &DatasetStore::load)
@@ -17,7 +21,12 @@ PYBIND11_MODULE(pyvoxer, m) {
       .def("load_from_json", &DatasetStore::load_from_json)
       .def("load_one", &DatasetStore::load_one)
       .def("add_from_json", &DatasetStore::add_from_json)
-      .def("print", &DatasetStore::print);
+      .def("print", &DatasetStore::print)
+      .def(
+          "get",
+          py::overload_cast<const std::string &, const std::string &, uint32_t>(
+              &DatasetStore::get, py::const_),
+          py::return_value_policy::reference);
 
   py::class_<Scene>(m, "Scene")
       .def(py::init())
@@ -107,13 +116,11 @@ PYBIND11_MODULE(pyvoxer, m) {
            py::return_value_policy::reference);
 
   m.doc() = R"pbdoc(
-        Pybind11 example plugin
+        python bindings for voxer
         -----------------------
         .. currentmodule:: pyvoxer
         .. autosummary::
            :toctree: _generate
-           add
-           subtract
     )pbdoc";
 
 #ifdef VERSION_INFO

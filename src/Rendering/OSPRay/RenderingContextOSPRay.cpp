@@ -239,4 +239,8 @@ OSPVolume &RenderingContextOSPRay::get_osp_volume(
   return it->second;
 }
 
+auto RenderingContextOSPRay::render_slice(const Dataset &dataset) -> Image {
+  return Image{};
+}
+
 } // namespace voxer
