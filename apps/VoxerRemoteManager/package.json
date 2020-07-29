@@ -1,5 +1,5 @@
 {
-  "name": "voxer_manager_server",
+  "name": "voxer_remote_manager",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
