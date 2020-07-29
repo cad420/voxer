@@ -35,6 +35,23 @@ struct VolumeInfo {
   auto byte_count() -> uint64_t {
     return this->voxel_count() * this->value_type_size();
   }
+
+  // TODO: byte-wise compare?
+  bool operator==(const VolumeInfo &another) {
+    if (this->value_type != another.value_type) {
+      return false;
+    }
+
+    for (int_fast8_t i = 0; i < 3; i++) {
+      if (this->dimensions[i] != another.dimensions[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool operator!=(const VolumeInfo &another) { return !(*this == another); }
 };
 
 struct Dataset {

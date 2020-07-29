@@ -1,4 +1,4 @@
-#include "Rendering/OSPRay/RenderingContextOSPRay.hpp"
+#include "Rendering/OSPRay/OSPRayRenderer.hpp"
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
 #include <voxer/utils.hpp>
@@ -7,7 +7,7 @@ using namespace std;
 
 namespace voxer {
 
-RenderingContextOSPRay::RenderingContextOSPRay() {
+OSPRayRenderer::OSPRayRenderer() {
   vector<const char *> argvs{};
   auto argc = static_cast<int>(argvs.size());
   auto error = ospInit(&argc, argvs.data());
@@ -23,8 +23,7 @@ RenderingContextOSPRay::RenderingContextOSPRay() {
 #endif
 }
 
-void RenderingContextOSPRay::render(const Scene &scene,
-                                    DatasetStore &datasets) {
+void OSPRayRenderer::render(const Scene &scene, DatasetStore &datasets) {
   vector<OSPInstance> osp_instances;
 
   for (auto &volume : scene.volumes) {
@@ -201,9 +200,9 @@ void RenderingContextOSPRay::render(const Scene &scene,
   ospRelease(osp_world);
 }
 
-auto RenderingContextOSPRay::get_colors() -> const Image & { return image; }
+auto OSPRayRenderer::get_colors() -> const Image & { return image; }
 
-void RenderingContextOSPRay::create_osp_volume(const Dataset &dataset) {
+void OSPRayRenderer::create_osp_volume(const Dataset &dataset) {
   auto &info = dataset.info;
   auto &dimensions = info.dimensions;
 
@@ -226,9 +225,10 @@ void RenderingContextOSPRay::create_osp_volume(const Dataset &dataset) {
   osp_volume_cache.emplace(dataset.id, osp_volume);
 }
 
-OSPVolume &RenderingContextOSPRay::get_osp_volume(
-    uint32_t idx, const vector<SceneDataset> &scene_datasets,
-    DatasetStore &datasets) {
+OSPVolume &
+OSPRayRenderer::get_osp_volume(uint32_t idx,
+                               const vector<SceneDataset> &scene_datasets,
+                               DatasetStore &datasets) {
   auto &scene_dataset = scene_datasets[idx];
   const auto &dataset = datasets.get_or_create(scene_dataset, scene_datasets);
   auto it = this->osp_volume_cache.find(dataset.id);
@@ -237,10 +237,6 @@ OSPVolume &RenderingContextOSPRay::get_osp_volume(
     it = this->osp_volume_cache.find(dataset.id);
   }
   return it->second;
-}
-
-auto RenderingContextOSPRay::render_slice(const Dataset &dataset) -> Image {
-  return Image{};
 }
 
 } // namespace voxer

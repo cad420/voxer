@@ -1,10 +1,10 @@
-#include "Rendering/IRenderingContext.hpp"
+#include "Rendering/IRenderer.hpp"
 #include "utils/Logger.hpp"
 #include <chrono>
 #include <dlfcn.h>
 #include <functional>
 #include <memory>
-#include <voxer/RenderingContext.hpp>
+#include <voxer/VolumeRenderer.hpp>
 
 using namespace std;
 
@@ -12,13 +12,11 @@ namespace voxer {
 
 static Logger logger("renderer");
 
-using GetRenderingBackend = VoxerIRenderingContext *(*)();
+using GetRenderingBackend = VoxerIRenderer *(*)();
 
-RenderingContext::~RenderingContext() = default;
+VolumeRenderer::~VolumeRenderer() = default;
 
-RenderingContext::RenderingContext(RenderingContext::Type type) {
-  std::cout << "Load Plugins" << std::endl;
-
+VolumeRenderer::VolumeRenderer(VolumeRenderer::Type type) {
   void *lib = nullptr;
   switch (type) {
   case Type::OSPRay: {
@@ -34,20 +32,18 @@ RenderingContext::RenderingContext(RenderingContext::Type type) {
     throw runtime_error(dlerror());
   }
 
-  std::cout << "Load Plugins end" << std::endl;
-
   void *symbol = dlsym(lib, "voxer_get_backend");
   if (symbol == nullptr) {
     throw runtime_error("Cannot find symbol `voxer_get_backend`");
   }
 
-  std::function<VoxerIRenderingContext *()> get_backend =
+  std::function<VoxerIRenderer *()> get_backend =
       reinterpret_cast<GetRenderingBackend>(symbol);
   auto context = get_backend();
   impl.reset(context);
 }
 
-void RenderingContext::render(const Scene &scene, DatasetStore &datasets) {
+void VolumeRenderer::render(const Scene &scene, DatasetStore &datasets) const {
   if (this->impl == nullptr) {
     return;
   }
@@ -61,7 +57,7 @@ void RenderingContext::render(const Scene &scene, DatasetStore &datasets) {
   logger.info(to_string(delta.count()) + " ms");
 }
 
-auto RenderingContext::get_colors() -> const Image & {
+auto VolumeRenderer::get_colors() -> const Image & {
   return this->impl->get_colors();
 }
 

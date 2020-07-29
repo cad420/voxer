@@ -3,22 +3,23 @@
 #include <voxer/Image.hpp>
 #include <voxer/Scene.hpp>
 
-class VoxerIRenderingContext;
+class VoxerIRenderer;
 
 namespace voxer {
 
-class RenderingContext {
+class VolumeRenderer {
 public:
   enum struct Type { OSPRay, OpenGL };
 
-  explicit RenderingContext(Type type);
-  ~RenderingContext();
+  explicit VolumeRenderer(Type type);
+  ~VolumeRenderer();
 
-  void render(const Scene &scene, DatasetStore &datasets);
+  void render(const Scene &scene, DatasetStore &datasets) const;
+
   auto get_colors() -> const Image &;
 
 private:
-  std::unique_ptr<VoxerIRenderingContext> impl;
+  std::unique_ptr<VoxerIRenderer> impl;
 };
 
 } // namespace voxer

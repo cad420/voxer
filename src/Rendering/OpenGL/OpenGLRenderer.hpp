@@ -1,7 +1,7 @@
 #pragma once
 #define None None
 #include "GLContext.hpp"
-#include "Rendering/IRenderingContext.hpp"
+#include "Rendering/IRenderer.hpp"
 #include <EGL/egl.h>
 #include <unordered_map>
 #include <voxer/DatasetStore.hpp>
@@ -10,13 +10,12 @@
 
 namespace voxer {
 
-class RenderingContextOpenGL final : public VoxerIRenderingContext {
+class OpenGLRenderer final : public VoxerIRenderer {
 public:
-  RenderingContextOpenGL();
-  ~RenderingContextOpenGL() final;
+  OpenGLRenderer();
+  ~OpenGLRenderer() final;
 
   void render(const Scene &scene, DatasetStore &datasets) final;
-  auto render_slice(const Dataset &dataset) -> Image final;
   auto get_colors() -> const Image & final;
 
 private:
@@ -42,7 +41,5 @@ private:
 } // namespace voxer
 
 extern "C" {
-VoxerIRenderingContext *voxer_get_backend() {
-  return new voxer::RenderingContextOpenGL();
-}
+VoxerIRenderer *voxer_get_backend() { return new voxer::OpenGLRenderer(); }
 }

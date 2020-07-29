@@ -1,17 +1,15 @@
 #pragma once
-#include "Rendering/IRenderingContext.hpp"
+#include "Rendering/IRenderer.hpp"
 #include <ospray/ospray_util.h>
 
 namespace voxer {
 
-class RenderingContextOSPRay final : public VoxerIRenderingContext {
+class OSPRayRenderer final : public VoxerIRenderer {
 public:
-  RenderingContextOSPRay();
+  OSPRayRenderer();
 
   void render(const Scene &scene, DatasetStore &datasets) final;
   auto get_colors() -> const Image & final;
-
-  auto render_slice(const Dataset &dataset) -> Image;
 
 private:
   void create_osp_volume(const Dataset &dataset);
@@ -26,7 +24,5 @@ private:
 } // namespace voxer
 
 extern "C" {
-VoxerIRenderingContext *voxer_get_backend() {
-  return new voxer::RenderingContextOSPRay();
-}
+VoxerIRenderer *voxer_get_backend() { return new voxer::OSPRayRenderer(); }
 }

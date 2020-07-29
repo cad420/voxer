@@ -2,7 +2,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <voxer/RenderingContext.hpp>
+#include <voxer/VolumeRenderer.hpp>
 #include <voxer/utils.hpp>
 
 using namespace std;

@@ -20,7 +20,8 @@ list(
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/Slice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/filter/differ.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/filter/histogram.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/RenderingContext.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/VolumeRenderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SliceRenderer.cpp
 )
 
 add_library(voxer_core STATIC ${VOXER_CORE_SRCS})

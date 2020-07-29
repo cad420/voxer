@@ -9,7 +9,7 @@ embed_shaders(
 list(
     APPEND
     VOXER_BACKEND_GL_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/RenderingContextOpenGL.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/OpenGLRenderer.cpp
     ${PROJECT_SOURCE_DIR}/third_party/glad/src/glad.c
 )
 

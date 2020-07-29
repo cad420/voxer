@@ -4,7 +4,7 @@
 #include <rapidjson/document.h>
 #include <stdexcept>
 #include <string>
-#include <voxer/RenderingContext.hpp>
+#include <voxer/VolumeRenderer.hpp>
 #include <voxer/scene/TransferFunction.hpp>
 #include <voxer/utils.hpp>
 

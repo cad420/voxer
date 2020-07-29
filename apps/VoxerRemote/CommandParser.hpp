@@ -5,7 +5,7 @@
 #include <utility>
 #include <variant>
 #include <voxer/Scene.hpp>
-#include <voxer/RenderingContext.hpp>
+#include <voxer/VolumeRenderer.hpp>
 
 using SceneModifier = std::function<voxer::Scene(const voxer::Scene &)>;
 using EngineType = voxer::RenderingContext::Type;

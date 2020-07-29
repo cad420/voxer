@@ -1,4 +1,4 @@
-#include "Rendering/OpenGL/RenderingContextOpenGL.hpp"
+#include "Rendering/OpenGL/OpenGLRenderer.hpp"
 #include "Rendering/OpenGL/shaders.hpp"
 #include <EGL/eglext.h>
 #include <VMFoundation/pluginloader.h>
@@ -84,7 +84,7 @@ void EGLCheck(const char *fn) {
 
 namespace voxer {
 
-RenderingContextOpenGL::RenderingContextOpenGL() : width(400), height(400) {
+OpenGLRenderer::OpenGLRenderer() : width(400), height(400) {
   static const int MAX_DEVICES = 4;
   EGLDeviceEXT eglDevs[MAX_DEVICES];
   EGLint numDevices;
@@ -247,10 +247,9 @@ RenderingContextOpenGL::RenderingContextOpenGL() : width(400), height(400) {
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-RenderingContextOpenGL::~RenderingContextOpenGL() { eglTerminate(eglDpy); }
+OpenGLRenderer::~OpenGLRenderer() { eglTerminate(eglDpy); }
 
-void RenderingContextOpenGL::render(const Scene &scene,
-                                    DatasetStore &datasets) {
+void OpenGLRenderer::render(const Scene &scene, DatasetStore &datasets) {
   auto render_volume = false;
   auto render_isosurface = false;
   auto isovalue = 0.0f;
@@ -484,7 +483,7 @@ void RenderingContextOpenGL::render(const Scene &scene,
   glFlush();
 }
 
-auto RenderingContextOpenGL::get_colors() -> const Image & {
+auto OpenGLRenderer::get_colors() -> const Image & {
   image.width = width;
   image.height = width;
   image.channels = 3;
@@ -496,7 +495,7 @@ auto RenderingContextOpenGL::get_colors() -> const Image & {
   return image;
 }
 
-GL::GLTexture RenderingContextOpenGL::create_volume(const Dataset &dataset) {
+GL::GLTexture OpenGLRenderer::create_volume(const Dataset &dataset) {
   auto &dimensions = dataset.info.dimensions;
 
   auto volume_texture = gl->CreateTexture(GL_TEXTURE_3D);
@@ -513,10 +512,6 @@ GL::GLTexture RenderingContextOpenGL::create_volume(const Dataset &dataset) {
                               dimensions[1], dimensions[2], GL_RED,
                               GL_UNSIGNED_BYTE, dataset.buffer.data()));
   return volume_texture;
-}
-
-auto RenderingContextOpenGL::render_slice(const Dataset &dataset) -> Image {
-  return Image{};
 }
 
 } // namespace voxer
