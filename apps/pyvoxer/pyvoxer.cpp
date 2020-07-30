@@ -105,14 +105,14 @@ PYBIND11_MODULE(pyvoxer, m) {
           py::overload_cast<const Image &, Image::Format, Image::Quality>(
               &Image::encode));
 
-  py::class_<RenderingContext> rendering_context(m, "RenderingContext");
-  py::enum_<RenderingContext::Type>(rendering_context, "Type")
-      .value("OSPRay", RenderingContext::Type::OSPRay)
-      .value("OpenGL", RenderingContext::Type::OpenGL)
+  py::class_<VolumeRenderer> volume_renderer(m, "VolumeRenderer");
+  py::enum_<VolumeRenderer::Type>(volume_renderer, "Type")
+      .value("OSPRay", VolumeRenderer::Type::OSPRay)
+      .value("OpenGL", VolumeRenderer::Type::OpenGL)
       .export_values();
-  rendering_context.def(py::init<RenderingContext::Type>())
-      .def("render", &RenderingContext::render)
-      .def("get_colors", &RenderingContext::get_colors,
+  volume_renderer.def(py::init<VolumeRenderer::Type>())
+      .def("render", &VolumeRenderer::render)
+      .def("get_colors", &VolumeRenderer::get_colors,
            py::return_value_policy::reference);
 
   m.doc() = R"pbdoc(

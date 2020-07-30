@@ -18,8 +18,8 @@ int main(int argc, const char **argv) {
   PipelineStore pipelines;
 
   CommandParser parser{};
-  RenderingContext ogl_renderer(RenderingContext::Type::OpenGL);
-  RenderingContext ospray_renderer(RenderingContext::Type::OSPRay);
+  VolumeRenderer ogl_renderer(VolumeRenderer::Type::OpenGL);
+  VolumeRenderer ospray_renderer(VolumeRenderer::Type::OSPRay);
 
   auto app = uWS::App();
 

@@ -8,7 +8,7 @@
 #include <voxer/VolumeRenderer.hpp>
 
 using SceneModifier = std::function<voxer::Scene(const voxer::Scene &)>;
-using EngineType = voxer::RenderingContext::Type;
+using EngineType = voxer::VolumeRenderer::Type;
 
 struct Command {
   enum class Type {

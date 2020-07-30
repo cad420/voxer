@@ -120,9 +120,9 @@ auto CommandParser::parse(const char *value, uint64_t size) -> Command {
   if (it != json.end() && it->value.IsString()) {
     auto type = it->value.GetString();
     if (strcmp(type, "OpenGL") == 0) {
-      engine = RenderingContext::Type::OpenGL;
+      engine = EngineType::OpenGL;
     } else if (strcmp(type, "OSPRay") == 0) {
-      engine = RenderingContext::Type::OSPRay;
+      engine = EngineType::OSPRay;
     } else {
       throw runtime_error("Unsupported rendering engine: " + string(type));
     }
