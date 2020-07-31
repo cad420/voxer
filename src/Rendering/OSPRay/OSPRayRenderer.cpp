@@ -8,19 +8,24 @@ using namespace std;
 namespace voxer {
 
 OSPRayRenderer::OSPRayRenderer() {
-  vector<const char *> argvs{};
-  auto argc = static_cast<int>(argvs.size());
-  auto error = ospInit(&argc, argvs.data());
-  if (error != OSP_NO_ERROR) {
-    throw runtime_error("Initialize OSPRay failed.");
+  ospLoadModule("ispc");
+  osp_device = ospNewDevice("cpu");
+  if (osp_device == nullptr) {
+    throw runtime_error("Failed to initialize OSPRay");
   }
 #ifndef NDEBUG
-  auto osp_device = ospGetCurrentDevice();
-  ospDeviceSetParam(osp_device, "logLevel", OSP_STRING, "warning");
+  ospDeviceSetParam(osp_device, "logLevel", OSP_STRING, "debug");
   ospDeviceSetParam(osp_device, "logOutput", OSP_STRING, "cout");
   ospDeviceSetParam(osp_device, "errorOutput", OSP_STRING, "cerr");
-  ospDeviceCommit(osp_device);
 #endif
+  ospDeviceCommit(osp_device);
+}
+
+OSPRayRenderer::~OSPRayRenderer() {
+  if (osp_device == nullptr)
+    return;
+
+  ospDeviceRelease(osp_device);
 }
 
 void OSPRayRenderer::render(const Scene &scene, DatasetStore &datasets) {

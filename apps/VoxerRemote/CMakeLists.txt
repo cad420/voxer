@@ -8,9 +8,10 @@ find_package(ZLIB REQUIRED)
 
 add_executable(
     VoxerRemote
-    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/CommandParser.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/PipelineStore.cpp
+    main.cpp
+    service/DatasetService.cpp
+    service/SliceService.cpp
+    service/VolumeRenderingService.cpp
 )
 target_include_directories(
     VoxerRemote

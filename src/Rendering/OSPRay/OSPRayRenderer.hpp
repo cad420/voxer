@@ -1,5 +1,6 @@
 #pragma once
 #include "Rendering/IRenderer.hpp"
+#include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
 
 namespace voxer {
@@ -7,6 +8,7 @@ namespace voxer {
 class OSPRayRenderer final : public VoxerIRenderer {
 public:
   OSPRayRenderer();
+  ~OSPRayRenderer() final;
 
   void render(const Scene &scene, DatasetStore &datasets) final;
   auto get_colors() -> const Image & final;
@@ -19,6 +21,7 @@ private:
 
   std::map<std::string, OSPVolume> osp_volume_cache{};
   Image image{};
+  OSPDevice osp_device = nullptr;
 };
 
 } // namespace voxer

@@ -4,6 +4,12 @@
 #include <string>
 #include <vector>
 
+struct NoCopy {
+  NoCopy() = default;
+  NoCopy(const NoCopy &) = delete;
+  auto operator=(const NoCopy &) -> NoCopy & = delete;
+};
+
 inline auto extract_params(const std::string &json) -> std::string {
   std::regex params_regex(R"("params":\s*(\{[^]+\})[\s|\n]*\})",
                           std::regex_constants::ECMAScript);
