@@ -73,9 +73,11 @@ struct Dataset {
     return reinterpret_cast<T *>(buffer.data())[index];
   }
 
-  Image get_slice(Axis axis, uint32_t slice) const;
+  [[nodiscard]] auto get_slice(Axis axis, uint32_t slice) const -> Image;
 
-  std::string serialize() const;
+  [[nodiscard]] auto serialize() const -> std::string;
+
+  [[nodiscard]] static auto Load(const char *path) -> Dataset;
 };
 
 } // namespace voxer

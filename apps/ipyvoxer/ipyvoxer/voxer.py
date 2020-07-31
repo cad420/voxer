@@ -3,6 +3,7 @@ from traitlets import HasTraits, Unicode, Dict, List, Float, Instance, Bytes, ob
 from ._meta import module_name
 import pyvoxer
 import copy
+from IPython.display import Image, display
 
 
 class TransferFunction(DOMWidget):
@@ -50,10 +51,6 @@ class TransferFunction(DOMWidget):
         self.points = clone
 
 
-OSPRayRenderer = pyvoxer.RenderingContext(pyvoxer.RenderingContext.Type.OSPRay)
-OpenGLRenderer = pyvoxer.RenderingContext(pyvoxer.RenderingContext.Type.OpenGL)
-
-
 class Renderer(DOMWidget):
     _model_name = Unicode("RendererModel").tag(sync=True)
     _model_module = Unicode(module_name).tag(sync=True)
@@ -65,6 +62,9 @@ class Renderer(DOMWidget):
 
     backend = Unicode('OSPRay').tag(sync=True)
     image = Bytes().tag(sync=True)
+
+    OpenGLRenderer = pyvoxer.VolumeRenderer(pyvoxer.VolumeRenderer.Type.OpenGL)
+    OSPRayRenderer = pyvoxer.VolumeRenderer(pyvoxer.VolumeRenderer.Type.OpenGL)
 
     datasets = Instance(pyvoxer.DatasetStore).tag(sync=False)
     scene = Instance(pyvoxer.Scene).tag(sync=False)
@@ -79,24 +79,24 @@ class Renderer(DOMWidget):
         self.scene = pyvoxer.Scene()
         self.datasets = pyvoxer.DatasetStore()
 
-    def addDataset(self, name, variable='default', timestep=0):
+    def add_dataset(self, name, variable='default', timestep=0):
         dataset = pyvoxer.SceneDataset()
         dataset.name = name
         dataset.variable = variable
         dataset.timestep = timestep
         self.scene.datasets = [dataset]
 
-    def addVolume(self, dataset, tfcn, render=True):
+    def add_volume(self, dataset, tfcn, render=True):
         volume = pyvoxer.Volume()
         volume.dataset = dataset
         volume.tfcn = tfcn
         volume.render = render
         self.scene.volumes = [volume]
 
-    def addTfcn(self, tfcn):
+    def add_tfcn(self, tfcn):
         self.scene.tfcns = [tfcn]
 
-    def setCamera(self, **kw):
+    def set_camera(self, **kw):
         self.canRender = False
         if 'pos' in kw:
             self.pos = kw['pos']
@@ -123,11 +123,11 @@ class Renderer(DOMWidget):
         self.scene.camera.up = self.up
         raw_image = pyvoxer.Image()
         if (self.backend == 'OSPRay'):
-            OSPRayRenderer.render(self.scene, self.datasets)
-            raw_image = OSPRayRenderer.get_colors()
+            self.OSPRayRenderer.render(self.scene, self.datasets)
+            raw_image = self.OSPRayRenderer.get_colors()
         else:
-            OpenGLRenderer.render(self.scene, self.datasets)
-            raw_image = OpenGLRenderer.get_colors()
+            self.OpenGLRenderer.render(self.scene, self.datasets)
+            raw_image = self.OpenGLRenderer.get_colors()
         jpeg = pyvoxer.Image.encode(
             raw_image, pyvoxer.Image.Format.JPEG, pyvoxer.Image.Quality.HIGH)
         self.image = bytes(jpeg.data)
@@ -139,3 +139,24 @@ class Renderer(DOMWidget):
         if not self.canRender:
             return
         self.render()
+
+
+class SliceView(DOMWidget):
+    renderer = Instance(pyvoxer.SliceRenderer).tag(sync=False)
+    axis_map = dict(x=pyvoxer.Dataset.Axis.X,
+                    y=pyvoxer.Dataset.Axis.Y, z=pyvoxer.Dataset.Axis.Z)
+
+    def __init__(self, dataset):
+        super(SliceView, self).__init__()
+        self.renderer = pyvoxer.SliceRenderer()
+        self.renderer.set_dataset(dataset)
+
+    def add_mark(self, mark, color):
+        self.renderer.add_mark(mark, color)
+
+    def draw(self, axis, slice):
+        raw_image = self.renderer.render(self.axis_map[axis], slice)
+        jpeg = pyvoxer.Image.encode(
+            raw_image, pyvoxer.Image.Format.JPEG, pyvoxer.Image.Quality.HIGH)
+        result = Image(data=bytes(jpeg.data))
+        display(result)

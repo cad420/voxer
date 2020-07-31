@@ -43,7 +43,7 @@ static void draw_mark(Dataset *dataset,
   for (auto &mark : marks) {
     auto mark_dataset = mark.first;
     auto color = mark.second;
-    if (mark_dataset->buffer[voxel_idx] == 1) {
+    if (mark_dataset->buffer[voxel_idx] != 0) {
       target.data[pixel_idx] = color[0] * 255;
       target.data[pixel_idx + 1] = color[1] * 255;
       target.data[pixel_idx + 2] = color[2] * 255;

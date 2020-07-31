@@ -1,7 +1,10 @@
+#include "databases/MRC/MRCReader.hpp"
+#include "databases/Raw/RawReader.hpp"
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 #include <seria/serialize.hpp>
 #include <voxer/Dataset.hpp>
+#include <voxer/utils.hpp>
 
 using namespace std;
 
@@ -19,7 +22,7 @@ template <> inline auto registerObject<voxer::Dataset>() {
 
 namespace voxer {
 
-string Dataset::serialize() const {
+auto Dataset::serialize() const -> string {
   auto json = seria::serialize(*this);
   rapidjson::StringBuffer rapidjson_buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(rapidjson_buffer);
@@ -27,7 +30,7 @@ string Dataset::serialize() const {
   return rapidjson_buffer.GetString();
 }
 
-Image Dataset::get_slice(Axis axis, uint32_t slice) const {
+auto Dataset::get_slice(Axis axis, uint32_t slice) const -> Image {
   Image result{};
   result.channels = 1;
   switch (axis) {
@@ -84,6 +87,21 @@ Image Dataset::get_slice(Axis axis, uint32_t slice) const {
   }
 
   return result;
+}
+
+auto Dataset::Load(const char *path) -> Dataset {
+  auto ext = get_file_extension(path);
+  if (ext == ".json") {
+    RawReader reader(path);
+    return reader.load();
+  }
+
+  if (ext == ".mrc") {
+    MRCReader reader(path);
+    return reader.load();
+  }
+
+  throw runtime_error(string("unsupported dataset extension: ") + ext);
 }
 
 } // namespace voxer

@@ -5,6 +5,8 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <rapidjson/document.h>
+#include <sstream>
 
 using namespace std;
 
@@ -19,6 +21,63 @@ RawReader::RawReader(const string &filepath,
   fs.unsetf(ios::skipws);
   if (!fs.is_open()) {
     throw runtime_error("cannot load file: " + filepath);
+  }
+}
+
+RawReader::RawReader(const char *json_path) {
+  ifstream json;
+  json.open(json_path);
+  if (!json.is_open()) {
+    throw runtime_error(string("cannot open file: ") + json_path);
+  }
+
+  stringstream buffer;
+  buffer << json.rdbuf();
+  json.close();
+
+  rapidjson::Document document;
+  document.Parse(buffer.str().c_str(), buffer.str().size());
+
+  if (!document.IsObject()) {
+    throw JSON_error("root", "object");
+  }
+
+  auto desc = document.GetObject();
+
+  auto it = desc.FindMember("path");
+  if (it == desc.end() || !(it->value.IsString())) {
+    throw JSON_error("root.path", "string");
+  }
+
+  fs.open(it->value.GetString(), ios::binary);
+  fs.unsetf(ios::skipws);
+  if (!fs.is_open()) {
+    throw runtime_error(string("cannot load file: ") + it->value.GetString());
+  }
+
+  it = desc.FindMember("type");
+  if (it == desc.end() || !(it->value.IsString())) {
+    throw JSON_error("root.type", "string");
+  }
+
+  it = desc.FindMember("dimensions");
+  if (it == desc.end() || !(it->value.IsArray()) ||
+      it->value.GetArray().Size() != 3) {
+    throw JSON_error("root.dimensions", "array of 3 integers");
+  }
+
+  auto dimension_json = it->value.GetArray();
+  for (int i = 0; i < 3; i++) {
+    dimensions[i] = dimension_json[i].GetInt();
+  }
+
+  string type = it->value.GetString();
+  if (type == "uint8") {
+    value_type = ValueType::UINT8;
+  } else if (type == "float") {
+    value_type = ValueType::FLOAT;
+  } else {
+    throw runtime_error(string("unsupported value type: ") + type);
   }
 }
 

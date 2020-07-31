@@ -2,6 +2,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+#include <voxer/SliceRenderer.hpp>
 #include <voxer/VolumeRenderer.hpp>
 #include <voxer/utils.hpp>
 
@@ -10,9 +11,16 @@ using namespace voxer;
 namespace py = pybind11;
 
 PYBIND11_MODULE(pyvoxer, m) {
-  py::class_<Dataset>(m, "Dataset")
-      .def(py::init())
-      .def("get_slice", &Dataset::get_slice);
+  py::class_<Dataset> dataset(m, "Dataset");
+  dataset.def(py::init())
+      .def("get_slice", &Dataset::get_slice)
+      .def_static("Load", &Dataset::Load);
+
+  py::enum_<Dataset::Axis>(dataset, "Axis")
+      .value("X", Dataset::Axis::X)
+      .value("Y", Dataset::Axis::Y)
+      .value("Z", Dataset::Axis::Z)
+      .export_values();
 
   py::class_<DatasetStore>(m, "DatasetStore")
       .def(py::init())
@@ -114,6 +122,13 @@ PYBIND11_MODULE(pyvoxer, m) {
       .def("render", &VolumeRenderer::render)
       .def("get_colors", &VolumeRenderer::get_colors,
            py::return_value_policy::reference);
+
+  py::class_<SliceRenderer>(m, "SliceRenderer")
+      .def(py::init())
+      .def("set_dataset", &SliceRenderer::set_dataset)
+      .def("add_mark", py::overload_cast<Dataset *, const string &>(
+                           &SliceRenderer::add_mark))
+      .def("render", &SliceRenderer::render);
 
   m.doc() = R"pbdoc(
         python bindings for voxer

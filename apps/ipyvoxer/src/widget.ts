@@ -7,8 +7,8 @@ import Pickr from "@simonwep/pickr";
 import { ModuleName, ModuleVersion } from "./meta";
 import LinearPieceWiseEditor from "./LinearPisewide";
 import TrackballControl from "./utils/TrackballControl";
-import "./style.css";
 import Vector3 from "./utils/Vector3";
+import "./style.css";
 
 class TransferFunctionModel extends DOMWidgetModel {
   static model_name = "TransferFunctionModel";
