@@ -4,6 +4,8 @@ Remote scientific visualization service
 
 > This repository only contains the backend service
 
+![teaser](teaser.png)
+
 ## Getting Started
 
 You can
