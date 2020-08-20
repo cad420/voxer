@@ -1,13 +1,12 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <voxer/scene/Camera.hpp>
-#include <voxer/scene/Isosurface.hpp>
-#include <voxer/scene/Light.hpp>
-#include <voxer/scene/SceneDataset.hpp>
-#include <voxer/scene/Slice.hpp>
-#include <voxer/scene/TransferFunction.hpp>
-#include <voxer/scene/Volume.hpp>
+#include <voxer/Scene/Camera.hpp>
+#include <voxer/Scene/Isosurface.hpp>
+#include <voxer/Scene/Light.hpp>
+#include <voxer/Scene/SceneDataset.hpp>
+#include <voxer/Scene/TransferFunction.hpp>
+#include <voxer/Scene/Volume.hpp>
 
 namespace voxer {
 
@@ -19,8 +18,6 @@ struct Scene {
   std::vector<Light> lights;
   Camera camera;
 
-  auto serialize() const -> rapidjson::Document;
-  static auto deserialize(const rapidjson::Value &json) -> Scene;
 };
 
 } // namespace voxer

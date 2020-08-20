@@ -1,7 +1,6 @@
 #pragma once
-#include <voxer/DatasetStore.hpp>
+#include "DataModel/Scene.hpp"
 #include <voxer/Image.hpp>
-#include <voxer/Scene.hpp>
 
 class VoxerIRenderer;
 
@@ -14,7 +13,11 @@ public:
   explicit VolumeRenderer(Type type);
   ~VolumeRenderer();
 
-  void render(const Scene &scene, DatasetStore &datasets) const;
+  void set_camera(const Camera &);
+  void add_volume(const Volume &volume);
+  void add_isosurface(const Isosurface &isosurface);
+
+  void render() const;
 
   auto get_colors() -> const Image &;
 

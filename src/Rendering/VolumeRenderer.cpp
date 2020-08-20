@@ -1,5 +1,5 @@
 #include "Rendering/IRenderer.hpp"
-#include "utils/Logger.hpp"
+#include "Common/Logger.hpp"
 #include <chrono>
 #include <dlfcn.h>
 #include <functional>
@@ -43,14 +43,14 @@ VolumeRenderer::VolumeRenderer(VolumeRenderer::Type type) {
   impl.reset(context);
 }
 
-void VolumeRenderer::render(const Scene &scene, DatasetStore &datasets) const {
+void VolumeRenderer::render() const {
   if (this->impl == nullptr) {
     return;
   }
 
   auto start = chrono::steady_clock::now();
 
-  this->impl->render(scene, datasets);
+  this->impl->render();
 
   const auto delta = chrono::duration_cast<chrono::milliseconds>(
       chrono::steady_clock::now() - start);

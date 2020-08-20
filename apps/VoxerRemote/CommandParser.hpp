@@ -13,11 +13,8 @@ using EngineType = voxer::VolumeRenderer::Type;
 struct Command {
   enum class Type {
     Render,
-    Save,
     QueryDatasets,
     QueryDataset,
-    QueryPipelines,
-    QueryPipeline,
     RunPipeline,
     AddDataset,
     ModifyDataset

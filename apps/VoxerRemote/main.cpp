@@ -23,8 +23,8 @@ int main(int argc, const char **argv) {
   SliceService slice_service{};
   slice_service.m_datasets = &datasets;
 
-  vector<Service *> services{&dataset_service, &volume_rendering_service,
-                             &slice_service};
+  vector<AbstractService *> services{&dataset_service,
+                                     &volume_rendering_service, &slice_service};
 
   auto app = uWS::App();
 

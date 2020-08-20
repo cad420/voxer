@@ -9,9 +9,9 @@ find_package(ZLIB REQUIRED)
 add_executable(
     VoxerRemote
     main.cpp
-    service/DatasetService.cpp
-    service/SliceService.cpp
-    service/VolumeRenderingService.cpp
+    Service/DatasetService.cpp
+    Service/SliceService.cpp
+    Service/VolumeRenderingService.cpp
 )
 target_include_directories(
     VoxerRemote

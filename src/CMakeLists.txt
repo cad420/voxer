@@ -8,18 +8,18 @@ list(
     VOXER_CORE_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/Dataset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/DatasetStore.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/databases/MRC/MRCReader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/databases/Raw/RawReader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Datasets/MRC/MRCReader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Datasets/Raw/RawReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/Scene.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/SceneDataset.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Dataset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/Volume.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/TransferFunction.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/Camera.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/Isosurface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/Slice.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/filter/differ.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/filter/histogram.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/differ.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/histogram.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/VolumeRenderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SliceRenderer.cpp
 )

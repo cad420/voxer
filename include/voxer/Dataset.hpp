@@ -55,9 +55,8 @@ struct VolumeInfo {
 };
 
 struct Dataset {
-  std::string id = "";
-  std::string name = "";
-  std::string variable = "";
+  std::string name;
+  std::string variable;
   uint32_t timestep = 0;
   VolumeInfo info{};
   std::vector<uint8_t> buffer{};
@@ -75,9 +74,9 @@ struct Dataset {
 
   [[nodiscard]] auto get_slice(Axis axis, uint32_t slice) const -> Image;
 
-  [[nodiscard]] auto serialize() const -> std::string;
-
   [[nodiscard]] static auto Load(const char *path) -> Dataset;
+
+  void convert_data();
 };
 
 } // namespace voxer
