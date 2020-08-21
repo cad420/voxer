@@ -6,20 +6,16 @@ include(${PROJECT_SOURCE_DIR}/third_party/vmcore.cmake)
 list(
     APPEND
     VOXER_CORE_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Dataset.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/DatasetStore.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Datasets/MRC/MRCReader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Datasets/Raw/RawReader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Scene.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Dataset.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Volume.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/TransferFunction.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Camera.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Isosurface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Slice.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Data/Annotation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Data/Color.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Data/Image.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Data/SliceInfo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Data/StructuredGrid.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Data/TransferFunction.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/differ.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/histogram.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/IO/MRC/MRCReader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/IO/Raw/RawReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/VolumeRenderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SliceRenderer.cpp
 )

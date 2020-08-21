@@ -5,7 +5,7 @@
 #include <EGL/egl.h>
 #include <unordered_map>
 #include <voxer/DatasetStore.hpp>
-#include <voxer/Image.hpp>
+#include <voxer/ImageData.hpp>
 #include <voxer/Scene.hpp>
 
 namespace voxer {

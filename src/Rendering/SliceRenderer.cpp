@@ -1,11 +1,12 @@
-#include <voxer/SliceRenderer.hpp>
-#include <voxer/utils.hpp>
+#include <voxer/Rendering/SliceRenderer.hpp>
+#include <voxer/Data/StructuredGrid.hpp>
+#include <stdexcept>
 
 using namespace std;
 
 namespace voxer {
 
-void SliceRenderer::set_dataset(Dataset *dataset) {
+void SliceRenderer::set_dataset(StructuredGrid *dataset) {
   if (dataset == nullptr) {
     throw runtime_error("Invalid dataset");
   }
@@ -13,12 +14,12 @@ void SliceRenderer::set_dataset(Dataset *dataset) {
   m_info = dataset->info;
 }
 
-void SliceRenderer::add_mark(Dataset *dataset, const string &hex_color) {
+void SliceRenderer::add_mark(StructuredGrid *dataset, const string &hex_color) {
   auto color = hex_color_to_float(hex_color);
   this->add_mark(dataset, color);
 }
 
-void SliceRenderer::add_mark(Dataset *dataset, const array<float, 3> &color) {
+void SliceRenderer::add_mark(StructuredGrid *dataset, const array<float, 3> &color) {
   if (dataset == nullptr) {
     throw runtime_error("Invalid mark dataset");
   }
@@ -35,7 +36,7 @@ void SliceRenderer::add_mark(Dataset *dataset, const array<float, 3> &color) {
   this->m_marks.emplace_back(make_pair(dataset, color));
 }
 
-static void draw_mark(Dataset *dataset,
+static void draw_mark(StructuredGrid *dataset,
                       const vector<SliceRenderer::MarkType> &marks,
                       uint32_t voxel_idx, uint32_t pixel_idx, Image &target) {
   auto should_draw_dataset = true;
@@ -60,7 +61,7 @@ static void draw_mark(Dataset *dataset,
   target.data[pixel_idx + 2] = dataset->buffer[voxel_idx];
 }
 
-Image SliceRenderer::render(Dataset::Axis axis, uint32_t slice) const {
+Image SliceRenderer::render(StructuredGrid::Axis axis, uint32_t slice) const {
   Image result{};
   result.channels = 3;
 
@@ -69,7 +70,7 @@ Image SliceRenderer::render(Dataset::Axis axis, uint32_t slice) const {
   }
 
   switch (axis) {
-  case Dataset::Axis::X: {
+  case StructuredGrid::Axis::X: {
     if (slice >= m_info.dimensions[0]) {
       throw runtime_error("slice idx overflow");
     }
@@ -87,7 +88,7 @@ Image SliceRenderer::render(Dataset::Axis axis, uint32_t slice) const {
     }
     break;
   }
-  case Dataset::Axis::Y: {
+  case StructuredGrid::Axis::Y: {
     if (slice >= m_info.dimensions[1]) {
       throw runtime_error("slice idx overflow");
     }
@@ -105,7 +106,7 @@ Image SliceRenderer::render(Dataset::Axis axis, uint32_t slice) const {
     }
     break;
   }
-  case Dataset::Axis::Z: {
+  case StructuredGrid::Axis::Z: {
     if (slice >= m_info.dimensions[2]) {
       throw runtime_error("slice idx overflow");
     }

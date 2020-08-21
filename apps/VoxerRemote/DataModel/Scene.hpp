@@ -1,7 +1,7 @@
 #pragma once
 #include "DataModel/Camera.hpp"
-#include "DataModel/Dataset.hpp"
 #include "DataModel/Isosurface.hpp"
+#include "DataModel/StructuredGrid.hpp"
 #include "DataModel/TransferFunction.hpp"
 #include "DataModel/Volume.hpp"
 #include <seria/utils.hpp>

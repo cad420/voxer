@@ -1,13 +1,13 @@
-#include "Datasets/Readers/MRC/MRCReader.hpp"
-#include "Datasets/Readers/Raw/RawReader.hpp"
-#include <voxer/Dataset.hpp>
+#include "IO/MRC/MRCReader.hpp"
+#include "IO/Raw/RawReader.hpp"
+#include <voxer/Data/StructuredGrid.hpp>
 #include <voxer/utils.hpp>
 
 using namespace std;
 
 namespace voxer {
 
-auto Dataset::get_slice(Axis axis, uint32_t slice) const -> Image {
+auto StructuredGrid::get_slice(Axis axis, uint32_t slice) const -> Image {
   Image result{};
   result.channels = 1;
   switch (axis) {
@@ -66,7 +66,7 @@ auto Dataset::get_slice(Axis axis, uint32_t slice) const -> Image {
   return result;
 }
 
-auto Dataset::Load(const char *path) -> Dataset {
+auto StructuredGrid::Load(const char *path) -> StructuredGrid {
   auto ext = get_file_extension(path);
   if (ext == ".json") {
     RawReader reader(path);

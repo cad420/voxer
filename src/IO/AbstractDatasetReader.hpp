@@ -1,5 +1,5 @@
 #pragma once
-#include "voxer/Dataset.hpp"
+#include <voxer/Data/StructuredGrid.hpp>
 
 namespace voxer {
 
@@ -7,7 +7,7 @@ class AbstractDatasetReader {
 public:
   virtual ~AbstractDatasetReader() = default;
 
-  virtual auto load() -> Dataset = 0;
+  virtual auto load() -> StructuredGrid = 0;
 };
 
 } // namespace voxer

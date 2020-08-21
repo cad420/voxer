@@ -1,13 +1,9 @@
-#include "TransferFunction.hpp"
+#include <voxer/Data/TransferFunction.hpp>
 #include <voxer/utils.hpp>
 
 using namespace std;
 
 namespace voxer {
-
-auto ControlPoint::serialize() -> rapidjson::Document {
-  return seria::serialize(*this);
-}
 
 auto ControlPoint::deserialize(const rapidjson::Value &json) -> ControlPoint {
   if (!json.IsArray()) {

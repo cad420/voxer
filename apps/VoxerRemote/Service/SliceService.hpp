@@ -1,9 +1,9 @@
 #pragma once
 #include "Service/AbstractService.hpp"
+#include "Store/DatasetStore.hpp"
 #include <rapidjson/document.h>
-#include <voxer/Annotation.hpp>
-#include <voxer/DatasetStore.hpp>
-#include <voxer/Slice.hpp>
+#include <voxer/Data/Annotation.hpp>
+#include <voxer/Data/Slice.hpp>
 
 class SliceService final : public AbstractService {
 public:

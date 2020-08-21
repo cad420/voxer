@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace voxer {
@@ -34,6 +35,31 @@ inline auto convert_float_to_uint8(const float *source, size_t size)
     }
   }
   return convert_float_to_uint8(source, size, max, min);
+}
+
+inline auto get_file_extension(const std::string &filepath) -> std::string {
+  auto ext_idx = filepath.find_last_of('.');
+  if (ext_idx == std::string::npos) {
+    return "";
+  }
+
+  return filepath.substr(ext_idx);
+}
+
+inline auto get_file_name(const std::string &filepath) -> std::string {
+  size_t begin = 0;
+  size_t end = filepath.size();
+
+  auto ext_idx = filepath.find_last_of('.');
+  if (ext_idx != std::string::npos) {
+    end = ext_idx;
+  }
+  auto slash_idx = filepath.find_last_of('/');
+  if (slash_idx != std::string::npos) {
+    begin = slash_idx + 1;
+  }
+
+  return filepath.substr(begin, end - begin);
 }
 
 } // namespace voxer

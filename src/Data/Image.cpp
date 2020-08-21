@@ -1,7 +1,7 @@
-#include <voxer/Image.hpp>
+#include <voxer/Data/Image.hpp>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "third_party/stb_image_write.h"
 #include "Common/Logger.hpp"
+#include "third_party/stb_image_write.h"
 #include <cassert>
 #include <chrono>
 #include <stdexcept>

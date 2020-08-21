@@ -1,6 +1,8 @@
 #pragma once
-#include "DataModel/Scene.hpp"
-#include <voxer/Image.hpp>
+#include <voxer/Data/Image.hpp>
+#include <voxer/Rendering/Camera.hpp>
+#include <voxer/Rendering/Isosurface.hpp>
+#include <voxer/Rendering/Volume.hpp>
 
 class VoxerIRenderer;
 

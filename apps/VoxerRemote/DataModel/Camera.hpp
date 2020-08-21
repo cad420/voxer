@@ -3,7 +3,7 @@
 #include <map>
 #include <seria/utils.hpp>
 #include <string>
-#include <voxer/Camera.hpp>
+#include <voxer/Rendering/Camera.hpp>
 
 namespace voxer::remote {
 

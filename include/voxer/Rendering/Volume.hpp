@@ -3,12 +3,14 @@
 #include <memory>
 #include <rapidjson/document.h>
 #include <string>
-#include <voxer/Dataset.hpp>
+#include <voxer/Data/StructuredGrid.hpp>
+#include <voxer/Data/TransferFunction.hpp>
 
 namespace voxer {
 
 struct Volume {
-  int32_t dataset_idx = -1;
+  StructuredGrid dataset;
+  TransferFunction *tfcn;
   int32_t tfcn_idx = -1;
   std::array<float, 3> spacing = {1.0f, 1.0f, 1.0f};
 

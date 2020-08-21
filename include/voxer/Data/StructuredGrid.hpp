@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <voxer/Image.hpp>
+#include <voxer/Data/Image.hpp>
 
 namespace voxer {
 
@@ -28,11 +28,14 @@ struct VolumeInfo {
   // VolumeType type = VolumeType::SCALAR;
   ValueType value_type = ValueType::UINT8;
   std::array<uint16_t, 3> dimensions{0, 0, 0};
-  auto value_type_size() -> uint8_t { return static_cast<uint8_t>(value_type); }
-  auto voxel_count() -> uint64_t {
+  uint32_t component = 1;
+  [[nodiscard]] auto value_type_size() const -> uint8_t {
+    return static_cast<uint8_t>(value_type);
+  }
+  [[nodiscard]] auto voxel_count() const -> uint64_t {
     return dimensions[0] * dimensions[1] * dimensions[2];
   }
-  auto byte_count() -> uint64_t {
+  [[nodiscard]] auto byte_count() const -> uint64_t {
     return this->voxel_count() * this->value_type_size();
   }
 
@@ -54,29 +57,18 @@ struct VolumeInfo {
   bool operator!=(const VolumeInfo &another) { return !(*this == another); }
 };
 
-struct Dataset {
+struct StructuredGrid {
   std::string name;
-  std::string variable;
-  uint32_t timestep = 0;
+  //  std::string variable;
+  //  uint32_t timestep = 0;
   VolumeInfo info{};
   std::vector<uint8_t> buffer{};
-  std::vector<uint32_t> histogram{};
 
-  enum struct Axis : uint_fast8_t { X, Y, Z };
-
-  template <typename T> auto get() -> T * {
-    return reinterpret_cast<T *>(buffer.data());
-  }
-
-  template <typename T> auto get(uint32_t index) -> T {
-    return reinterpret_cast<T *>(buffer.data())[index];
-  }
+  enum struct Axis { X, Y, Z };
 
   [[nodiscard]] auto get_slice(Axis axis, uint32_t slice) const -> Image;
 
-  [[nodiscard]] static auto Load(const char *path) -> Dataset;
-
-  void convert_data();
+  [[nodiscard]] static auto Load(const char *path) -> StructuredGrid;
 };
 
 } // namespace voxer

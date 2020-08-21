@@ -6,7 +6,7 @@
 #include <iostream>
 #include <utility>
 #include <voxer/DatasetStore.hpp>
-#include <voxer/Image.hpp>
+#include <voxer/ImageData.hpp>
 
 using namespace std;
 using namespace voxer;

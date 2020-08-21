@@ -1,7 +1,8 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <voxer/Annotation.hpp>
+#include <voxer/Data/Annotation.hpp>
+#include <voxer/Data/Image.hpp>
 
 namespace voxer {
 
