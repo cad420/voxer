@@ -59,8 +59,6 @@ struct VolumeInfo {
 
 struct StructuredGrid {
   std::string name;
-  //  std::string variable;
-  //  uint32_t timestep = 0;
   VolumeInfo info{};
   std::vector<uint8_t> buffer{};
 

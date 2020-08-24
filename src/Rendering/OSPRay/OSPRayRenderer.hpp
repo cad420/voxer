@@ -10,17 +10,23 @@ public:
   OSPRayRenderer();
   ~OSPRayRenderer() final;
 
-  void render(const Scene &scene, DatasetStore &datasets) final;
+  void set_camera(const Camera &) override;
+  void add_volume(const std::shared_ptr<Volume> &) override;
+  void add_isosurface(const std::shared_ptr<voxer::Isosurface> &) override;
+  void render() final;
   auto get_colors() -> const Image & final;
+  void clear_scene() override;
 
 private:
-  void create_osp_volume(const Dataset &dataset);
-  OSPVolume &get_osp_volume(uint32_t idx,
-                            const std::vector<SceneDataset> &scene_datasets,
-                            DatasetStore &datasets);
+  void create_osp_volume(const StructuredGrid &dataset);
+  OSPVolume &get_osp_volume(Volume *volume);
 
-  std::map<std::string, OSPVolume> osp_volume_cache{};
-  Image image{};
+  std::map<std::string, OSPVolume> m_osp_volume_cache{};
+  Image m_image{};
+  std::vector<std::shared_ptr<Volume>> m_volumes;
+  std::vector<std::shared_ptr<Isosurface>> m_isosurfaces;
+  Camera m_camera;
+
   OSPDevice osp_device = nullptr;
 };
 

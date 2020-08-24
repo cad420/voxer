@@ -4,22 +4,20 @@
 #include "Rendering/IRenderer.hpp"
 #include <EGL/egl.h>
 #include <unordered_map>
-#include <voxer/DatasetStore.hpp>
-#include <voxer/ImageData.hpp>
-#include <voxer/Scene.hpp>
+#include <voxer/Data/Image.hpp>
 
 namespace voxer {
 
 class OpenGLRenderer final : public VoxerIRenderer {
 public:
   OpenGLRenderer();
-  ~OpenGLRenderer() final;
+  ~OpenGLRenderer() override;
 
-  void render(const Scene &scene, DatasetStore &datasets) final;
-  auto get_colors() -> const Image & final;
+  void render() override;
+  auto get_colors() -> const Image & override;
 
 private:
-  GL::GLTexture create_volume(const Dataset &dataset);
+  GL::GLTexture create_volume(const StructuredGrid &dataset);
 
   Image image;
   EGLDisplay eglDpy;
@@ -34,8 +32,7 @@ private:
   GL::GLBuffer vbo;
   GL::GLBuffer ebo;
 
-  std::unordered_map<SceneDataset, GL::GLTexture, SceneDatasetHasher>
-      volume_cache;
+  std::unordered_map<StructuredGrid *, GL::GLTexture> volume_cache;
 };
 
 } // namespace voxer

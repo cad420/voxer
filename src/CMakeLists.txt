@@ -1,6 +1,5 @@
 find_package(Threads REQUIRED)
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
-include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/vmcore.cmake)
 
 list(
@@ -34,7 +33,7 @@ target_include_directories(
 )
 target_link_libraries(
     voxer_core
-    PUBLIC Threads::Threads seria::seria fmt::fmt ${CMAKE_DL_LIBS}
+    PUBLIC Threads::Threads fmt::fmt ${CMAKE_DL_LIBS}
     PRIVATE vmcore -static-libstdc++
 )
 target_compile_options(voxer_core PRIVATE -Wall -Wextra)

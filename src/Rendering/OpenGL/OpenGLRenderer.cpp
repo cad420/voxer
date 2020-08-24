@@ -8,7 +8,6 @@
 #include <VMUtils/ref.hpp>
 #include <VMat/geometry.h>
 #include <stdexcept>
-#include <voxer/utils.hpp>
 
 using namespace vm;
 using namespace std;

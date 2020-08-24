@@ -1,6 +1,7 @@
-#include <voxer/Rendering/SliceRenderer.hpp>
-#include <voxer/Data/StructuredGrid.hpp>
 #include <stdexcept>
+#include <voxer/Data/Color.hpp>
+#include <voxer/Data/StructuredGrid.hpp>
+#include <voxer/Rendering/SliceRenderer.hpp>
 
 using namespace std;
 
@@ -15,11 +16,13 @@ void SliceRenderer::set_dataset(StructuredGrid *dataset) {
 }
 
 void SliceRenderer::add_mark(StructuredGrid *dataset, const string &hex_color) {
-  auto color = hex_color_to_float(hex_color);
-  this->add_mark(dataset, color);
+  RGBColor color{};
+  color.from_hex(hex_color.c_str());
+  this->add_mark(dataset, color.data);
 }
 
-void SliceRenderer::add_mark(StructuredGrid *dataset, const array<float, 3> &color) {
+void SliceRenderer::add_mark(StructuredGrid *dataset,
+                             const array<float, 3> &color) {
   if (dataset == nullptr) {
     throw runtime_error("Invalid mark dataset");
   }

@@ -1,7 +1,6 @@
 #include "Rendering/OSPRay/OSPRayRenderer.hpp"
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
-#include <voxer/utils.hpp>
 
 using namespace std;
 
@@ -28,15 +27,27 @@ OSPRayRenderer::~OSPRayRenderer() {
   ospDeviceRelease(osp_device);
 }
 
-void OSPRayRenderer::render(const Scene &scene, DatasetStore &datasets) {
+void OSPRayRenderer::set_camera(const Camera &camera) { m_camera = camera; }
+
+void OSPRayRenderer::add_volume(const std::shared_ptr<Volume> &volume) {
+  m_volumes.emplace_back(volume);
+}
+
+void OSPRayRenderer::add_isosurface(
+    const std::shared_ptr<voxer::Isosurface> &isosurface) {
+  m_isosurfaces.emplace_back(isosurface);
+}
+
+void OSPRayRenderer::clear_scene() {
+  m_volumes.clear();
+  m_isosurfaces.clear();
+}
+
+void OSPRayRenderer::render() {
   vector<OSPInstance> osp_instances;
 
-  for (auto &volume : scene.volumes) {
-    if (!volume.render) {
-      continue;
-    }
-
-    const auto &tfcn = scene.tfcns[volume.tfcn_idx];
+  for (const auto &volume : m_volumes) {
+    const auto &tfcn = *(volume->tfcn);
     auto interpolated = interpolate_tfcn(tfcn);
 
     auto tmp = ospNewSharedData(interpolated.first.data(), OSP_FLOAT,
@@ -59,8 +70,7 @@ void OSPRayRenderer::render(const Scene &scene, DatasetStore &datasets) {
     ospSetVec2f(osp_tfcn, "valueRange", 0.0f, 255.0f);
     ospCommit(osp_tfcn);
 
-    auto &osp_volume =
-        this->get_osp_volume(volume.dataset_idx, scene.datasets, datasets);
+    auto &osp_volume = this->get_osp_volume(volume.get());
 
     auto osp_volume_model = ospNewVolumetricModel(osp_volume);
     ospSetParam(osp_volume_model, "transferFunction", OSP_TRANSFER_FUNCTION,
@@ -84,11 +94,7 @@ void OSPRayRenderer::render(const Scene &scene, DatasetStore &datasets) {
     ospRelease(group);
   }
 
-  for (auto &isosurface : scene.isosurfaces) {
-    if (!isosurface.render) {
-      continue;
-    }
-
+  for (const auto &isosurface : m_isosurfaces) {
     array<float, 2> opacity{1.0f, 1.0f};
     auto tmp = ospNewSharedData(opacity.data(), OSP_FLOAT, opacity.size());
     auto osp_opacity_data = ospNewData(OSP_FLOAT, opacity.size());
@@ -96,8 +102,8 @@ void OSPRayRenderer::render(const Scene &scene, DatasetStore &datasets) {
     ospRelease(tmp);
     ospCommit(osp_opacity_data);
 
-    auto color = hex_color_to_float(isosurface.color);
-    array<decltype(color), 2> colors{color, color};
+    auto &color = isosurface->color.data;
+    array<array<float, 3>, 2> colors{color, color};
     tmp = ospNewSharedData(colors.data(), OSP_VEC3F, colors.size());
     auto osp_colors_data = ospNewData(OSP_VEC3F, colors.size());
     ospCopyData(tmp, osp_colors_data);
