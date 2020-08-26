@@ -1,8 +1,0 @@
-//
-// Created by ukabuer on 2020.08.26.
-//
-
-#ifndef VOXER_HISTORAGMEQULIZER_HPP
-#define VOXER_HISTORAGMEQULIZER_HPP
-
-#endif // VOXER_HISTORAGMEQULIZER_HPP

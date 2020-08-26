@@ -1,4 +1,5 @@
 find_package(Threads REQUIRED)
+find_package(OpenMP REQUIRED)
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/vmcore.cmake)
 
@@ -11,6 +12,8 @@ list(
     ${CMAKE_CURRENT_SOURCE_DIR}/Data/Dataset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/differ.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/histogram.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/BlurFilter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/EqualizeFilter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/IO/MRC/MRCReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/IO/Raw/RawReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/VolumeRenderer.cpp
@@ -31,7 +34,7 @@ target_include_directories(
 )
 target_link_libraries(
     voxer_core
-    PUBLIC Threads::Threads fmt::fmt ${CMAKE_DL_LIBS}
+    PUBLIC Threads::Threads fmt::fmt OpenMP::OpenMP_CXX ${CMAKE_DL_LIBS}
     PRIVATE vmcore -static-libstdc++
 )
 target_compile_options(voxer_core PRIVATE -Wall -Wextra)
