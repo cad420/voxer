@@ -7,9 +7,7 @@
 namespace voxer {
 
 struct SliceInfo {
-  enum struct Axis { X, Y, Z };
-
-  Axis axis = Axis::X;
+  StructuredGrid::Axis axis = StructuredGrid::Axis::X;
   uint32_t index = 0;
 
   auto operator==(const SliceInfo &rhs) const -> bool {
@@ -34,7 +32,7 @@ template <> struct hash<voxer::SliceInfo> {
   size_t operator()(const voxer::SliceInfo &s) const {
     // http://stackoverflow.com/a/1646913/126995
     size_t res = 17;
-    res = res * 31 + hash<voxer::SliceInfo::Axis>()(s.axis);
+    res = res * 31 + hash<voxer::StructuredGrid::Axis>()(s.axis);
     res = res * 31 + hash<uint32_t>()(s.index);
     return res;
   }

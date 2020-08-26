@@ -1,7 +1,7 @@
 #pragma once
 #include <seria/utils.hpp>
 #include <string>
-#include <voxer/Slice.hpp>
+#include <voxer/Data/Slice.hpp>
 
 namespace voxer::remote {
 
@@ -29,4 +29,49 @@ template <> inline auto registerObject<voxer::remote::Slice>() {
                          member("annotations", &Slice::annotations));
 }
 
+template <typename T>
+std::enable_if_t<std::is_same_v<voxer::StructuredGrid::Axis, T>>
+deserialize(T &obj, const rapidjson::Value &value) {
+  using Axis = voxer::StructuredGrid::Axis;
+
+  rapidjson::Document json(rapidjson::kStringType);
+  if (!value.IsString()) {
+    throw std::runtime_error("wrong type");
+  }
+
+  std::string str = value.GetString();
+  if (str == "x") {
+    obj = Axis::X;
+  } else if (str == "y") {
+    obj = Axis::Y;
+  } else if (str == "z") {
+    obj = Axis::Z;
+  } else {
+    throw std::runtime_error("invalid value");
+  }
+}
+
+template <typename T>
+std::enable_if_t<std::is_same_v<T, voxer::StructuredGrid::Axis>,
+                 rapidjson::Document>
+serialize(const T &obj) {
+  using Axis = voxer::StructuredGrid::Axis;
+
+  rapidjson::Document json(rapidjson::kStringType);
+  switch (obj) {
+  case Axis::X:
+    json.SetString("x", 1);
+    break;
+  case Axis::Y:
+    json.SetString("y", 1);
+    break;
+  case Axis::Z:
+    json.SetString("z", 1);
+    break;
+  default:
+    break;
+  }
+
+  return json;
+}
 } // namespace seria

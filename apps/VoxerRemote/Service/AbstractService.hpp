@@ -2,6 +2,8 @@
 #include "utils.hpp"
 #include <rapidjson/document.h>
 
+namespace voxer::remote {
+
 class AbstractService : public NoCopy {
 public:
   ~AbstractService() = default;
@@ -15,3 +17,5 @@ public:
 protected:
   rapidjson::Document m_document;
 };
+
+} // namespace voxer::remote

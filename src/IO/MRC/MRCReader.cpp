@@ -1,10 +1,9 @@
-#include "MRCReader.hpp"
-#include "Datasets/Readers/conversion.hpp"
-#include "voxer/utils.hpp"
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+#include <voxer/IO/MRCReader.hpp>
+#include <voxer/IO/utils.hpp>
 
 using namespace std;
 
@@ -418,7 +417,7 @@ MRCReader::MRCReader(const string &filepath) {
   }
 }
 
-auto MRCReader::load() -> Dataset {
+auto MRCReader::load() -> std::unique_ptr<StructuredGrid> {
   std::vector<uint8_t> header_buffer;
   header_buffer.reserve(MRC_HEADER_SIZE);
 
@@ -463,19 +462,19 @@ auto MRCReader::load() -> Dataset {
     }
   }
 
-  Dataset dataset{};
-  dataset.info.dimensions = {static_cast<uint16_t>(header.nx),
-                             static_cast<uint16_t>(header.ny),
-                             static_cast<uint16_t>(header.nz)};
+  auto dataset = make_unique<StructuredGrid>();
+  dataset->info.dimensions = {static_cast<uint32_t>(header.nx),
+                              static_cast<uint32_t>(header.ny),
+                              static_cast<uint32_t>(header.nz)};
   if (header.mode == MRC_MODE_FLOAT) {
     auto total = header.nx * header.ny * header.nz;
     auto uint8_buffer = convert_float_to_uint8(
         reinterpret_cast<const float *>(data_buffer.data()), total, header.dmax,
         header.dmin);
-    dataset.info.value_type = ValueType::UINT8;
-    dataset.buffer = move(uint8_buffer);
+    dataset->info.value_type = ValueType::UINT8;
+    dataset->buffer = move(uint8_buffer);
   } else if (header.mode == MRC_MODE_BYTE) {
-    dataset.buffer = move(data_buffer);
+    dataset->buffer = move(data_buffer);
   } else {
     throw runtime_error("unsupported MRC data type");
   }
@@ -486,7 +485,8 @@ auto MRCReader::load() -> Dataset {
 auto MRCReader::load_region(__attribute__((unused))
                             const std::array<uint16_t, 3> &begin,
                             __attribute__((unused))
-                            const std::array<uint16_t, 3> &end) -> Dataset {
+                            const std::array<uint16_t, 3> &end)
+    -> std::unique_ptr<StructuredGrid> {
   // TODO: load subregion
   throw runtime_error("not support loading subregion");
 }

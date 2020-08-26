@@ -1,12 +1,13 @@
 #include "Service/VolumeRenderingService.hpp"
 #include <fmt/format.h>
 #include <seria/deserialize.hpp>
-#include <voxer/VolumeRenderer.hpp>
-#include <voxer/utils.hpp>
+#include <voxer/Rendering/VolumeRenderer.hpp>
 
 using namespace std;
 using namespace voxer;
 using namespace fmt;
+
+namespace voxer::remote {
 
 VolumeRenderingService::VolumeRenderingService() {
   m_opengl = make_unique<VolumeRenderer>(VolumeRenderer::Type::OpenGL);
@@ -20,12 +21,17 @@ void VolumeRenderingService::on_message(const char *message, uint32_t size) {
   try {
     auto command = parse(message, size);
     auto &renderer =
-        command.engine == VolumeRenderer::Type::OSPRay ? *m_ospray : *m_opengl;
-    renderer.render(command.scene, *m_datasets);
+        command.first == VolumeRenderer::Type::OSPRay ? *m_ospray : *m_opengl;
+
+    traverse_scene(renderer, command.second);
+
+    renderer.render();
     auto &image = renderer.get_colors();
+
     auto compressed = Image::encode(image, Image::Format::JPEG);
     m_send(reinterpret_cast<const uint8_t *>(compressed.data.data()),
            compressed.data.size(), true);
+    renderer.clear_scene();
   } catch (exception &e) {
     auto error_msg = fmt::format(R"({{"error": "{}"}})", e.what());
     m_send(reinterpret_cast<const uint8_t *>(error_msg.data()),
@@ -34,7 +40,7 @@ void VolumeRenderingService::on_message(const char *message, uint32_t size) {
 }
 
 auto VolumeRenderingService::parse(const char *message, uint32_t size)
-    -> Command {
+    -> pair<VolumeRenderer::Type, Scene> {
   m_document.Parse(message, size);
 
   if (!m_document.IsObject()) {
@@ -68,9 +74,56 @@ auto VolumeRenderingService::parse(const char *message, uint32_t size)
   }
   auto params = it->value.GetObject();
 
-  if (command_type == "render") {
-    return {engine, Scene::deserialize(params)};
+  voxer::remote::Scene scene{};
+  seria::deserialize(scene, params);
+  return make_pair(engine, scene);
+}
+
+void VolumeRenderingService::traverse_scene(VolumeRenderer &renderer,
+                                            const Scene &scene) const {
+  renderer.set_camera(scene.camera);
+
+  unordered_map<uint32_t, shared_ptr<voxer::TransferFunction>> tfcns_map;
+
+  for (auto &volume_desc : scene.volumes) {
+    if (!volume_desc.render) {
+      continue;
+    }
+
+    auto &dataset_desc = scene.datasets[volume_desc.dataset_idx];
+    auto &dataset = m_datasets->get(dataset_desc);
+
+    auto volume = make_shared<voxer::Volume>();
+    volume->dataset = dataset;
+
+    if (tfcns_map.find(volume_desc.tfcn_idx) == tfcns_map.end()) {
+      auto tfcn = make_shared<voxer::TransferFunction>();
+      auto &tfcn_desc = scene.tfcns[volume_desc.tfcn_idx];
+      auto data = interpolate_tfcn(tfcn_desc);
+      tfcn->opacities = move(data.first);
+      tfcn->colors = move(data.second);
+      tfcns_map.emplace(volume_desc.tfcn_idx, move(tfcn));
+    } else {
+      volume->tfcn = tfcns_map[volume_desc.tfcn_idx];
+    }
+
+    renderer.add_volume(volume);
   }
 
-  throw runtime_error("invalid JSON: unknown command type");
+  for (auto &isosurface_desc : scene.isosurfaces) {
+    if (!isosurface_desc.render) {
+      continue;
+    }
+
+    auto &dataset_desc = scene.datasets[isosurface_desc.dataset_idx];
+    auto &dataset = m_datasets->get(dataset_desc);
+
+    auto isosurface = make_shared<voxer::Isosurface>();
+    isosurface->dataset = dataset;
+    isosurface->color.from_hex(isosurface_desc.color.c_str());
+    isosurface->value = isosurface_desc.value;
+    renderer.add_isosurface(isosurface);
+  }
 }
+
+} // namespace voxer::remote

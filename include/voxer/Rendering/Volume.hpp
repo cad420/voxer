@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdint>
 #include <memory>
-#include <rapidjson/document.h>
 #include <string>
 #include <voxer/Data/StructuredGrid.hpp>
 #include <voxer/Data/TransferFunction.hpp>

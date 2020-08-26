@@ -1,7 +1,7 @@
-#include "IO/MRC/MRCReader.hpp"
-#include "IO/Raw/RawReader.hpp"
 #include <voxer/Data/StructuredGrid.hpp>
-#include <voxer/utils.hpp>
+#include <voxer/IO/MRCReader.hpp>
+#include <voxer/IO/RawReader.hpp>
+#include <voxer/IO/utils.hpp>
 
 using namespace std;
 
@@ -18,8 +18,8 @@ auto StructuredGrid::get_slice(Axis axis, uint32_t slice) const -> Image {
     result.width = info.dimensions[1];
     result.height = info.dimensions[2];
     result.data.reserve(result.width * result.height * sizeof(uint8_t));
-    for (int z = 0; z < info.dimensions[2]; z++) {
-      for (int y = 0; y < info.dimensions[1]; y++) {
+    for (uint32_t z = 0; z < info.dimensions[2]; z++) {
+      for (uint32_t y = 0; y < info.dimensions[1]; y++) {
         auto idx = slice + y * info.dimensions[0] +
                    z * info.dimensions[0] * info.dimensions[1];
         result.data.emplace_back(buffer[idx]);
@@ -34,8 +34,8 @@ auto StructuredGrid::get_slice(Axis axis, uint32_t slice) const -> Image {
     result.width = info.dimensions[0];
     result.height = info.dimensions[2];
     result.data.reserve(result.width * result.height * sizeof(uint8_t));
-    for (int z = 0; z < info.dimensions[2]; z++) {
-      for (int x = 0; x < info.dimensions[0]; x++) {
+    for (uint32_t z = 0; z < info.dimensions[2]; z++) {
+      for (uint32_t x = 0; x < info.dimensions[0]; x++) {
         auto idx = x + slice * info.dimensions[0] +
                    z * info.dimensions[0] * info.dimensions[1];
         result.data.emplace_back(buffer[idx]);
@@ -50,8 +50,8 @@ auto StructuredGrid::get_slice(Axis axis, uint32_t slice) const -> Image {
     result.width = info.dimensions[0];
     result.height = info.dimensions[1];
     result.data.reserve(result.width * result.height * sizeof(uint8_t));
-    for (int y = 0; y < info.dimensions[1]; y++) {
-      for (int x = 0; x < info.dimensions[0]; x++) {
+    for (uint32_t y = 0; y < info.dimensions[1]; y++) {
+      for (uint32_t x = 0; x < info.dimensions[0]; x++) {
         auto idx = x + y * info.dimensions[0] +
                    slice * info.dimensions[0] * info.dimensions[1];
         result.data.emplace_back(buffer[idx]);
@@ -66,9 +66,9 @@ auto StructuredGrid::get_slice(Axis axis, uint32_t slice) const -> Image {
   return result;
 }
 
-auto StructuredGrid::Load(const char *path) -> StructuredGrid {
+auto StructuredGrid::Load(const char *path) -> std::shared_ptr<StructuredGrid> {
   auto ext = get_file_extension(path);
-  if (ext == ".json") {
+  if (ext == ".raw") {
     RawReader reader(path);
     return reader.load();
   }

@@ -1,15 +1,14 @@
-#include "CommandParser.hpp"
-#include "service/DatasetService.hpp"
-#include "service/SliceService.hpp"
-#include "service/VolumeRenderingService.hpp"
+#include "Service/DatasetService.hpp"
+#include "Service/SliceService.hpp"
+#include "Service/VolumeRenderingService.hpp"
+#include "Store/DatasetStore.hpp"
 #include "uWebSockets/App.h"
 #include <iostream>
 #include <utility>
-#include <voxer/DatasetStore.hpp>
-#include <voxer/ImageData.hpp>
+#include <voxer/Data/Image.hpp>
 
 using namespace std;
-using namespace voxer;
+using namespace voxer::remote;
 
 struct UserData {};
 
@@ -23,8 +22,10 @@ int main(int argc, const char **argv) {
   SliceService slice_service{};
   slice_service.m_datasets = &datasets;
 
-  vector<AbstractService *> services{&dataset_service,
-                                     &volume_rendering_service, &slice_service};
+  vector<AbstractService *> services{};
+  services.emplace_back(&dataset_service);
+  services.emplace_back(&volume_rendering_service);
+  services.emplace_back(&volume_rendering_service);
 
   auto app = uWS::App();
 

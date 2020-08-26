@@ -18,10 +18,10 @@ public:
   void clear_scene() override;
 
 private:
-  void create_osp_volume(const StructuredGrid &dataset);
-  OSPVolume &get_osp_volume(Volume *volume);
+  void create_osp_volume(StructuredGrid *volume);
+  OSPVolume &get_osp_volume(StructuredGrid *volume);
 
-  std::map<std::string, OSPVolume> m_osp_volume_cache{};
+  std::map<StructuredGrid *, OSPVolume> m_osp_volume_cache{};
   Image m_image{};
   std::vector<std::shared_ptr<Volume>> m_volumes;
   std::vector<std::shared_ptr<Isosurface>> m_isosurfaces;

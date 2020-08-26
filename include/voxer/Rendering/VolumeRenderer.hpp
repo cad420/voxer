@@ -16,8 +16,9 @@ public:
   ~VolumeRenderer();
 
   void set_camera(const Camera &);
-  void add_volume(const Volume &volume);
-  void add_isosurface(const Isosurface &isosurface);
+  void add_volume(const std::shared_ptr<Volume> &volume);
+  void add_isosurface(const std::shared_ptr<Isosurface> &isosurface);
+  void clear_scene();
 
   void render() const;
 

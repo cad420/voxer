@@ -14,7 +14,7 @@ add_executable(
     Service/SliceService.cpp
     Service/VolumeRenderingService.cpp
     Store/DatasetStore.cpp
-    Store/PipelineStore.cpp
+#    Store/PipelineStore.cpp
 )
 target_include_directories(
     VoxerRemote

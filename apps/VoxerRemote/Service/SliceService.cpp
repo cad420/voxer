@@ -1,17 +1,17 @@
 #include "Service/SliceService.hpp"
-#include <voxer/utils.hpp>
-#include <voxer/Slice.hpp>
+#include "DataModel/Slice.hpp"
 #include <seria/deserialize.hpp>
 
 using namespace voxer;
 using namespace std;
+
+namespace voxer::remote {
 
 void SliceService::on_message(const char *message, uint32_t size) {
   m_document.Parse(message, size);
 
   if (!m_document.IsObject()) {
     throw std::runtime_error("root should be an object");
-    return;
   }
 
   auto params = m_document.GetObject();
@@ -21,19 +21,31 @@ void SliceService::on_message(const char *message, uint32_t size) {
 
   std::string type = params["type"].GetString();
   if (type == "slice") {
-    SliceInfo slice{};
+    Slice slice{};
     seria::deserialize(slice, params);
-    auto image = get_dataset_slice(slice.dataset_id, slice.axis, slice.index);
-    cb(reinterpret_cast<const uint8_t *>(image.data.data()), image.data.size(),
-       true);
-    auto it = annotation_store.find(slice);
-    if (it != annotation_store.end()) {
-      auto json = it->second.serialize();
-      auto result =
-          std::string(R"({"type":"annotation","data":)") + json + R"(})";
-      cb(reinterpret_cast<const uint8_t *>(result.data()), result.size(),
-         false);
-    }
-    return;
+    auto image = get_dataset_slice(slice.dataset, slice.axis, slice.index);
+    m_send(reinterpret_cast<const uint8_t *>(image.data.data()),
+           image.data.size(), true);
+    //    auto it = annotation_store.find(slice);
+    //    if (it != annotation_store.end()) {
+    //      auto json = seria::serialize(it->second);
+    //      auto result =
+    //          std::string(R"({"type":"annotation","data":)") + json + R"(})";
+    //      cb(reinterpret_cast<const uint8_t *>(result.data()), result.size(),
+    //         false);
+    //    }
+    //    return;
   }
 }
+
+auto SliceService::get_dataset_slice(const std::string &name,
+                                     StructuredGrid::Axis axis,
+                                     uint32_t index) const -> Image {
+  voxer::remote::Dataset dataset_desc{name, "default", 0};
+  auto dataset = m_datasets->get(dataset_desc);
+  auto image = dataset->get_slice(axis, index);
+  auto jpeg = Image::encode(image, Image::Format::JPEG);
+  return jpeg;
+}
+
+} // namespace voxer::remote

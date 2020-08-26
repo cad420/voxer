@@ -1,40 +1,43 @@
 #pragma once
-#include "DataModel/StructuredGrid.hpp"
+#include "DataModel/Dataset.hpp"
 #include <array>
-#include <map>
 #include <memory>
 #include <rapidjson/document.h>
 #include <string>
-#include <voxer/Dataset.hpp>
+#include <unordered_map>
+#include <voxer/Data/StructuredGrid.hpp>
 
-namespace voxer {
+namespace voxer::remote {
 
 class DatasetStore {
   using TimestepLookUpTable = std::vector<uint32_t>;
   using VariableLookUpTable = std::map<std::string, TimestepLookUpTable>;
 
 public:
-  void load();
   void load_from_file(const std::string &filepath);
   void load_from_json(const char *json, uint32_t size);
   void load_one(const rapidjson::Value &json);
   void add_from_json(const char *text, uint32_t size);
-  auto get(const std::string &name, const std::string &variable = "",
-           uint32_t timestep = 0) const -> const voxer::Dataset &;
-  [[nodiscard]] auto get_or_create(const Dataset &scene_dataset,
-                                   const std::vector<Dataset> &scene_datasets)
-      -> const voxer::Dataset &;
-  [[nodiscard]] auto get() const -> const std::vector<voxer::Dataset> & {
-    return datasets;
+  [[nodiscard]] auto get(const voxer::remote::Dataset &desc) const
+      -> const std::shared_ptr<voxer::StructuredGrid> &;
+  //  [[nodiscard]] auto
+  //  get_or_create(const voxer::remote::Dataset &scene_dataset,
+  //                const std::vector<voxer::remote::Dataset> &scene_datasets)
+  //      -> const voxer::remote::Dataset &;
+  [[nodiscard]] auto get() const
+      -> const std::unordered_map<voxer::remote::Dataset,
+                                  std::shared_ptr<voxer::StructuredGrid>> & {
+    return m_datasets;
   }
-  [[nodiscard]] auto print() const -> std::string;
+  //  [[nodiscard]] auto print() const -> std::string;
 
 private:
-  std::string path = "./datasets.json";
-  rapidjson::Document document;
-  std::vector<voxer::Dataset> datasets;
-  std::map<std::string, voxer::Dataset> temp_datasets;
-  std::map<std::string, VariableLookUpTable> lookup_table;
+  rapidjson::Document m_document;
+  std::unordered_map<std::string, std::shared_ptr<voxer::StructuredGrid>>
+      m_temp_datasets;
+  std::unordered_map<voxer::remote::Dataset,
+                     std::shared_ptr<voxer::StructuredGrid>>
+      m_datasets;
 };
 
-} // namespace voxer
+} // namespace voxer::remote

@@ -13,7 +13,7 @@ using Camera = voxer::Camera;
 
 namespace seria {
 
-template <> auto registerObject<voxer::remote::Camera>() {
+template <> inline auto registerObject<voxer::remote::Camera>() {
   using Camera = voxer::remote::Camera;
   return std::make_tuple(
       member("width", &Camera::width), member("height", &Camera::height),

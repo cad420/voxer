@@ -1,6 +1,5 @@
 #pragma once
 #include <array>
-#include <rapidjson/document.h>
 #include <vector>
 #include <voxer/Data/Color.hpp>
 
@@ -15,7 +14,7 @@ struct ControlPoint {
 
 struct TransferFunction {
   std::vector<float> opacities;
-  std::vector<float> colors;
+  std::vector<std::array<float, 3>> colors;
 };
 
 auto interpolate_tfcn(const TransferFunction &tf)

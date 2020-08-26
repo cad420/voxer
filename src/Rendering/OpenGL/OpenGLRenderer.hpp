@@ -13,17 +13,25 @@ public:
   OpenGLRenderer();
   ~OpenGLRenderer() override;
 
-  void render() override;
-  auto get_colors() -> const Image & override;
+  void set_camera(const Camera &) override;
+  void add_volume(const std::shared_ptr<Volume> &) override;
+  void add_isosurface(const std::shared_ptr<voxer::Isosurface> &) override;
+  void render() final;
+  auto get_colors() -> const Image & final;
+  void clear_scene() override;
 
 private:
-  GL::GLTexture create_volume(const StructuredGrid &dataset);
+  GL::GLTexture create_volume(StructuredGrid *dataset);
 
   Image image;
   EGLDisplay eglDpy;
   uint32_t width;
   uint32_t height;
   std::shared_ptr<GLContext> gl;
+
+  Camera m_camera;
+  std::vector<std::shared_ptr<Volume>> m_volumes;
+  std::vector<std::shared_ptr<Isosurface>> m_isosurfaces;
 
   GL::GLProgram positionGenerateProgram;
   GL::GLProgram raycastingProgram;

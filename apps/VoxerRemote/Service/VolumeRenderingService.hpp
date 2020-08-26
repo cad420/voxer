@@ -1,17 +1,16 @@
 #pragma once
+#include "DataModel/Scene.hpp"
 #include "Service/AbstractService.hpp"
+#include "Store/DatasetStore.hpp"
 #include "utils.hpp"
 #include <future>
 #include <memory>
-#include <voxer/VolumeRenderer.hpp>
+#include <voxer/Rendering/VolumeRenderer.hpp>
+
+namespace voxer::remote {
 
 class VolumeRenderingService final : public AbstractService {
 public:
-  struct Command {
-    voxer::VolumeRenderer::Type engine = voxer::VolumeRenderer::Type::OSPRay;
-    voxer::Scene scene{};
-  };
-
   VolumeRenderingService();
 
   void on_message(const char *message, uint32_t size) final;
@@ -20,11 +19,16 @@ public:
     return "/rendering";
   }
 
-  voxer::DatasetStore *m_datasets = nullptr;
+  voxer::remote::DatasetStore *m_datasets = nullptr;
 
 private:
   std::unique_ptr<voxer::VolumeRenderer> m_opengl;
   std::unique_ptr<voxer::VolumeRenderer> m_ospray;
 
-  auto parse(const char *message, uint32_t size) -> Command;
+  void traverse_scene(VolumeRenderer &renderer, const Scene &scene) const;
+
+  auto parse(const char *message, uint32_t size)
+      -> std::pair<VolumeRenderer::Type, Scene>;
 };
+
+} // namespace voxer::remote

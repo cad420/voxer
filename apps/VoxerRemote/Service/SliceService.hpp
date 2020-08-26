@@ -1,9 +1,10 @@
 #pragma once
 #include "Service/AbstractService.hpp"
 #include "Store/DatasetStore.hpp"
-#include <rapidjson/document.h>
 #include <voxer/Data/Annotation.hpp>
 #include <voxer/Data/Slice.hpp>
+
+namespace voxer::remote {
 
 class SliceService final : public AbstractService {
 public:
@@ -11,7 +12,16 @@ public:
 
   [[nodiscard]] auto get_path() const -> std::string final { return "/slice"; }
 
-  voxer::DatasetStore *m_datasets = nullptr;
+  [[nodiscard]] auto get_dataset_slice(const std::string &id,
+                                       voxer::StructuredGrid::Axis axis,
+                                       uint32_t index) const -> Image;
+
+  DatasetStore *m_datasets = nullptr;
+
+private:
+  rapidjson::Document m_document;
   std::unordered_map<voxer::SliceInfo, voxer::AnnotatedSliceInfo>
       annotation_store;
 };
+
+} // namespace voxer::remote

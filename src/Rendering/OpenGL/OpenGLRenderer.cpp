@@ -8,6 +8,7 @@
 #include <VMUtils/ref.hpp>
 #include <VMat/geometry.h>
 #include <stdexcept>
+#include <voxer/Data/TransferFunction.hpp>
 
 using namespace vm;
 using namespace std;
@@ -248,7 +249,7 @@ OpenGLRenderer::OpenGLRenderer() : width(400), height(400) {
 
 OpenGLRenderer::~OpenGLRenderer() { eglTerminate(eglDpy); }
 
-void OpenGLRenderer::render(const Scene &scene, DatasetStore &datasets) {
+void OpenGLRenderer::render() {
   auto render_volume = false;
   auto render_isosurface = false;
   auto isovalue = 0.0f;
@@ -259,20 +260,20 @@ void OpenGLRenderer::render(const Scene &scene, DatasetStore &datasets) {
   Transform ModelTransform;
   ModelTransform.SetIdentity();
 
-  for (auto &isosurface : scene.isosurfaces) {
-    if (!isosurface.render || render_isosurface) {
+  for (auto &isosurface : m_isosurfaces) {
+    if (render_isosurface) {
       continue;
     }
     render_isosurface = true;
-    isovalue = isosurface.value;
+    isovalue = isosurface->value;
 
-    auto color = hex_color_to_float(isosurface.color);
-    isosurface_color = color;
+    isosurface_color = isosurface->color.data;
     vector<array<float, 4>> tfcn_data(256);
     // TODO: inefficient
     for (size_t i = 0; i < tfcn_data.size(); i++) {
       auto opacity = i >= 1 && i < 5 ? 1.0f : 0.0f;
-      tfcn_data[i] = {color[0], color[1], color[2], opacity};
+      tfcn_data[i] = {isosurface_color[0], isosurface_color[1],
+                      isosurface_color[2], opacity};
     }
 
     // Create transfer function texture
@@ -288,33 +289,29 @@ void OpenGLRenderer::render(const Scene &scene, DatasetStore &datasets) {
     textures.emplace_back(move(tfcn_texture));
 
     // Create Volume Texture
-    auto &scene_dataset = scene.datasets[isosurface.dataset_idx];
-    auto &dataset = datasets.get_or_create(scene_dataset, scene.datasets);
-    auto &dimensions = dataset.info.dimensions;
+    auto &dataset = isosurface->dataset;
+    auto &dimensions = dataset->info.dimensions;
     ModelTransform = Scale(dimensions[0], dimensions[1], dimensions[2]) *
                      Translate(-0.5f, -0.5f, -0.5f);
 
-    auto it = volume_cache.find(scene_dataset);
+    auto it = volume_cache.find(dataset.get());
     if (it != volume_cache.end()) {
       GL_EXPR(glBindTextureUnit(1, it->second));
     } else {
-      auto volume_texture = this->create_volume(dataset);
+      auto volume_texture = this->create_volume(dataset.get());
       GL_EXPR(glBindTextureUnit(1, volume_texture));
-      volume_cache.emplace(scene_dataset, move(volume_texture));
+      volume_cache.emplace(dataset.get(), move(volume_texture));
     }
 
-    assert(volume_cache[scene_dataset].Valid());
+    assert(volume_cache[dataset.get()].Valid());
   }
 
   if (!render_isosurface) {
-    for (auto &volume : scene.volumes) {
-      if (!volume.render)
-        continue;
-
+    for (auto &volume : m_volumes) {
       render_volume = true;
 
-      auto &tfcn = scene.tfcns[volume.tfcn_idx];
-      auto interploted = interpolate_tfcn(tfcn);
+      auto &tfcn = volume->tfcn;
+      auto interploted = interpolate_tfcn(*tfcn);
       vector<array<float, 4>> tfcn_data(interploted.first.size());
       // TODO: inefficient
       for (size_t i = 0; i < tfcn_data.size(); i++) {
@@ -335,25 +332,24 @@ void OpenGLRenderer::render(const Scene &scene, DatasetStore &datasets) {
       textures.emplace_back(move(tfcn_texture));
 
       // Create Volume Texture
-      auto &scene_dataset = scene.datasets[volume.dataset_idx];
-      auto &dataset = datasets.get_or_create(scene_dataset, scene.datasets);
-      auto &dimensions = dataset.info.dimensions;
+      auto &dataset = volume->dataset;
+      auto &dimensions = dataset->info.dimensions;
       ModelTransform = Scale(dimensions[0], dimensions[1], dimensions[2]) *
                        Translate(-0.5f, -0.5f, -0.5f);
 
-      auto it = volume_cache.find(scene_dataset);
+      auto it = volume_cache.find(dataset.get());
       if (it != volume_cache.end()) {
         GL_EXPR(glBindTextureUnit(1, it->second));
       } else {
-        auto volume_texture = this->create_volume(dataset);
+        auto volume_texture = this->create_volume(dataset.get());
         GL_EXPR(glBindTextureUnit(1, volume_texture));
-        volume_cache.emplace(scene_dataset, move(volume_texture));
+        volume_cache.emplace(dataset.get(), move(volume_texture));
       }
-      assert(volume_cache[scene_dataset].Valid());
+      assert(volume_cache[dataset.get()].Valid());
     }
   }
 
-  auto &camera = scene.camera;
+  auto &camera = m_camera;
   width = camera.width;
   height = camera.height;
 
@@ -494,8 +490,8 @@ auto OpenGLRenderer::get_colors() -> const Image & {
   return image;
 }
 
-GL::GLTexture OpenGLRenderer::create_volume(const Dataset &dataset) {
-  auto &dimensions = dataset.info.dimensions;
+GL::GLTexture OpenGLRenderer::create_volume(StructuredGrid *dataset) {
+  auto &dimensions = dataset->info.dimensions;
 
   auto volume_texture = gl->CreateTexture(GL_TEXTURE_3D);
   assert(volume_texture.Valid());
@@ -509,7 +505,7 @@ GL::GLTexture OpenGLRenderer::create_volume(const Dataset &dataset) {
                              dimensions[1], dimensions[2]));
   GL_EXPR(glTextureSubImage3D(volume_texture, 0, 0, 0, 0, dimensions[0],
                               dimensions[1], dimensions[2], GL_RED,
-                              GL_UNSIGNED_BYTE, dataset.buffer.data()));
+                              GL_UNSIGNED_BYTE, dataset->buffer.data()));
   return volume_texture;
 }
 

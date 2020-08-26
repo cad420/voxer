@@ -5,9 +5,9 @@
 namespace voxer::remote {
 
 struct Isosurface {
-  float value = 0.0f;
   int32_t dataset_idx = -1;
   std::string color = "#FF0000";
+  float value = 0.0f;
   bool render = true;
 };
 

@@ -81,8 +81,8 @@ Image SliceRenderer::render(StructuredGrid::Axis axis, uint32_t slice) const {
     result.height = m_info.dimensions[2];
     result.data.resize(result.width * result.height * result.channels *
                        sizeof(uint8_t));
-    for (int z = 0; z < m_info.dimensions[2]; z++) {
-      for (int y = 0; y < m_info.dimensions[1]; y++) {
+    for (uint32_t z = 0; z < m_info.dimensions[2]; z++) {
+      for (uint32_t y = 0; y < m_info.dimensions[1]; y++) {
         auto voxel_idx = slice + y * m_info.dimensions[0] +
                          z * m_info.dimensions[0] * m_info.dimensions[1];
         auto pixel_idx = (y + z * result.width) * result.channels;
@@ -99,8 +99,8 @@ Image SliceRenderer::render(StructuredGrid::Axis axis, uint32_t slice) const {
     result.height = m_info.dimensions[2];
     result.data.reserve(result.width * result.height * result.channels *
                         sizeof(uint8_t));
-    for (int z = 0; z < m_info.dimensions[2]; z++) {
-      for (int x = 0; x < m_info.dimensions[0]; x++) {
+    for (uint32_t z = 0; z < m_info.dimensions[2]; z++) {
+      for (uint32_t x = 0; x < m_info.dimensions[0]; x++) {
         auto voxel_idx = x + slice * m_info.dimensions[0] +
                          z * m_info.dimensions[0] * m_info.dimensions[1];
         auto pixel_idx = (x + z * result.width) * result.channels;
@@ -117,8 +117,8 @@ Image SliceRenderer::render(StructuredGrid::Axis axis, uint32_t slice) const {
     result.height = m_info.dimensions[1];
     result.data.reserve(result.width * result.height * result.channels *
                         sizeof(uint8_t));
-    for (int y = 0; y < m_info.dimensions[1]; y++) {
-      for (int x = 0; x < m_info.dimensions[0]; x++) {
+    for (uint32_t y = 0; y < m_info.dimensions[1]; y++) {
+      for (uint32_t x = 0; x < m_info.dimensions[0]; x++) {
         auto voxel_idx = x + y * m_info.dimensions[0] +
                          slice * m_info.dimensions[0] * m_info.dimensions[1];
         auto pixel_idx = (x + y * result.width) * result.channels;

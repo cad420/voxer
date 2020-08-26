@@ -62,4 +62,17 @@ inline auto get_file_name(const std::string &filepath) -> std::string {
   return filepath.substr(begin, end - begin);
 }
 
+inline auto split(const std::string &s, const std::string &delimiter = " ")
+    -> std::vector<std::string> {
+  std::vector<std::string> tokens;
+  auto last_pos = s.find_first_not_of(delimiter, 0);
+  auto pos = s.find_first_of(delimiter, last_pos);
+  while (pos != std::string::npos || last_pos != std::string::npos) {
+    tokens.push_back(s.substr(last_pos, pos - last_pos));
+    last_pos = s.find_first_not_of(delimiter, pos);
+    pos = s.find_first_of(delimiter, last_pos);
+  }
+  return tokens;
+}
+
 } // namespace voxer

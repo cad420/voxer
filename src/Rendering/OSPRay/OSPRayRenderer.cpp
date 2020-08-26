@@ -70,7 +70,7 @@ void OSPRayRenderer::render() {
     ospSetVec2f(osp_tfcn, "valueRange", 0.0f, 255.0f);
     ospCommit(osp_tfcn);
 
-    auto &osp_volume = this->get_osp_volume(volume.get());
+    auto &osp_volume = this->get_osp_volume(volume->dataset.get());
 
     auto osp_volume_model = ospNewVolumetricModel(osp_volume);
     ospSetParam(osp_volume_model, "transferFunction", OSP_TRANSFER_FUNCTION,
@@ -116,15 +116,14 @@ void OSPRayRenderer::render() {
     ospSetVec2f(osp_tfcn, "valueRange", 0.0f, 255.0f);
     ospCommit(osp_tfcn);
 
-    auto &osp_volume =
-        this->get_osp_volume(isosurface.dataset_idx, scene.datasets, datasets);
+    auto &osp_volume = this->get_osp_volume(isosurface->dataset.get());
     auto osp_volume_model = ospNewVolumetricModel(osp_volume);
     ospSetParam(osp_volume_model, "transferFunction", OSP_TRANSFER_FUNCTION,
                 &osp_tfcn);
     ospCommit(osp_volume_model);
 
     auto osp_isosurface = ospNewGeometry("isosurface");
-    ospSetFloat(osp_isosurface, "isovalue", isosurface.value);
+    ospSetFloat(osp_isosurface, "isovalue", isosurface->value);
     ospSetParam(osp_isosurface, "volume", OSP_VOLUMETRIC_MODEL,
                 &osp_volume_model);
     ospCommit(osp_isosurface);
@@ -159,7 +158,7 @@ void OSPRayRenderer::render() {
   ospSetObjectAsData(osp_world, "light", OSP_LIGHT, osp_light);
   ospCommit(osp_world);
 
-  auto &camera = scene.camera;
+  auto &camera = m_camera;
   auto osp_camera = ospNewCamera("perspective");
   ospSetFloat(osp_camera, "fovy", 45.0f);
   ospSetFloat(osp_camera, "aspect",
@@ -194,10 +193,10 @@ void OSPRayRenderer::render() {
       ospMapFrameBuffer(osp_framebuffer, OSP_FB_COLOR));
   // TODO: better way to get framebuffer data
   vector<unsigned char> data(fb, fb + camera.width * camera.height * 4);
-  image.width = camera.width;
-  image.height = camera.height;
-  image.channels = 4;
-  image.data = move(data);
+  m_image.width = camera.width;
+  m_image.height = camera.height;
+  m_image.channels = 4;
+  m_image.data = move(data);
   ospUnmapFrameBuffer(reinterpret_cast<const void *>(fb), osp_framebuffer);
 
   for (auto &osp_instance : osp_instances) {
@@ -211,15 +210,15 @@ void OSPRayRenderer::render() {
   ospRelease(osp_world);
 }
 
-auto OSPRayRenderer::get_colors() -> const Image & { return image; }
+auto OSPRayRenderer::get_colors() -> const Image & { return m_image; }
 
-void OSPRayRenderer::create_osp_volume(const Dataset &dataset) {
-  auto &info = dataset.info;
+void OSPRayRenderer::create_osp_volume(StructuredGrid *dataset) {
+  auto &info = dataset->info;
   auto &dimensions = info.dimensions;
 
   // TODO: handle datasets created by differing
   auto osp_volume_data =
-      ospNewSharedData(dataset.buffer.data(), OSP_UCHAR, dimensions[0], 0,
+      ospNewSharedData(dataset->buffer.data(), OSP_UCHAR, dimensions[0], 0,
                        dimensions[1], 0, dimensions[2], 0);
   ospCommit(osp_volume_data);
 
@@ -233,19 +232,14 @@ void OSPRayRenderer::create_osp_volume(const Dataset &dataset) {
   ospSetVec3f(osp_volume, "gridSpacing", 1.0f, 1.0f, 1.0f);
   ospCommit(osp_volume);
 
-  osp_volume_cache.emplace(dataset.id, osp_volume);
+  m_osp_volume_cache.emplace(dataset, osp_volume);
 }
 
-OSPVolume &
-OSPRayRenderer::get_osp_volume(uint32_t idx,
-                               const vector<SceneDataset> &scene_datasets,
-                               DatasetStore &datasets) {
-  auto &scene_dataset = scene_datasets[idx];
-  const auto &dataset = datasets.get_or_create(scene_dataset, scene_datasets);
-  auto it = this->osp_volume_cache.find(dataset.id);
-  if (it == this->osp_volume_cache.end()) {
+OSPVolume &OSPRayRenderer::get_osp_volume(StructuredGrid *dataset) {
+  auto it = this->m_osp_volume_cache.find(dataset);
+  if (it == this->m_osp_volume_cache.end()) {
     this->create_osp_volume(dataset);
-    it = this->osp_volume_cache.find(dataset.id);
+    it = this->m_osp_volume_cache.find(dataset);
   }
   return it->second;
 }

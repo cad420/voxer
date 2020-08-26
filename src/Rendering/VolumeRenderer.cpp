@@ -61,4 +61,19 @@ auto VolumeRenderer::get_colors() -> const Image & {
   return this->impl->get_colors();
 }
 
+void VolumeRenderer::set_camera(const Camera &camera) {
+  this->impl->set_camera(camera);
+}
+
+void VolumeRenderer::add_volume(const std::shared_ptr<Volume> &volume) {
+  return this->impl->add_volume(volume);
+}
+
+void VolumeRenderer::add_isosurface(
+    const std::shared_ptr<Isosurface> &isosurface) {
+  return this->impl->add_isosurface(isosurface);
+}
+
+void VolumeRenderer::clear_scene() { this->impl->clear_scene(); }
+
 } // namespace voxer

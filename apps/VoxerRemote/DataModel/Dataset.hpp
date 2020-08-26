@@ -27,3 +27,17 @@ template <> inline auto registerObject<voxer::remote::Dataset>() {
 }
 
 } // namespace seria
+
+namespace std {
+template <> struct hash<voxer::remote::Dataset> {
+  size_t operator()(const voxer::remote::Dataset &s) const {
+    // Compute individual hash values for first, second and third
+    // http://stackoverflow.com/a/1646913/126995
+    size_t res = 17;
+    res = res * 31 + hash<string>()(s.name);
+    res = res * 31 + hash<string>()(s.variable);
+    res = res * 31 + hash<uint32_t>()(s.timestep);
+    return res;
+  }
+};
+} // namespace std

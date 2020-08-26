@@ -1,4 +1,3 @@
-#pragma once
 #include <voxer/Data/Annotation.hpp>
 
 namespace voxer {

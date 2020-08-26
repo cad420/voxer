@@ -1,7 +1,7 @@
 #pragma once
 #include "DataModel/Camera.hpp"
+#include "DataModel/Dataset.hpp"
 #include "DataModel/Isosurface.hpp"
-#include "DataModel/StructuredGrid.hpp"
 #include "DataModel/TransferFunction.hpp"
 #include "DataModel/Volume.hpp"
 #include <seria/utils.hpp>
@@ -11,7 +11,7 @@
 namespace voxer::remote {
 
 struct Scene {
-  std::vector<SceneDataset> datasets;
+  std::vector<Dataset> datasets;
   std::vector<TransferFunction> tfcns;
   std::vector<Volume> volumes;
   std::vector<Isosurface> isosurfaces;

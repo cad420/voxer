@@ -1,7 +1,9 @@
 #pragma once
 #include "Service/AbstractService.hpp"
+#include "Store/DatasetStore.hpp"
 #include <string>
-#include <voxer/DatasetStore.hpp>
+
+namespace voxer::remote {
 
 class DatasetService final : public AbstractService {
 public:
@@ -11,8 +13,10 @@ public:
     return "/datasets";
   }
 
-  voxer::DatasetStore *m_datasets = nullptr;
+  voxer::remote::DatasetStore *m_datasets = nullptr;
 
 private:
   void load_dataset(const char *json, uint32_t size);
 };
+
+} // namespace voxer::remote

@@ -2,6 +2,7 @@
 #include <array>
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include <voxer/Data/Image.hpp>
@@ -27,7 +28,7 @@ struct VolumeInfo {
   // only support scalar field
   // VolumeType type = VolumeType::SCALAR;
   ValueType value_type = ValueType::UINT8;
-  std::array<uint16_t, 3> dimensions{0, 0, 0};
+  std::array<uint32_t, 3> dimensions{0, 0, 0};
   uint32_t component = 1;
   [[nodiscard]] auto value_type_size() const -> uint8_t {
     return static_cast<uint8_t>(value_type);
@@ -66,7 +67,8 @@ struct StructuredGrid {
 
   [[nodiscard]] auto get_slice(Axis axis, uint32_t slice) const -> Image;
 
-  [[nodiscard]] static auto Load(const char *path) -> StructuredGrid;
+  [[nodiscard]] static auto Load(const char *path)
+      -> std::shared_ptr<StructuredGrid>;
 };
 
 } // namespace voxer
