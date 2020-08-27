@@ -5,19 +5,9 @@
 
 namespace voxer {
 
-struct ControlPoint {
-  float x = 0.0f;
-  float y = 0.0f;
-  std::string hex_color = "";
-  std::array<float, 3> color = {};
-};
-
 struct TransferFunction {
   std::vector<float> opacities;
   std::vector<std::array<float, 3>> colors;
 };
-
-auto interpolate_tfcn(const TransferFunction &tf)
-    -> std::pair<std::vector<float>, std::vector<std::array<float, 3>>>;
 
 } // namespace voxer

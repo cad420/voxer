@@ -1,6 +1,7 @@
 #include "Rendering/OSPRay/OSPRayRenderer.hpp"
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
+#include <stdexcept>
 
 using namespace std;
 
@@ -48,18 +49,16 @@ void OSPRayRenderer::render() {
 
   for (const auto &volume : m_volumes) {
     const auto &tfcn = *(volume->tfcn);
-    auto interpolated = interpolate_tfcn(tfcn);
-
-    auto tmp = ospNewSharedData(interpolated.first.data(), OSP_FLOAT,
-                                interpolated.first.size());
-    auto osp_opacity_data = ospNewData(OSP_FLOAT, interpolated.first.size());
+    auto tmp = ospNewSharedData(tfcn.opacities.data(), OSP_FLOAT,
+                                tfcn.opacities.size());
+    auto osp_opacity_data = ospNewData(OSP_FLOAT, tfcn.opacities.size());
     ospCopyData(tmp, osp_opacity_data);
     ospRelease(tmp);
     ospCommit(osp_opacity_data);
 
-    tmp = ospNewSharedData(interpolated.second.data(), OSP_VEC3F,
-                           interpolated.second.size());
-    auto osp_colors_data = ospNewData(OSP_VEC3F, interpolated.second.size());
+    tmp = ospNewSharedData(tfcn.colors.data(), OSP_VEC3F,
+                           tfcn.colors.size());
+    auto osp_colors_data = ospNewData(OSP_VEC3F, tfcn.colors.size());
     ospCopyData(tmp, osp_colors_data);
     ospRelease(tmp);
     ospCommit(osp_colors_data);

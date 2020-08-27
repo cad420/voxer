@@ -6,9 +6,7 @@
 namespace voxer {
 
 struct Camera {
-  enum class Type {
-    PERSPECTIVE, OR
-  };
+  enum class Type { PERSPECTIVE, ORTHOGRAPHIC };
   uint32_t width = 0;
   uint32_t height = 0;
   Type type = Type::PERSPECTIVE;

@@ -311,12 +311,11 @@ void OpenGLRenderer::render() {
       render_volume = true;
 
       auto &tfcn = volume->tfcn;
-      auto interploted = interpolate_tfcn(*tfcn);
-      vector<array<float, 4>> tfcn_data(interploted.first.size());
+      vector<array<float, 4>> tfcn_data(tfcn->colors.size());
       // TODO: inefficient
       for (size_t i = 0; i < tfcn_data.size(); i++) {
-        auto opacity = interploted.first[i];
-        auto &color = interploted.second[i];
+        auto opacity = tfcn->opacities[i];
+        auto &color = tfcn->colors[i];
         tfcn_data[i] = {color[0], color[1], color[2], opacity};
       }
 
@@ -325,8 +324,8 @@ void OpenGLRenderer::render() {
       assert(tfcn_texture.Valid());
       GL_EXPR(
           glTextureStorage1D(tfcn_texture, 1, GL_RGBA32F, tfcn_data.size()));
-      GL_EXPR(glTextureSubImage1D(tfcn_texture, 0, 0, interploted.first.size(),
-                                  GL_RGBA, GL_FLOAT, tfcn_data.data()));
+      GL_EXPR(glTextureSubImage1D(tfcn_texture, 0, 0, tfcn_data.size(), GL_RGBA,
+                                  GL_FLOAT, tfcn_data.data()));
       GL_EXPR(glBindTextureUnit(0, tfcn_texture));
 
       textures.emplace_back(move(tfcn_texture));
@@ -507,6 +506,22 @@ GL::GLTexture OpenGLRenderer::create_volume(StructuredGrid *dataset) {
                               dimensions[1], dimensions[2], GL_RED,
                               GL_UNSIGNED_BYTE, dataset->buffer.data()));
   return volume_texture;
+}
+
+void OpenGLRenderer::set_camera(const Camera &camera) { m_camera = camera; }
+
+void OpenGLRenderer::add_volume(const std::shared_ptr<Volume> &volume) {
+  m_volumes.emplace_back(volume);
+}
+
+void OpenGLRenderer::add_isosurface(
+    const std::shared_ptr<voxer::Isosurface> &isosurface) {
+  m_isosurfaces.emplace_back(isosurface);
+}
+
+void OpenGLRenderer::clear_scene() {
+  m_volumes.clear();
+  m_isosurfaces.clear();
 }
 
 } // namespace voxer

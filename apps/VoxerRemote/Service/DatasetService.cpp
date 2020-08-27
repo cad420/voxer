@@ -25,14 +25,18 @@ void DatasetService::load_dataset(const char *msg, uint32_t size) {
     throw runtime_error("No send function");
   }
 
+  auto items = m_datasets->load_from_json(msg, size);
+
+  return;
+
+  // TODO: return dimension & histogram
+
   rapidjson::StringBuffer buffer;
   buffer.Clear();
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
-  m_datasets->load_from_json(msg, size);
-  auto &items = m_datasets->get();
   for (auto &item : items) {
-    auto histogram = voxer::calculate_histogram(*(item.second));
+    auto histogram = voxer::calculate_histogram(*(item));
     auto serialized = seria::serialize(histogram);
     serialized.Accept(writer);
 

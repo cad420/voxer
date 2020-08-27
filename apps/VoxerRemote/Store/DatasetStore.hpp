@@ -10,13 +10,13 @@
 namespace voxer::remote {
 
 class DatasetStore {
-  using TimestepLookUpTable = std::vector<uint32_t>;
-  using VariableLookUpTable = std::map<std::string, TimestepLookUpTable>;
-
 public:
-  void load_from_file(const std::string &filepath);
-  void load_from_json(const char *json, uint32_t size);
-  void load_one(const rapidjson::Value &json);
+  auto load_from_file(const std::string &filepath)
+      -> std::vector<std::shared_ptr<voxer::StructuredGrid>>;
+  auto load_from_json(const char *json, uint32_t size)
+      -> std::vector<std::shared_ptr<voxer::StructuredGrid>>;
+  auto load_one(const rapidjson::Value &json)
+      -> std::shared_ptr<voxer::StructuredGrid>;
   void add_from_json(const char *text, uint32_t size);
   [[nodiscard]] auto get(const voxer::remote::Dataset &desc) const
       -> const std::shared_ptr<voxer::StructuredGrid> &;

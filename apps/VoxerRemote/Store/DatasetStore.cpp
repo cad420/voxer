@@ -15,7 +15,8 @@ using namespace std;
 
 namespace voxer::remote {
 
-void DatasetStore::load_from_file(const string &filepath) {
+vector<shared_ptr<StructuredGrid>>
+DatasetStore::load_from_file(const string &filepath) {
   ifstream fs(filepath);
   if (!fs.good() || !fs.is_open()) {
     throw runtime_error("cannot open file: " + filepath);
@@ -23,32 +24,58 @@ void DatasetStore::load_from_file(const string &filepath) {
   stringstream sstr;
   sstr << fs.rdbuf();
   auto json = sstr.str();
-  this->load_from_json(json.c_str(), json.size());
+  return this->load_from_json(json.c_str(), json.size());
 }
 
-void DatasetStore::load_from_json(const char *text, uint32_t size) {
+vector<shared_ptr<StructuredGrid>>
+DatasetStore::load_from_json(const char *text, uint32_t size) {
   m_document.Parse(text, size);
+  vector<shared_ptr<StructuredGrid>> datasets;
   if (m_document.IsArray()) {
     const auto &items = m_document.GetArray();
     for (auto &item : items) {
-      load_one(item);
+      datasets.emplace_back(load_one(item));
     }
-    fmt::print("load {} datasets.\n", items.Size());
   } else {
-    load_one(m_document.GetObject());
-    fmt::print("load 1 datasets.\n");
+    datasets.emplace_back(load_one(m_document.GetObject()));
   }
+
+  fmt::print("load {} datasets.\n", datasets.size());
+
+  return datasets;
 }
 
-void DatasetStore::load_one(const rapidjson::Value &json) {
+shared_ptr<StructuredGrid>
+DatasetStore::load_one(const rapidjson::Value &json) {
   if (!json.IsObject()) {
     throw JSON_error("dataset", "object");
   }
 
-  // key values
-  DatasetCollection collection{};
-  seria::deserialize(collection, json);
+  Dataset dataset_desc{};
+  seria::deserialize(dataset_desc, json);
 
+  auto it = m_datasets.find(dataset_desc);
+  if (it != m_datasets.end()) {
+    return it->second;
+  }
+
+  shared_ptr<StructuredGrid> dataset{};
+  auto ext = get_file_extension(dataset_desc.path);
+  if (ext == ".raw") {
+    RawReader reader(dataset_desc.path.c_str());
+    dataset = reader.load();
+  } else if (ext == ".mrc") {
+    MRCReader reader(dataset_desc.path);
+    dataset = reader.load();
+  } else {
+    throw runtime_error("unknown dataset format: " + ext);
+  }
+  m_datasets.emplace(dataset_desc, dataset);
+
+  return dataset;
+
+  /*DatasetCollection collection {};
+  seria::deserialize(collection, json);
   for (const auto &variable : collection.variables) {
     auto idx = string::npos;
     if (variable.timesteps > 1) {
@@ -90,7 +117,7 @@ void DatasetStore::load_one(const rapidjson::Value &json) {
       // desc.histogram = calculate_histogram(dataset);
       m_datasets.emplace(desc, move(dataset));
     }
-  }
+  }*/
 }
 
 auto DatasetStore::get(const voxer::remote::Dataset &desc) const
@@ -102,6 +129,7 @@ auto DatasetStore::get(const voxer::remote::Dataset &desc) const
 
   return it->second;
 }
+
 //
 // auto DatasetStore::get_or_create(const SceneDataset &scene_dataset,
 //                                 const vector<SceneDataset> &scene_datasets)
