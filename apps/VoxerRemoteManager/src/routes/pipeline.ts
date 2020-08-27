@@ -1,55 +1,87 @@
 import express from "express";
-import store from "../models/Pipeline";
-import { Pipeline, Scene } from "../models/voxer";
+import Pipeline from "../models/Pipeline";
+import { Scene } from "../models/voxer";
 
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-  const pipelines = await store.getAll();
+  const pipelines = await Pipeline.findAll();
   res.send({
     code: 200,
-    data: Object.values(pipelines)
+    data: Object.values(pipelines),
   });
 });
 
 router.post("/", async (req, res) => {
   const scene = req.body as Scene;
-  const id = await store.add(scene);
+
+  // TODO: validate scene params
+  // TODO: allow `comment`
+  const pipeline = await Pipeline.create({
+    params: JSON.stringify(scene),
+  });
 
   res.send({
     code: 200,
-    data: id
+    data: pipeline.id,
   });
 });
 
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
-  const pipeline = await store.get(id);
+  const pipeline = await Pipeline.findOne({
+    where: {
+      id: parseInt(id),
+    },
+  });
+
+  if (!pipeline) {
+    res.send({
+      code: 404,
+      data: "Not Found",
+    });
+    return;
+  }
+
   res.send({
     code: 200,
-    data: pipeline
+    data: JSON.parse(pipeline.params),
   });
 });
 
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const params = req.body;
-  const pipeline = await store.get(id);
+
+  // TODO: validate scene params
+
+  const pipeline = await Pipeline.findOne({ where: { id } });
 
   if (!pipeline) {
     res.send({
       code: 404,
-      data: "Pipeline not found."
+      data: "Pipeline not found.",
     });
+    return;
   }
 
-  await store.update(id, { id, params: params as Pipeline["params"] });
+  pipeline.params = JSON.stringify(params);
+  await pipeline.save();
 
   res.send({
-    code: 200
+    code: 200,
   });
 });
 
-// router.delete("/:id", () => {});
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+  await Pipeline.destroy({
+    where: { id },
+  });
+
+  res.send({
+    code: 200,
+  });
+});
 
 export default router;

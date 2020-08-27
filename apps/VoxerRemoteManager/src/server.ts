@@ -3,11 +3,13 @@ import cors from "cors";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import routes from "./routes";
 import { PUBLIC_PATH, RENDER_SERVICE } from "./config";
+import sequelize from "./models";
+import Dataset from "./models/Dataset";
 
 const app = express();
 const wsProxy = createProxyMiddleware("/render", {
   target: RENDER_SERVICE,
-  ws: true
+  ws: true,
 });
 
 app.use(wsProxy);
@@ -22,6 +24,13 @@ app.use((req, res) => {
 });
 
 const port = process.env.PORT || 3001;
-app.listen(port, () => {
-  console.log(`listening on port ${port}`);
-});
+
+export default async function run() {
+  await sequelize.sync();
+
+  app.listen(port, () => {
+    console.log(`listening on port ${port}`);
+  });
+}
+
+run();

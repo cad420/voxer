@@ -1,28 +1,21 @@
 import WebSocket from "ws";
-import { Dataset } from "./voxer";
-import { RENDER_SERVICE } from "../config";
+import Dataset from "./models/Dataset";
+import { RENDER_SERVICE, UPLOAD_PATH } from "./config";
+import {resolve } from 'path'
 
-class DatasetMessager {
+class Messager {
   ws: WebSocket;
   pingTimeout: NodeJS.Timer;
   pingInterval: number;
   reconnectInterval: number;
-  saved: Dataset[];
 
   constructor() {
     this.pingInterval = 5 * 1000;
     this.reconnectInterval = 5 * 1000;
-    this.saved = [];
     this.connect();
   }
 
-  post = (data: Dataset | Dataset[]) => {
-    if (Array.isArray(data)) {
-      this.saved = this.saved.concat(data);
-    } else {
-      this.saved.push(data);
-    }
-
+  post = (data: unknown) => {
     if (!this.ws) {
       return;
     }
@@ -38,9 +31,21 @@ class DatasetMessager {
     this.close();
 
     this.ws = new WebSocket(`${RENDER_SERVICE}/datasets`);
-    this.ws.on("open", () => {
+    this.ws.on("open", async () => {
       console.log("DatasetMessager: connected");
-      this.post(this.saved);
+
+      const datasets = await Dataset.findAll();
+
+      this.post(
+        datasets.map(({ id, name, variable, timestep, path }) => ({
+          id,
+          name,
+          variable,
+          timestep,
+          path: resolve(UPLOAD_PATH, path.substr(1)),
+        }))
+      );
+
       this.pingTimeout = setInterval(() => {
         this.ws.ping();
       }, this.pingInterval);
@@ -55,7 +60,7 @@ class DatasetMessager {
           break;
       }
     });
-    this.ws.onerror = err => {
+    this.ws.onerror = (err) => {
       console.log("DatasetMessager Error: ", err.message);
       switch (err.type) {
         case "ECONNREFUSED": {
@@ -88,4 +93,4 @@ class DatasetMessager {
   };
 }
 
-export default DatasetMessager;
+export default new Messager();

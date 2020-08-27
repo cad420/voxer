@@ -1,4 +1,5 @@
 type Histogram = Array<number>;
+
 export type Dataset = {
   name: string;
   dimensions?: [number, number, number];
