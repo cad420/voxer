@@ -2,9 +2,32 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 #include <seria/serialize.hpp>
+#include <seria/utils.hpp>
 #include <voxer/Filters/histogram.hpp>
+#include <iostream>
 
 using namespace std;
+
+namespace {
+
+struct LoadDatasetResponse {
+  uint32_t id = 0;
+  std::array<uint32_t, 3> dimensions {};
+  std::vector<uint32_t> histogram {};
+};
+
+} // namespace
+
+namespace seria {
+
+template <> inline auto registerObject<LoadDatasetResponse>() {
+  return std::make_tuple(
+      member("id", &LoadDatasetResponse::id),
+      member("dimensions", &LoadDatasetResponse::dimensions),
+                         member("histogram", &LoadDatasetResponse::histogram));
+}
+
+} // namespace seria
 
 namespace voxer::remote {
 
@@ -25,19 +48,19 @@ void DatasetService::load_dataset(const char *msg, uint32_t size) {
     throw runtime_error("No send function");
   }
 
-  auto items = m_datasets->load_from_json(msg, size);
+  m_datasets->load_from_json(msg, size);
 
-  return;
-
-  // TODO: return dimension & histogram
-
-  rapidjson::StringBuffer buffer;
-  buffer.Clear();
-  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-
+  LoadDatasetResponse res;
+  const auto &items = m_datasets->get();
   for (auto &item : items) {
-    auto histogram = voxer::calculate_histogram(*(item));
-    auto serialized = seria::serialize(histogram);
+    res.id = item.first;
+    res.histogram = voxer::calculate_histogram(*item.second);
+    res.dimensions = item.second->info.dimensions;
+    auto serialized = seria::serialize(res);
+
+    rapidjson::StringBuffer buffer;
+    buffer.Clear();
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     serialized.Accept(writer);
 
     m_send(reinterpret_cast<const uint8_t *>(buffer.GetString()),

@@ -38,7 +38,7 @@ RawReader::RawReader(const char *filepath) {
   }
 
   for (int i = 0; i < 3; i++) {
-    auto &dim = splited[splited.size() - 2 - i];
+    auto &dim = splited[splited.size() - 4 + i];
     dimensions[i] = strtoul(dim.c_str(), nullptr, 10);
     if (dimensions[i] == 0) {
       throw runtime_error(name_rule);

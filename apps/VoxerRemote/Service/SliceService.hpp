@@ -12,7 +12,7 @@ public:
 
   [[nodiscard]] auto get_path() const -> std::string final { return "/slice"; }
 
-  [[nodiscard]] auto get_dataset_slice(const std::string &id,
+  [[nodiscard]] auto get_dataset_slice(uint32_t id,
                                        voxer::StructuredGrid::Axis axis,
                                        uint32_t index) const -> Image;
 

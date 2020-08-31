@@ -24,7 +24,7 @@ int main(int argc, const char **argv) {
 
   vector<AbstractService *> services{};
   services.emplace_back(&dataset_service);
-  services.emplace_back(&volume_rendering_service);
+  services.emplace_back(&slice_service);
   services.emplace_back(&volume_rendering_service);
 
   auto app = uWS::App();

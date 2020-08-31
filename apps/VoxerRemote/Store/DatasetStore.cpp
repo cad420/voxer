@@ -54,7 +54,7 @@ DatasetStore::load_one(const rapidjson::Value &json) {
   Dataset dataset_desc{};
   seria::deserialize(dataset_desc, json);
 
-  auto it = m_datasets.find(dataset_desc);
+  auto it = m_datasets.find(dataset_desc.id);
   if (it != m_datasets.end()) {
     return it->second;
   }
@@ -70,7 +70,7 @@ DatasetStore::load_one(const rapidjson::Value &json) {
   } else {
     throw runtime_error("unknown dataset format: " + ext);
   }
-  m_datasets.emplace(dataset_desc, dataset);
+  m_datasets.emplace(dataset_desc.id, dataset);
 
   return dataset;
 
@@ -122,7 +122,12 @@ DatasetStore::load_one(const rapidjson::Value &json) {
 
 auto DatasetStore::get(const voxer::remote::Dataset &desc) const
     -> const shared_ptr<StructuredGrid> & {
-  const auto it = m_datasets.find(desc);
+  return get(desc.id);
+}
+
+auto DatasetStore::get(uint32_t id) const
+-> const shared_ptr<StructuredGrid> & {
+  const auto it = m_datasets.find(id);
   if (it == m_datasets.end()) {
     throw runtime_error("cannot find dataset");
   }

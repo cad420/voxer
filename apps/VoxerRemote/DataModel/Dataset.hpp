@@ -5,14 +5,14 @@
 namespace voxer::remote {
 
 struct Dataset {
+  uint32_t id;
   std::string name;
   std::string variable;
   uint32_t timestep = 0;
   std::string path;
 
   bool operator==(const Dataset &other) const {
-    return (name == other.name && variable == other.variable &&
-            timestep == other.timestep);
+    return id == other.id;
   }
 };
 
@@ -23,7 +23,8 @@ namespace seria {
 template <> inline auto registerObject<voxer::remote::Dataset>() {
   using Dataset = voxer::remote::Dataset;
   return std::make_tuple(
-      member("name", &Dataset::name), member("variable", &Dataset::variable),
+      member("id", &Dataset::id), member("name", &Dataset::name),
+      member("variable", &Dataset::variable),
       member("timestep", &Dataset::timestep), member("path", &Dataset::path));
 }
 

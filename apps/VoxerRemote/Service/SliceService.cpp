@@ -38,11 +38,10 @@ void SliceService::on_message(const char *message, uint32_t size) {
   }
 }
 
-auto SliceService::get_dataset_slice(const std::string &name,
+auto SliceService::get_dataset_slice(uint32_t dataset_id,
                                      StructuredGrid::Axis axis,
                                      uint32_t index) const -> Image {
-  voxer::remote::Dataset dataset_desc{name, "default", 0};
-  auto dataset = m_datasets->get(dataset_desc);
+  auto dataset = m_datasets->get(dataset_id);
   auto image = dataset->get_slice(axis, index);
   auto jpeg = Image::encode(image, Image::Format::JPEG);
   return jpeg;
