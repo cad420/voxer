@@ -67,6 +67,7 @@ router.get("/", async (req, res) => {
       name,
       variable,
       timestep,
+      dimensions: messager.cache[id.toString()].dimensions
     })),
   });
 });
@@ -132,6 +133,7 @@ router.get("/:name/:variable/:timestep", async (req, res) => {
     return;
   }
 
+  // TODO: send histogram
   return res.send({
     code: 200,
     data: [],

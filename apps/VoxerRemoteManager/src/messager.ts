@@ -1,17 +1,25 @@
 import WebSocket from "ws";
 import Dataset from "./models/Dataset";
 import { RENDER_SERVICE, UPLOAD_PATH } from "./config";
-import {resolve } from 'path'
+import { resolve } from "path";
 
 class Messager {
   ws: WebSocket;
   pingTimeout: NodeJS.Timer;
   pingInterval: number;
   reconnectInterval: number;
+  cache: Record<
+    string,
+    {
+      dimensions: [number, number, number];
+      histogram: Array<number>;
+    }
+  >;
 
   constructor() {
     this.pingInterval = 5 * 1000;
     this.reconnectInterval = 5 * 1000;
+    this.cache = {};
     this.connect();
   }
 
@@ -60,6 +68,17 @@ class Messager {
           break;
       }
     });
+    this.ws.onmessage = (msg) => {
+      const { data } = msg;
+      try {
+        const json = JSON.parse(data as string);
+
+        this.cache[json.id] = json;
+      } catch (e) {
+        console.log("不支持的消息: ", data);
+      }
+      return;
+    };
     this.ws.onerror = (err) => {
       console.log("DatasetMessager Error: ", err.message);
       switch (err.type) {

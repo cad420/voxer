@@ -4,15 +4,18 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 import routes from "./routes";
 import { PUBLIC_PATH, RENDER_SERVICE } from "./config";
 import sequelize from "./models";
-import Dataset from "./models/Dataset";
 
 const app = express();
-const wsProxy = createProxyMiddleware("/render", {
-  target: RENDER_SERVICE,
-  ws: true,
+
+const services = ['/render', '/slice']
+services.forEach((service) => {
+  const serviceProxy = createProxyMiddleware(service, {
+    target: RENDER_SERVICE,
+    ws: true,
+  });
+  app.use(serviceProxy);
 });
 
-app.use(wsProxy);
 app.use(express.static(PUBLIC_PATH));
 app.use(cors());
 app.use(express.json());
