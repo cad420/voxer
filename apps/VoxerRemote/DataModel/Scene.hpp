@@ -4,7 +4,7 @@
 #include "DataModel/Isosurface.hpp"
 #include "DataModel/TransferFunction.hpp"
 #include "DataModel/Volume.hpp"
-#include <seria/utils.hpp>
+#include <seria/object.hpp>
 #include <string>
 #include <vector>
 
@@ -22,7 +22,7 @@ struct Scene {
 
 namespace seria {
 
-template <> inline auto registerObject<voxer::remote::Scene>() {
+template <> inline auto register_object<voxer::remote::Scene>() {
   using Scene = voxer::remote::Scene;
   return std::make_tuple(member("datasets", &Scene::datasets),
                          member("volumes", &Scene::volumes),

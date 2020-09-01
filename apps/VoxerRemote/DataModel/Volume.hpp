@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include <seria/utils.hpp>
+#include <seria/object.hpp>
 #include <string>
 
 namespace voxer::remote {
@@ -21,7 +21,7 @@ struct Volume {
 
 namespace seria {
 
-template <> inline auto registerObject<voxer::remote::Volume>() {
+template <> inline auto register_object<voxer::remote::Volume>() {
   using Volume = voxer::remote::Volume;
   return std::make_tuple(member("dataset", &Volume::dataset_idx),
                          member("tfcn", &Volume::tfcn_idx),

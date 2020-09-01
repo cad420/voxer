@@ -2,7 +2,7 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 #include <seria/serialize.hpp>
-#include <seria/utils.hpp>
+#include <seria/object.hpp>
 #include <voxer/Filters/histogram.hpp>
 #include <iostream>
 
@@ -20,7 +20,7 @@ struct LoadDatasetResponse {
 
 namespace seria {
 
-template <> inline auto registerObject<LoadDatasetResponse>() {
+template <> inline auto register_object<LoadDatasetResponse>() {
   return std::make_tuple(
       member("id", &LoadDatasetResponse::id),
       member("dimensions", &LoadDatasetResponse::dimensions),

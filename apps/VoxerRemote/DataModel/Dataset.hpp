@@ -1,6 +1,6 @@
 #pragma once
 #include <array>
-#include <seria/utils.hpp>
+#include <seria/object.hpp>
 
 namespace voxer::remote {
 
@@ -20,7 +20,7 @@ struct Dataset {
 
 namespace seria {
 
-template <> inline auto registerObject<voxer::remote::Dataset>() {
+template <> inline auto register_object<voxer::remote::Dataset>() {
   using Dataset = voxer::remote::Dataset;
   return std::make_tuple(
       member("id", &Dataset::id), member("name", &Dataset::name),

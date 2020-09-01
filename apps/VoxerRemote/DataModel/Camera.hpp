@@ -1,7 +1,7 @@
 #pragma once
 #include <array>
 #include <map>
-#include <seria/utils.hpp>
+#include <seria/object.hpp>
 #include <string>
 #include <voxer/Rendering/Camera.hpp>
 
@@ -13,7 +13,7 @@ using Camera = voxer::Camera;
 
 namespace seria {
 
-template <> inline auto registerObject<voxer::remote::Camera>() {
+template <> inline auto register_object<voxer::remote::Camera>() {
   using Camera = voxer::remote::Camera;
   return std::make_tuple(
       member("width", &Camera::width), member("height", &Camera::height),

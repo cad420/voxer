@@ -1,6 +1,6 @@
 #pragma once
 #include <array>
-#include <seria/utils.hpp>
+#include <seria/object.hpp>
 #include <string>
 #include <vector>
 #include <voxer/Data/Color.hpp>
@@ -61,7 +61,7 @@ inline auto interpolate_tfcn(const TransferFunction &points)
 
 namespace seria {
 
-template <> inline auto registerObject<voxer::remote::ControlPoint>() {
+template <> inline auto register_object<voxer::remote::ControlPoint>() {
   using ControlPoint = voxer::remote::ControlPoint;
   return std::make_tuple(member("x", &ControlPoint::x),
                          member("y", &ControlPoint::y),

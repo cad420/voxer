@@ -1,19 +1,21 @@
 #pragma once
-#include <seria/utils.hpp>
+#include <seria/object.hpp>
 #include <string>
 #include <voxer/Data/Slice.hpp>
 
 namespace voxer::remote {
 
-struct Slice : public voxer::SliceInfo {
+struct Slice {
   uint32_t dataset = 0;
+  StructuredGrid::Axis axis = StructuredGrid::Axis::X;
+  uint32_t index = 0;
 };
 
 } // namespace voxer::remote
 
 namespace seria {
 
-template <> inline auto registerObject<voxer::Annotation>() {
+template <> inline auto register_object<voxer::Annotation>() {
   using Annotation = voxer::Annotation;
   return std::make_tuple(member("type", &Annotation::type),
                          member("coordinates", &Annotation::coordinates),
@@ -21,56 +23,40 @@ template <> inline auto registerObject<voxer::Annotation>() {
                          member("comment", &Annotation::comment));
 }
 
-template <> inline auto registerObject<voxer::remote::Slice>() {
+template <> inline auto register_object<voxer::remote::Slice>() {
   using Slice = voxer::remote::Slice;
+  using Axis = voxer::StructuredGrid::Axis;
   return std::make_tuple(member("dataset", &Slice::dataset),
-                         member("axis", &Slice::axis),
+                         member<Slice, Axis, const char *>(
+                             "axis", &Slice::axis, nullptr,
+                             [](const char *const &v) -> Axis {
+                               if (std::strcmp(v, "x") == 0) {
+                                 return Axis::X;
+                               }
+
+                               if (std::strcmp(v, "y") == 0) {
+                                 return Axis::Y;
+                               }
+
+                               if (std::strcmp(v, "z") == 0) {
+                                 return Axis::Z;
+                               }
+
+                               throw std::runtime_error("invalid value");
+                             },
+                             [](const Axis &axis) -> const char * {
+                               switch (axis) {
+                               case Axis::X:
+                                 return "x";
+                               case Axis::Y:
+                                 return "y";
+                               case Axis::Z:
+                                 return "z";
+                               default:
+                                 return "";
+                               }
+                             }),
                          member("index", &Slice::index));
 }
 
-template <typename T>
-std::enable_if_t<std::is_same_v<voxer::StructuredGrid::Axis, T>>
-deserialize(T &obj, const rapidjson::Value &value) {
-  using Axis = voxer::StructuredGrid::Axis;
-
-  rapidjson::Document json(rapidjson::kStringType);
-  if (!value.IsString()) {
-    throw std::runtime_error("wrong type");
-  }
-
-  std::string str = value.GetString();
-  if (str == "x") {
-    obj = Axis::X;
-  } else if (str == "y") {
-    obj = Axis::Y;
-  } else if (str == "z") {
-    obj = Axis::Z;
-  } else {
-    throw std::runtime_error("invalid value");
-  }
-}
-
-template <typename T>
-std::enable_if_t<std::is_same_v<T, voxer::StructuredGrid::Axis>,
-                 rapidjson::Document>
-serialize(const T &obj) {
-  using Axis = voxer::StructuredGrid::Axis;
-
-  rapidjson::Document json(rapidjson::kStringType);
-  switch (obj) {
-  case Axis::X:
-    json.SetString("x", 1);
-    break;
-  case Axis::Y:
-    json.SetString("y", 1);
-    break;
-  case Axis::Z:
-    json.SetString("z", 1);
-    break;
-  default:
-    break;
-  }
-
-  return json;
-}
 } // namespace seria

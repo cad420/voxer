@@ -4,7 +4,7 @@ include(FetchContent)
 FetchContent_Declare(
     uWebSockets-git
     GIT_REPOSITORY https://github.com/uNetworking/uWebSockets.git
-    GIT_TAG v18
+    GIT_TAG v18.11.0
 )
 
 FetchContent_GetProperties(uWebSockets-git)

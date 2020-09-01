@@ -1,7 +1,7 @@
 #pragma once
 #include <array>
 #include <cstdint>
-#include <seria/utils.hpp>
+#include <seria/object.hpp>
 #include <string>
 #include <vector>
 
@@ -24,14 +24,14 @@ struct DatasetCollection {
 namespace seria {
 
 template <>
-inline auto registerObject<voxer::remote::DatasetCollection::Variable>() {
+inline auto register_object<voxer::remote::DatasetCollection::Variable>() {
   using Variable = voxer::remote::DatasetCollection::Variable;
   return std::make_tuple(member("name", &Variable::name),
                          member("timesteps", &Variable::timesteps),
                          member("path", &Variable::path));
 }
 
-template <> inline auto registerObject<voxer::remote::DatasetCollection>() {
+template <> inline auto register_object<voxer::remote::DatasetCollection>() {
   using DatasetCollection = voxer::remote::DatasetCollection;
   return std::make_tuple(member("name", &DatasetCollection::name),
                          member("type", &DatasetCollection::type),

@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include <seria/utils.hpp>
+#include <seria/object.hpp>
 
 namespace voxer::remote {
 
@@ -15,7 +15,7 @@ struct Isosurface {
 
 namespace seria {
 
-template <> inline auto registerObject<voxer::remote::Isosurface>() {
+template <> inline auto register_object<voxer::remote::Isosurface>() {
   using Isosurface = voxer::remote::Isosurface;
   return std::make_tuple(member("value", &Isosurface::value),
                          member("dataset", &Isosurface::dataset_idx),
