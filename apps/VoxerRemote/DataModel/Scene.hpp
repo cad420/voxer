@@ -11,7 +11,6 @@
 namespace voxer::remote {
 
 struct Scene {
-  std::vector<Dataset> datasets;
   std::vector<TransferFunction> tfcns;
   std::vector<Volume> volumes;
   std::vector<Isosurface> isosurfaces;
@@ -24,8 +23,7 @@ namespace seria {
 
 template <> inline auto register_object<voxer::remote::Scene>() {
   using Scene = voxer::remote::Scene;
-  return std::make_tuple(member("datasets", &Scene::datasets),
-                         member("volumes", &Scene::volumes),
+  return std::make_tuple(member("volumes", &Scene::volumes),
                          member("tfcns", &Scene::tfcns),
                          member("isosurfaces", &Scene::isosurfaces),
                          member("camera", &Scene::camera));

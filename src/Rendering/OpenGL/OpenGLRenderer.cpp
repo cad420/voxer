@@ -93,8 +93,6 @@ OpenGLRenderer::OpenGLRenderer() : width(400), height(400) {
       (PFNEGLQUERYDEVICESEXTPROC)eglGetProcAddress("eglQueryDevicesEXT");
   eglQueryDevicesEXT(4, eglDevs, &numDevices);
 
-  cout << "Detected " << numDevices << " devices" << endl;
-
   auto eglGetPlatformDisplayEXT =
       (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress(
           "eglGetPlatformDisplayEXT");
@@ -136,7 +134,9 @@ OpenGLRenderer::OpenGLRenderer() : width(400), height(400) {
     throw runtime_error("failed to load gl");
   }
 
-  cout << "GL Version: " << GLVersion.major << "." << GLVersion.minor << endl;
+  cout << "Detected " << numDevices << " devices, using first one: "
+       << "OpenGL Version: " << GLVersion.major << "." << GLVersion.minor
+       << endl;
 
   Point3f CubeVertices[8];
   Point3f CubeTexCoords[8];

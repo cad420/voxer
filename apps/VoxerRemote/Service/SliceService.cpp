@@ -38,7 +38,7 @@ void SliceService::on_message(const char *message, uint32_t size) {
   }
 }
 
-auto SliceService::get_dataset_slice(uint32_t dataset_id,
+auto SliceService::get_dataset_slice(const DatasetId &dataset_id,
                                      StructuredGrid::Axis axis,
                                      uint32_t index) const -> Image {
   auto dataset = m_datasets->get(dataset_id);

@@ -2,11 +2,12 @@
 #include <seria/object.hpp>
 #include <string>
 #include <voxer/Data/Slice.hpp>
+#include "DataModel/Dataset.hpp"
 
 namespace voxer::remote {
 
 struct Slice {
-  uint32_t dataset = 0;
+  DatasetId dataset;
   StructuredGrid::Axis axis = StructuredGrid::Axis::X;
   uint32_t index = 0;
 };

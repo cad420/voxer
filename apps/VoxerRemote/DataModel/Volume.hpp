@@ -1,4 +1,5 @@
 #pragma once
+#include "DataModel/Dataset.hpp"
 #include <cstdint>
 #include <seria/object.hpp>
 #include <string>
@@ -6,7 +7,7 @@
 namespace voxer::remote {
 
 struct Volume {
-  int32_t dataset_idx = -1;
+  DatasetId dataset;
   int32_t tfcn_idx = -1;
   std::array<float, 3> spacing = {1.0f, 1.0f, 1.0f};
 
@@ -23,10 +24,9 @@ namespace seria {
 
 template <> inline auto register_object<voxer::remote::Volume>() {
   using Volume = voxer::remote::Volume;
-  return std::make_tuple(member("dataset", &Volume::dataset_idx),
-                         member("tfcn", &Volume::tfcn_idx),
-                         member("spacing", &Volume::spacing),
-                         member("render", &Volume::render));
+  return std::make_tuple(
+      member("dataset", &Volume::dataset), member("tfcn", &Volume::tfcn_idx),
+      member("spacing", &Volume::spacing), member("render", &Volume::render));
 }
 
 } // namespace seria

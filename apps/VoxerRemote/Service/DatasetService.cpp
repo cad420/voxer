@@ -1,4 +1,5 @@
 #include "DatasetService.hpp"
+#include "DataModel/Dataset.hpp"
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 #include <seria/serialize.hpp>
@@ -11,7 +12,7 @@ using namespace std;
 namespace {
 
 struct LoadDatasetResponse {
-  uint32_t id = 0;
+  voxer::remote::DatasetId id;
   std::array<uint32_t, 3> dimensions {};
   std::vector<uint32_t> histogram {};
 };

@@ -90,8 +90,7 @@ void VolumeRenderingService::traverse_scene(VolumeRenderer &renderer,
       continue;
     }
 
-    auto &dataset_desc = scene.datasets[volume_desc.dataset_idx];
-    auto &dataset = m_datasets->get(dataset_desc);
+    auto &dataset = m_datasets->get(volume_desc.dataset);
 
     auto volume = make_shared<voxer::Volume>();
     volume->dataset = dataset;
@@ -102,7 +101,8 @@ void VolumeRenderingService::traverse_scene(VolumeRenderer &renderer,
       auto data = interpolate_tfcn(tfcn_desc);
       tfcn->opacities = move(data.first);
       tfcn->colors = move(data.second);
-      tfcns_map.emplace(volume_desc.tfcn_idx, move(tfcn));
+      auto res = tfcns_map.emplace(volume_desc.tfcn_idx, move(tfcn));
+      volume->tfcn = res.first->second;
     } else {
       volume->tfcn = tfcns_map[volume_desc.tfcn_idx];
     }
@@ -115,8 +115,7 @@ void VolumeRenderingService::traverse_scene(VolumeRenderer &renderer,
       continue;
     }
 
-    auto &dataset_desc = scene.datasets[isosurface_desc.dataset_idx];
-    auto &dataset = m_datasets->get(dataset_desc);
+    auto &dataset = m_datasets->get(isosurface_desc.dataset);
 
     auto isosurface = make_shared<voxer::Isosurface>();
     isosurface->dataset = dataset;

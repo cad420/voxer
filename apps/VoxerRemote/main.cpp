@@ -46,7 +46,7 @@ int main(int argc, const char **argv) {
   }
 
   // run server
-  const auto port = 3000;
+  const auto port = 3040;
   auto on_success = [port](auto *token) {
     if (!token) {
       cout << " failed to listen on port " << port << endl;

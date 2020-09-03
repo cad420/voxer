@@ -16,7 +16,7 @@ public:
   void on_message(const char *message, uint32_t size) final;
 
   [[nodiscard]] auto get_path() const -> std::string final {
-    return "/rendering";
+    return "/render";
   }
 
   voxer::remote::DatasetStore *m_datasets = nullptr;

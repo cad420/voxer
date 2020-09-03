@@ -2,6 +2,7 @@
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
 #include <stdexcept>
+#include <iostream>
 
 using namespace std;
 
@@ -14,11 +15,14 @@ OSPRayRenderer::OSPRayRenderer() {
     throw runtime_error("Failed to initialize OSPRay");
   }
 #ifndef NDEBUG
-  ospDeviceSetParam(osp_device, "logLevel", OSP_STRING, "debug");
+  auto logLevel = OSP_LOG_INFO;
+  ospDeviceSetParam(osp_device, "logLevel", OSP_INT, &logLevel);
   ospDeviceSetParam(osp_device, "logOutput", OSP_STRING, "cout");
   ospDeviceSetParam(osp_device, "errorOutput", OSP_STRING, "cerr");
 #endif
   ospDeviceCommit(osp_device);
+  ospSetCurrentDevice(osp_device);
+  std::cout << "OSPRay initialized" << std::endl;
 }
 
 OSPRayRenderer::~OSPRayRenderer() {
@@ -211,7 +215,7 @@ void OSPRayRenderer::render() {
 
 auto OSPRayRenderer::get_colors() -> const Image & { return m_image; }
 
-void OSPRayRenderer::create_osp_volume(StructuredGrid *dataset) {
+OSPVolume &OSPRayRenderer::create_osp_volume(StructuredGrid *dataset) {
   auto &info = dataset->info;
   auto &dimensions = info.dimensions;
 
@@ -222,7 +226,7 @@ void OSPRayRenderer::create_osp_volume(StructuredGrid *dataset) {
   ospCommit(osp_volume_data);
 
   auto osp_volume = ospNewVolume("structuredRegular");
-  ospSetParam(osp_volume, "data", OSP_DATA, &osp_volume_data);
+  ospSetObject(osp_volume, "data", osp_volume_data);
   ospSetVec3f(osp_volume, "gridOrigin",
               -static_cast<float>(dimensions[0]) / 2.0f,
               -static_cast<float>(dimensions[1]) / 2.0f,
@@ -231,14 +235,14 @@ void OSPRayRenderer::create_osp_volume(StructuredGrid *dataset) {
   ospSetVec3f(osp_volume, "gridSpacing", 1.0f, 1.0f, 1.0f);
   ospCommit(osp_volume);
 
-  m_osp_volume_cache.emplace(dataset, osp_volume);
+  auto res = m_osp_volume_cache.emplace(dataset, osp_volume);
+  return res.first->second;
 }
 
 OSPVolume &OSPRayRenderer::get_osp_volume(StructuredGrid *dataset) {
   auto it = this->m_osp_volume_cache.find(dataset);
   if (it == this->m_osp_volume_cache.end()) {
-    this->create_osp_volume(dataset);
-    it = this->m_osp_volume_cache.find(dataset);
+    return this->create_osp_volume(dataset);
   }
   return it->second;
 }

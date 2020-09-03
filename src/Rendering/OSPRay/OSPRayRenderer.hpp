@@ -18,7 +18,7 @@ public:
   void clear_scene() override;
 
 private:
-  void create_osp_volume(StructuredGrid *volume);
+  OSPVolume& create_osp_volume(StructuredGrid *volume);
   OSPVolume &get_osp_volume(StructuredGrid *volume);
 
   std::map<StructuredGrid *, OSPVolume> m_osp_volume_cache{};

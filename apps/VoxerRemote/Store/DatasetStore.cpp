@@ -125,7 +125,7 @@ auto DatasetStore::get(const voxer::remote::Dataset &desc) const
   return get(desc.id);
 }
 
-auto DatasetStore::get(uint32_t id) const
+auto DatasetStore::get(const DatasetId &id) const
 -> const shared_ptr<StructuredGrid> & {
   const auto it = m_datasets.find(id);
   if (it == m_datasets.end()) {
