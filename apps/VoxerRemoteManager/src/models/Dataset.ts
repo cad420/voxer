@@ -1,57 +1,19 @@
-import { DataTypes, Model, Optional } from "sequelize";
-import sequelize from "./index";
+import { ObjectID } from 'mongodb';
+import Annotation from './Annotation';
 
-interface DatasetAttributes {
-  id: number;
+type Dataset = {
+  _id: ObjectID;
   name: string;
-  variable: string;
-  timestep: number;
   path: string;
-}
-
-type DatasetCreationAttributes = Optional<DatasetAttributes, "id">;
-
-class Dataset
-  extends Model<DatasetAttributes, DatasetCreationAttributes>
-  implements DatasetAttributes {
-  id: number;
-  name: string;
-  variable: string;
-  timestep: number;
-  path: string;
-
-  public readonly createdAt: Date;
-  public readonly updatedAt: Date;
-}
-
-Dataset.init(
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    variable: {
-      type: DataTypes.STRING,
-      defaultValue: "default",
-    },
-    timestep: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
-    path: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-  },
-  {
-    sequelize,
-    tableName: "datasets",
-  }
-);
+  tags?: Array<{
+    name: string;
+    color: string;
+  }>;
+  annotations?: {
+    z: Array<Array<Annotation>>; // 使用map, tag为id?
+    y: Array<Array<Annotation>>;
+    x: Array<Array<Annotation>>;
+  };
+};
 
 export default Dataset;

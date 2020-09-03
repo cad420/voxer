@@ -1,45 +1,29 @@
-import { DataTypes, Model, Optional } from "sequelize";
-import sequelize from "./index";
+import { ObjectID } from "mongodb";
 
-interface PipelineAttributes {
-  id: number;
+interface Pipeline {
+  _id: ObjectID;
   comment: string;
-  params: string;
+  tfcns: Array<Array<{ x: number; y: number; color: string }>>;
+  volumes: Array<{
+    dataset: ObjectID;
+    tfcn: number;
+    spacing: [number, number, number];
+    render: boolean;
+  }>;
+  isosurfaces: Array<{
+    dataset: ObjectID;
+    value: number;
+    color: string;
+    render: boolean;
+  }>;
+  camera: {
+    width: number;
+    height: number;
+    type: string;
+    position: [number, number, number];
+    target: [number, number, number];
+    up: [number, number, number];
+  };
 }
-
-type PipelineCreationAttributes = Optional<PipelineAttributes, "id" | "comment">;
-
-class Pipeline
-  extends Model<PipelineAttributes, PipelineCreationAttributes>
-  implements PipelineAttributes {
-  id: number;
-  comment: string;
-  params: string;
-
-  public readonly createdAt: Date;
-  public readonly updatedAt: Date;
-}
-
-Pipeline.init(
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    comment: {
-      type: DataTypes.STRING,
-      defaultValue: ''
-    },
-    params: {
-      type: DataTypes.TEXT,
-      allowNull: false,
-    },
-  },
-  {
-    sequelize,
-    tableName: "pipelines",
-  }
-);
 
 export default Pipeline;

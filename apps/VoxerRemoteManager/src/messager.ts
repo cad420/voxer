@@ -1,7 +1,8 @@
 import WebSocket from "ws";
-import Dataset from "./models/Dataset";
+import mongodb from "mongodb";
 import { RENDER_SERVICE, UPLOAD_PATH } from "./config";
 import { resolve } from "path";
+import Dataset from "./models/Dataset";
 
 class Messager {
   ws: WebSocket;
@@ -20,7 +21,6 @@ class Messager {
     this.pingInterval = 5 * 1000;
     this.reconnectInterval = 5 * 1000;
     this.cache = {};
-    this.connect();
   }
 
   post = (data: unknown) => {
@@ -35,22 +35,21 @@ class Messager {
     }
   };
 
-  connect() {
+  connect(database: mongodb.Db) {
     this.close();
 
     this.ws = new WebSocket(`${RENDER_SERVICE}/datasets`);
     this.ws.on("open", async () => {
       console.log("DatasetMessager: connected");
 
-      const datasets = await Dataset.findAll();
+      const collection = database.collection('datasets');
+      const datasets = await collection.find().toArray();
 
       this.post(
-        datasets.map(({ id, name, variable, timestep, path }) => ({
-          id,
-          name,
-          variable,
-          timestep,
-          path: resolve(UPLOAD_PATH, path.substr(1)),
+        datasets.map((dataset: Dataset) => ({
+          id: dataset._id.toHexString(),
+          name: dataset.name,
+          path: resolve(UPLOAD_PATH, dataset.path),
         }))
       );
 
@@ -64,7 +63,7 @@ class Messager {
           console.log("DatasetMessager: closed", reason);
           break;
         default:
-          this.reconnect();
+          this.reconnect(database);
           break;
       }
     });
@@ -84,7 +83,7 @@ class Messager {
       switch (err.type) {
         case "ECONNREFUSED": {
           clearInterval(this.pingTimeout);
-          this.reconnect();
+          this.reconnect(database);
           break;
         }
         default: {
@@ -103,11 +102,11 @@ class Messager {
     clearInterval(this.pingTimeout);
   };
 
-  reconnect = () => {
+  reconnect = (database: mongodb.Db) => {
     this.ws.removeAllListeners();
     setTimeout(() => {
       console.log("DatasetMessager: reconnecting...");
-      this.connect();
+      this.connect(database);
     }, this.reconnectInterval);
   };
 }

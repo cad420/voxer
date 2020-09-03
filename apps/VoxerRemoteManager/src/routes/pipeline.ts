@@ -1,38 +1,47 @@
 import express from "express";
+import mongodb, { ObjectID } from "mongodb";
 import Pipeline from "../models/Pipeline";
-import { Scene } from "../models/voxer";
 
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-  const pipelines = await Pipeline.findAll();
+  const database: mongodb.Db = req.app.get("database");
+  const collection = database.collection("pipelines");
+
+  const pipelines: Pipeline[] = await collection.find().project({ comment: true }).toArray();
   res.send({
     code: 200,
-    data: Object.values(pipelines),
+    data: pipelines.map(pipeline => ({
+      id: pipeline._id.toHexString(),
+      comment: pipeline.comment
+    })),
   });
 });
 
 router.post("/", async (req, res) => {
-  const scene = req.body as Scene;
+  const params = req.body;
+  const database: mongodb.Db = req.app.get("database");
+  const collection = database.collection("pipelines");
 
   // TODO: validate scene params
   // TODO: allow `comment`
-  const pipeline = await Pipeline.create({
-    params: JSON.stringify(scene),
+  const result = await collection.insertOne({
+    ...params,
   });
 
   res.send({
     code: 200,
-    data: pipeline.id,
+    data: result.insertedId,
   });
 });
 
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
-  const pipeline = await Pipeline.findOne({
-    where: {
-      id: parseInt(id),
-    },
+  const database: mongodb.Db = req.app.get("database");
+  const collection = database.collection("pipelines");
+
+  const pipeline = await collection.findOne({
+    _id: new ObjectID(id),
   });
 
   if (!pipeline) {
@@ -43,19 +52,23 @@ router.get("/:id", async (req, res) => {
     return;
   }
 
+  pipeline.id = pipeline._id;
+  
   res.send({
     code: 200,
-    data: JSON.parse(pipeline.params),
+    data: pipeline,
   });
 });
 
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const params = req.body;
+  const database: mongodb.Db = req.app.get("database");
+  const collection = database.collection("pipelines");
 
   // TODO: validate scene params
 
-  const pipeline = await Pipeline.findOne({ where: { id } });
+  const pipeline = await collection.findOne({ _id: id });
 
   if (!pipeline) {
     res.send({
@@ -65,8 +78,14 @@ router.put("/:id", async (req, res) => {
     return;
   }
 
-  pipeline.params = JSON.stringify(params);
-  await pipeline.save();
+  await collection.updateOne(
+    {
+      _id: id,
+    },
+    {
+      $set: params,
+    }
+  );
 
   res.send({
     code: 200,
@@ -75,9 +94,10 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
-  await Pipeline.destroy({
-    where: { id },
-  });
+  const database: mongodb.Db = req.app.get("database");
+  const collection = database.collection("pipelines");
+
+  await collection.deleteOne({ id });
 
   res.send({
     code: 200,

@@ -1,9 +1,11 @@
 import express from "express";
 import multer from "multer";
+import mongodb from "mongodb";
+import { resolve } from "path";
 import Dataset from "../models/Dataset";
 import { PUBLIC_PATH, UPLOAD_PATH } from "../config";
 import messager from "../messager";
-import { resolve } from "path";
+import DatasetGroup from "../models/DatasetGroup";
 
 const router = express.Router();
 
@@ -18,112 +20,145 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.post("/", upload.single("dataset"), async (req, res) => {
-  const { name, variable = "default", timestep = "0" } = req.params;
-  const path = req.file.fieldname;
+  const filename = req.file.filename;
 
   // TODO: make sure previous timestep is uploaded
-
-  const dataset = await Dataset.findOne({
-    where: {
-      name,
-      variable,
-      timestep: parseInt(timestep),
-    },
+  const database: mongodb.Db = req.app.get("database");
+  const collection = database.collection("datasets");
+  const result = await collection.insertOne({
+    path: filename, // TODO
+    name: filename,
+    annotations: { z: [], y: [], x: [] },
   });
-
-  if (!dataset) {
-    await Dataset.create({
-      name,
-      variable,
-      timestep: parseInt(timestep),
-      path,
-    });
-  } else {
-    dataset.path = path;
-    await dataset.save();
-  }
+  const id = result.insertedId;
 
   messager.post({
-    id: dataset.id,
-    name: dataset.name,
-    variable: dataset.variable,
-    timestep: dataset.timestep,
-    path: resolve(UPLOAD_PATH, dataset.path.substr(1)),
+    id,
+    name: filename,
+    path: resolve(UPLOAD_PATH, filename),
   });
 
   res.send({
     code: 200,
-    data: name,
+    data: id,
   });
 });
 
 router.get("/", async (req, res) => {
-  const datasets = await Dataset.findAll();
+  const database: mongodb.Db = req.app.get("database");
+
+  const collection = database.collection("datasets");
+  const datasets = await collection.find({}).toArray();
 
   res.send({
     code: 200,
-    data: datasets.map(({ id, name, variable, timestep }) => ({
-      id,
-      name,
-      variable,
-      timestep,
-      dimensions: messager.cache[id.toString()].dimensions
+    data: datasets.map((dataset: Dataset) => ({
+      id: dataset._id,
+      dimensions: messager.cache[dataset._id.toString()].dimensions,
     })),
   });
 });
 
-router.get("/collections", async (req, res) => {
-  const datasets = await Dataset.findAll();
+router.get("/groups", async (req, res) => {
+  const database: mongodb.Db = req.app.get("database");
+  const collection = database.collection("dataset_groups");
 
-  const collections: Record<
-    string,
-    {
-      name: string;
-      variables: Array<{
-        name: string;
-        timesteps: number;
-      }>;
-    }
-  > = {};
-
-  datasets.forEach((dataset) => {
-    if (!collections[dataset.name]) {
-      collections[dataset.name] = {
-        name: dataset.name,
-        variables: [],
-      };
-    }
-
-    const collection = collections[dataset.name];
-    const variable = collection.variables.find(
-      (item) => item.name === dataset.variable
-    );
-    if (variable) {
-      variable.timesteps = Math.max(variable.timesteps, dataset.timestep + 1);
-    } else {
-      collection.variables.push({
-        name: dataset.variable,
-        timesteps: dataset.timestep + 1,
-      });
-    }
-  });
+  const groups: DatasetGroup[] = await collection.find({}).toArray();
 
   res.send({
     code: 200,
-    data: Object.values(collections),
+    data: groups.map((group) => {
+      return {
+        name: group.name,
+        variables: group.variables.map((variable) => {
+          return {
+            name: variable.name,
+            timesteps: variable.timesteps.map((id) => {
+              return {
+                id,
+                dimensions: messager.cache[id.toHexString()],
+              };
+            }),
+          };
+        }),
+      };
+    }),
   });
 });
 
-router.get("/:name/:variable/:timestep", async (req, res) => {
-  const { name, variable, timestep } = req.params;
+router.post("/groups", async (req, res) => {
+  const { id, name, variable = "default" } = req.params;
+  const timestep = parseInt(req.params.timestep || "0");
 
-  const dataset = await Dataset.findOne({
-    where: {
+  const database: mongodb.Db = req.app.get("database");
+  const collection = database.collection("dataset_groups");
+  const group: DatasetGroup = await collection.findOne({ name });
+
+  // name not exit
+  if (!group) {
+    await collection.insertOne({
       name,
-      variable,
-      timestep: parseInt(timestep),
+      variables: [
+        {
+          name: variable,
+          timesteps: [id],
+        },
+      ],
+    });
+    res.send({ code: 200 });
+    return;
+  }
+
+  // variable not exist
+  const variableData = group.variables.find((item) => item.name === variable);
+  if (!variableData) {
+    await collection.updateOne(
+      {
+        _id: group._id,
+      },
+      {
+        $set: {
+          variables: [
+            {
+              name: variable,
+              timesteps: [group],
+            },
+          ],
+        },
+      }
+    );
+
+    return;
+  }
+
+  // check timestep
+  if (variableData.timesteps.length !== timestep) {
+    res.send({
+      code: 404,
+      data: "missing timestep",
+    });
+    return;
+  }
+
+  await collection.updateOne(
+    {
+      _id: group._id,
+      "variables.name": variable,
     },
-  });
+    {
+      $push: {
+        timesteps: id,
+      },
+    }
+  );
+});
+
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  const database: mongodb.Db = req.app.get("database");
+  const collection = database.collection("datasets");
+
+  const dataset = await collection.findOne({ _id: id });
 
   if (!dataset) {
     res.send({
@@ -133,10 +168,10 @@ router.get("/:name/:variable/:timestep", async (req, res) => {
     return;
   }
 
-  // TODO: send histogram
+  // TODO: send histogram & dimensiosn
   return res.send({
     code: 200,
-    data: [],
+    data: messager.cache[id],
   });
 });
 
