@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import mongodb from "mongodb";
+import mongodb, { ObjectId } from "mongodb";
 import { resolve } from "path";
 import Dataset from "../models/Dataset";
 import { PUBLIC_PATH, UPLOAD_PATH } from "../config";
@@ -158,7 +158,7 @@ router.get("/:id", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("datasets");
 
-  const dataset = await collection.findOne({ _id: id });
+  const dataset = await collection.findOne({ _id: new ObjectId(id) });
 
   if (!dataset) {
     res.send({

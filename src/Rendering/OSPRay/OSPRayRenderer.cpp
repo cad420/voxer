@@ -1,27 +1,29 @@
 #include "Rendering/OSPRay/OSPRayRenderer.hpp"
+#include <iostream>
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
 #include <stdexcept>
-#include <iostream>
 
 using namespace std;
 
 namespace voxer {
 
 OSPRayRenderer::OSPRayRenderer() {
-  ospLoadModule("ispc");
-  osp_device = ospNewDevice("cpu");
-  if (osp_device == nullptr) {
-    throw runtime_error("Failed to initialize OSPRay");
-  }
-#ifndef NDEBUG
-  auto logLevel = OSP_LOG_INFO;
-  ospDeviceSetParam(osp_device, "logLevel", OSP_INT, &logLevel);
-  ospDeviceSetParam(osp_device, "logOutput", OSP_STRING, "cout");
-  ospDeviceSetParam(osp_device, "errorOutput", OSP_STRING, "cerr");
-#endif
-  ospDeviceCommit(osp_device);
-  ospSetCurrentDevice(osp_device);
+  ospInit();
+  osp_device = ospGetCurrentDevice();
+  //  ospLoadModule("ispc");
+  //  osp_device = ospNewDevice("cpu");
+  //  if (osp_device == nullptr) {
+  //    throw runtime_error("Failed to initialize OSPRay");
+  //  }
+  //#ifndef NDEBUG
+  ////  auto logLevel = OSP_LOG_INFO;
+  ////  ospDeviceSetParam(osp_device, "logLevel", OSP_INT, &logLevel);
+  //  ospDeviceSetParam(osp_device, "logOutput", OSP_STRING, "cout");
+  //  ospDeviceSetParam(osp_device, "errorOutput", OSP_STRING, "cerr");
+  //#endif
+  //  ospDeviceCommit(osp_device);
+  //  ospSetCurrentDevice(osp_device);
   std::cout << "OSPRay initialized" << std::endl;
 }
 
@@ -60,8 +62,7 @@ void OSPRayRenderer::render() {
     ospRelease(tmp);
     ospCommit(osp_opacity_data);
 
-    tmp = ospNewSharedData(tfcn.colors.data(), OSP_VEC3F,
-                           tfcn.colors.size());
+    tmp = ospNewSharedData(tfcn.colors.data(), OSP_VEC3F, tfcn.colors.size());
     auto osp_colors_data = ospNewData(OSP_VEC3F, tfcn.colors.size());
     ospCopyData(tmp, osp_colors_data);
     ospRelease(tmp);

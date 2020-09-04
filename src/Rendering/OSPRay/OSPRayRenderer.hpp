@@ -33,5 +33,5 @@ private:
 } // namespace voxer
 
 extern "C" {
-VoxerIRenderer *voxer_get_backend() { return new voxer::OSPRayRenderer(); }
+inline VoxerIRenderer *voxer_get_backend() { return new voxer::OSPRayRenderer(); }
 }

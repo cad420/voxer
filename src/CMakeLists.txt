@@ -1,5 +1,6 @@
 find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(ospray 2.0.0 REQUIRED)
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/vmcore.cmake)
 
@@ -18,6 +19,7 @@ list(
     ${CMAKE_CURRENT_SOURCE_DIR}/IO/Raw/RawReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/VolumeRenderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SliceRenderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OSPRay/OSPRayRenderer.cpp
 )
 
 add_library(voxer_core STATIC ${VOXER_CORE_SRCS})
@@ -34,7 +36,7 @@ target_include_directories(
 )
 target_link_libraries(
     voxer_core
-    PUBLIC Threads::Threads fmt::fmt OpenMP::OpenMP_CXX ${CMAKE_DL_LIBS}
+    PUBLIC Threads::Threads fmt::fmt OpenMP::OpenMP_CXX ${CMAKE_DL_LIBS} ospray::ospray
     PRIVATE vmcore -static-libstdc++
 )
 target_compile_options(voxer_core PRIVATE -Wall -Wextra)

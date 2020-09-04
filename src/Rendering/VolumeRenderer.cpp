@@ -1,5 +1,6 @@
 #include "Common/Logger.hpp"
 #include "Rendering/IRenderer.hpp"
+#include "Rendering/OSPRay/OSPRayRenderer.hpp"
 #include <chrono>
 #include <dlfcn.h>
 #include <functional>
@@ -20,8 +21,10 @@ VolumeRenderer::VolumeRenderer(VolumeRenderer::Type type) {
   void *lib = nullptr;
   switch (type) {
   case Type::OSPRay: {
-    lib = dlopen("libvoxer_backend_ospray.so", RTLD_NOW);
-    break;
+    impl = std::make_unique<OSPRayRenderer>();
+    return;
+//    lib = dlopen("libvoxer_backend_ospray.so", RTLD_NOW);
+//    break;
   }
   case Type::OpenGL: {
     lib = dlopen("libvoxer_backend_gl.so", RTLD_NOW);
