@@ -15,6 +15,7 @@ list(
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/histogram.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/BlurFilter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/EqualizeFilter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/ContrastFilter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/IO/MRC/MRCReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/IO/Raw/RawReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/VolumeRenderer.cpp

@@ -26,15 +26,6 @@ void SliceService::on_message(const char *message, uint32_t size) {
     auto image = get_dataset_slice(slice.dataset, slice.axis, slice.index);
     m_send(reinterpret_cast<const uint8_t *>(image.data.data()),
            image.data.size(), true);
-    //    auto it = annotation_store.find(slice);
-    //    if (it != annotation_store.end()) {
-    //      auto json = seria::serialize(it->second);
-    //      auto result =
-    //          std::string(R"({"type":"annotation","data":)") + json + R"(})";
-    //      cb(reinterpret_cast<const uint8_t *>(result.data()), result.size(),
-    //         false);
-    //    }
-    //    return;
   }
 }
 
