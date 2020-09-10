@@ -1,12 +1,19 @@
 import { ObjectID } from "mongodb";
+import { AnnotationType, DatasetAnnotations } from "./Annotation";
 
-interface DatasetGroup {
+type DatasetGroup = {
   _id: ObjectID;
   name: string;
-  variables: Array<{
+  labels: Array<{
     name: string;
-    timesteps: Array<ObjectID>;
+    color: string;
+    type: AnnotationType;
+    annotations: Record<string, DatasetAnnotations>;
   }>;
-}
+  datasets: Array<{
+    id: ObjectID;
+    name: string;
+  }>;
+};
 
 export default DatasetGroup;

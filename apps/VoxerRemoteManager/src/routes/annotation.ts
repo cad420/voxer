@@ -1,8 +1,9 @@
 import express from "express";
-import mongodb from "mongodb";
-import Dataset from "../models/Dataset";
+import mongodb, { ObjectId } from "mongodb";
+import Annotation from "../models/Annotation";
+import DatasetGroup from "../models/DatasetGroup";
 
-type Axis = 'x' | 'y' | 'z';
+type Axis = "x" | "y" | "z";
 
 function validate(axis: string, index: number): string {
   if (axis !== "z" && axis !== "y" && axis !== "x") {
@@ -13,13 +14,16 @@ function validate(axis: string, index: number): string {
     return "invalid index";
   }
 
-  return '';
+  return "";
 }
 
 const router = express.Router();
 
-router.get("/:dataset/:axis/:index", async (req, res) => {
-  const { dataset: id, axis } = req.params;
+/**
+ * get annotations of dataset slice in a group
+ */
+router.get("/:group/:dataset/:axis/:index", async (req, res) => {
+  const { group: groupId, dataset: datasetId, axis } = req.params;
   const index = parseInt(req.params.index);
 
   const error = validate(axis, index);
@@ -32,42 +36,45 @@ router.get("/:dataset/:axis/:index", async (req, res) => {
   }
 
   const database: mongodb.Db = req.app.get("database");
-  const collection = database.collection("datasets");
+  const collection = database.collection("groups");
 
-  const dataset: Dataset = await collection.findOne({ _id: id });
+  const group: DatasetGroup = await collection.findOne({
+    _id: new ObjectId(groupId),
+  });
 
-  if (!dataset) {
+  if (!group) {
     res.send({
       code: 404,
-      data: `dataset ${id} not found`,
+      data: `group ${datasetId} not found`,
     });
     return;
   }
 
-  if (dataset.annotations[axis as Axis].length <= index) {
-    res.send({
-      code: 400,
-      data: [],
-    });
-    return;
-  }
+  const result: Annotation[] = [];
+  group.labels.forEach((label) => {
+    const annotationsOfDataset = label.annotations[datasetId];
+    if (!annotationsOfDataset) {
+      return;
+    }
+
+    const annotationsOfSlice = annotationsOfDataset[axis as Axis][index];
+    if (!annotationsOfSlice) return;
+
+    result.concat(annotationsOfSlice);
+  });
 
   res.send({
     code: 200,
-    data: dataset.annotations[axis as Axis][index].map(
-      ({ tag, comment, type, coordinates }) => ({
-        tag,
-        comment,
-        type,
-        coordinates,
-      })
-    ),
+    data: result,
   });
 });
 
-router.post("/:dataset/:axis/:index", async (req, res) => {
-  const { dataset: id, axis } = req.params;
-  const { tag, type, coordinates, comment = "" } = req.body;
+/**
+ * add annotations of dataset slice in a group
+ */
+router.post("/:group/:dataset/:axis/:index", async (req, res) => {
+  const { group: groupId, dataset: datasetId, axis } = req.params;
+  const annotations: Annotation[] = req.body;
   const index = parseInt(req.params.index);
 
   const error = validate(axis, index);
@@ -80,20 +87,25 @@ router.post("/:dataset/:axis/:index", async (req, res) => {
   }
 
   const database: mongodb.Db = req.app.get("database");
-  const collection = database.collection("datasets");
+  const collection = database.collection("groups");
 
-  const dataset: Dataset = await collection.findOne({ _id: id });
-
-  const annotation = {
-    tag, type, coordinates, comment
-  };
-
-  await collection.updateOne({
-    _id: dataset._id,
-    [`annotations.${axis}`]: '1'
-  }, {
-    $push: { [index.toString()]:annotation }
-  });
+  await collection.updateOne(
+    {
+      _id: new ObjectId(groupId),
+    },
+    {
+      $push: {
+        [`annotations.${datasetId}.${axis}.${index}`]: {
+          $each: annotations.map(({ tag, type, coordinates, comment }) => ({
+            tag,
+            type,
+            coordinates,
+            comment,
+          })),
+        },
+      },
+    }
+  );
 
   res.send({
     code: 200,

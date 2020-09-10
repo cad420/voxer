@@ -18,7 +18,7 @@ services.forEach((service) => {
 });
 
 app.use(express.static(PUBLIC_PATH));
-app.use(cors({ methods: 'GET,POST' }));
+app.use(cors());
 app.use(express.json());
 app.use(routes);
 
