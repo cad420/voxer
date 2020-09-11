@@ -1,19 +1,24 @@
 import { ObjectID } from "mongodb";
 import { AnnotationType, DatasetAnnotations } from "./Annotation";
 
+export type LabelId = number;
+
 type DatasetGroup = {
   _id: ObjectID;
   name: string;
   labels: Array<{
+    id: LabelId;
     name: string;
     color: string;
     type: AnnotationType;
-    annotations: Record<string, DatasetAnnotations>;
   }>;
-  datasets: Array<{
-    id: ObjectID;
-    name: string;
-  }>;
+  datasets: Record<
+    string,
+    {
+      name: string;
+      labels: Record<LabelId, DatasetAnnotations>;
+    }
+  >;
 };
 
 export default DatasetGroup;

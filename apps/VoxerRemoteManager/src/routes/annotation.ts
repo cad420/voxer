@@ -45,19 +45,23 @@ router.get("/:group/:dataset/:axis/:index", async (req, res) => {
   if (!group) {
     res.send({
       code: 404,
-      data: `group ${datasetId} not found`,
+      data: `group ${groupId} not found`,
+    });
+    return;
+  }
+
+  const dataset = group.datasets[datasetId];
+  if (!dataset) {
+    res.send({
+      code: 404,
+      data: `dataset ${datasetId} not found`,
     });
     return;
   }
 
   const result: Annotation[] = [];
-  group.labels.forEach((label) => {
-    const annotationsOfDataset = label.annotations[datasetId];
-    if (!annotationsOfDataset) {
-      return;
-    }
-
-    const annotationsOfSlice = annotationsOfDataset[axis as Axis][index];
+  Object.values(dataset.labels).forEach((annotations) => {
+    const annotationsOfSlice = annotations[axis as Axis][index];
     if (!annotationsOfSlice) return;
 
     result.concat(annotationsOfSlice);
@@ -70,11 +74,11 @@ router.get("/:group/:dataset/:axis/:index", async (req, res) => {
 });
 
 /**
- * add annotations of dataset slice in a group
+ * add an annotation of dataset slice in a group
  */
 router.post("/:group/:dataset/:axis/:index", async (req, res) => {
   const { group: groupId, dataset: datasetId, axis } = req.params;
-  const annotations: Annotation[] = req.body;
+  const annotation: Annotation = req.body;
   const index = parseInt(req.params.index);
 
   const error = validate(axis, index);
@@ -95,13 +99,9 @@ router.post("/:group/:dataset/:axis/:index", async (req, res) => {
     },
     {
       $push: {
-        [`annotations.${datasetId}.${axis}.${index}`]: {
-          $each: annotations.map(({ tag, type, coordinates, comment }) => ({
-            tag,
-            type,
-            coordinates,
-            comment,
-          })),
+        [`datasets.${datasetId}.labels.${annotation.tag}.${axis}.${index}`]: {
+          comment: annotation.comment,
+          coordinates: annotation.coordinates,
         },
       },
     }

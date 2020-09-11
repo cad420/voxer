@@ -3,14 +3,14 @@ import multer from "multer";
 import mongodb, { ObjectId } from "mongodb";
 import { resolve } from "path";
 import Dataset from "../models/Dataset";
-import { PUBLIC_PATH, UPLOAD_PATH } from "../config";
 import messager from "../messager";
+import { UPLOAD_PATH } from "../config";
 
 const router = express.Router();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, PUBLIC_PATH);
+    cb(null, UPLOAD_PATH);
   },
   filename: (req, file, cb) => {
     cb(null, file.originalname);
@@ -22,7 +22,7 @@ router.get("/", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
 
   const collection = database.collection("datasets");
-  const datasets = await collection.find({}).toArray();
+  const datasets = await collection.find().toArray();
 
   res.send({
     code: 200,
@@ -76,7 +76,6 @@ router.get("/:id", async (req, res) => {
     return;
   }
 
-  // TODO: send histogram & dimensiosn
   return res.send({
     code: 200,
     data: messager.cache[id],

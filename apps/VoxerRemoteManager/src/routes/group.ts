@@ -1,7 +1,8 @@
 import express from "express";
-import mongodb, { ObjectId } from "mongodb";
-import DatasetGroup from "../models/DatasetGroup";
+import mongodb, { ObjectId, ObjectID } from "mongodb";
+import DatasetGroup, { LabelId } from "../models/DatasetGroup";
 import Dataset from "../models/Dataset";
+import { DatasetAnnotations } from "../models/Annotation";
 
 const router = express.Router();
 
@@ -52,19 +53,26 @@ router.get("/:id", async (req, res) => {
 
   const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("groups");
+  const result: DatasetGroup[] = await collection
+    .aggregate([
+      { $match: { _id: new ObjectId(id) } },
+      { $project: { datasets: { $objectToArray: "$datasets" } } },
+      { $project: { "datasets.v.labels": 0 } },
+      { $project: { datasets: { $arrayToObject: "$datasets" } } },
+    ])
+    .toArray();
 
-  const result = await collection.findOne(
-    { id: new ObjectId(id) },
-    {
-      fields: {
-        "labels.annotations": 0,
-      },
-    }
-  );
+  if (result.length === 0) {
+    res.send({
+      code: 404,
+      data: "group not found.",
+    });
+    return;
+  }
 
   res.send({
     code: 200,
-    data: result,
+    data: result[0],
   });
 });
 
@@ -87,7 +95,6 @@ router.post("/:id/labels", async (req, res) => {
           name: label.name,
           color: label.color,
           type: label.type,
-          annotations: {},
         },
       },
     }
@@ -112,10 +119,9 @@ router.post("/:id/labels", async (req, res) => {
 router.post("/:id/datasets", async (req, res) => {
   // TODO: validate body
   const { id: datasetId } = req.body;
-  const { id } = req.params;
+  const { id: groupId } = req.params;
 
   const database: mongodb.Db = req.app.get("database");
-  const collection = database.collection("groups");
 
   const dataset: Dataset = await database.collection("datasets").findOne({
     _id: new ObjectId(datasetId),
@@ -129,26 +135,41 @@ router.post("/:id/datasets", async (req, res) => {
     return;
   }
 
-  // TODO: make sure dataset not exist in group
-  const result = await collection.updateOne(
-    { _id: new ObjectId(id) },
-    {
-      $push: {
-        datasets: {
-          id: new ObjectId(id),
-          name: dataset.name,
-        },
-      },
-    }
-  );
+  const collection = database.collection("groups");
 
-  if (result.modifiedCount !== 1) {
+  const group: DatasetGroup = await collection.findOne({
+    _id: new ObjectID(groupId),
+  });
+
+  if (!group) {
     res.send({
-      code: 400,
-      data: "Failed to update",
+      code: 404,
+      data: "group not found.",
     });
     return;
   }
+
+  if (group.datasets[datasetId]) {
+    res.send({
+      code: 200,
+    });
+    return;
+  }
+
+  const labels: Record<LabelId, DatasetAnnotations> = {};
+  group.labels.forEach((label) => {
+    labels[label.id] = { z: {}, y: {}, x: {} };
+  });
+
+  await collection.updateOne(
+    { _id: new ObjectId(groupId) },
+    {
+      [`datasets.${datasetId}`]: {
+        name: dataset.name,
+        labels,
+      },
+    }
+  );
 
   res.send({
     code: 200,
