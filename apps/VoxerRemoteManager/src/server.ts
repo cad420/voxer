@@ -8,7 +8,7 @@ import messager from "./messager";
 
 const app = express();
 
-const services: string[] = ['/render', '/slice'];
+const services: string[] = ["/render", "/slice"];
 services.forEach((service) => {
   const serviceProxy = createProxyMiddleware(service, {
     target: RENDER_SERVICE,

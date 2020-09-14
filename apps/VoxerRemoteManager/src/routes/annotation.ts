@@ -1,7 +1,6 @@
 import express from "express";
 import mongodb, { ObjectId } from "mongodb";
-import Annotation from "../models/Annotation";
-import DatasetGroup from "../models/DatasetGroup";
+import DatasetGroup, { Label } from "../models/DatasetGroup";
 
 type Axis = "x" | "y" | "z";
 
@@ -22,8 +21,8 @@ const router = express.Router();
 /**
  * get annotations of dataset slice in a group
  */
-router.get("/:group/:dataset/:axis/:index", async (req, res) => {
-  const { group: groupId, dataset: datasetId, axis } = req.params;
+router.get("/:groupId/:datasetId/:axis/:index", async (req, res) => {
+  const { groupId, datasetId, axis } = req.params;
   const index = parseInt(req.params.index);
 
   const error = validate(axis, index);
@@ -59,12 +58,25 @@ router.get("/:group/:dataset/:axis/:index", async (req, res) => {
     return;
   }
 
-  const result: Annotation[] = [];
-  Object.values(dataset.labels).forEach((annotations) => {
+  const labelMap: Record<string, Label> = {};
+  group.labels.forEach((label) => {
+    labelMap[label.id.toHexString()] = label;
+  });
+
+  const result: any[] = [];
+  Object.entries(dataset.labels).forEach(([labelId, annotations]) => {
     const annotationsOfSlice = annotations[axis as Axis][index];
     if (!annotationsOfSlice) return;
 
-    result.concat(annotationsOfSlice);
+    const label = labelMap[labelId];
+
+    if (!label) return;
+
+    result.concat({
+      tag: labelId,
+      type: label.type,
+      ...annotationsOfSlice,
+    });
   });
 
   res.send({
@@ -78,7 +90,7 @@ router.get("/:group/:dataset/:axis/:index", async (req, res) => {
  */
 router.post("/:group/:dataset/:axis/:index", async (req, res) => {
   const { group: groupId, dataset: datasetId, axis } = req.params;
-  const annotation: Annotation = req.body;
+  const { tag, comment, coordinates } = req.body;
   const index = parseInt(req.params.index);
 
   const error = validate(axis, index);
@@ -99,9 +111,9 @@ router.post("/:group/:dataset/:axis/:index", async (req, res) => {
     },
     {
       $push: {
-        [`datasets.${datasetId}.labels.${annotation.tag}.${axis}.${index}`]: {
-          comment: annotation.comment,
-          coordinates: annotation.coordinates,
+        [`datasets.${datasetId}.labels.${tag}.${axis}.${index}`]: {
+          comment,
+          coordinates,
         },
       },
     }
