@@ -1,6 +1,7 @@
 import express from "express";
 import mongodb, { ObjectId } from "mongodb";
 import DatasetGroup, { Label } from "../models/DatasetGroup";
+import Annotation from "../models/Annotation";
 
 type Axis = "x" | "y" | "z";
 
@@ -63,19 +64,27 @@ router.get("/:groupId/:datasetId/:axis/:index", async (req, res) => {
     labelMap[label.id.toHexString()] = label;
   });
 
-  const result: any[] = [];
+  type ResAnnotation = {
+    tag: string;
+    type: string;
+    coordinates: Annotation["coordinates"];
+    comment: string;
+  };
+  const result: ResAnnotation[] = [];
   Object.entries(dataset.labels).forEach(([labelId, annotations]) => {
-    const annotationsOfSlice = annotations[axis as Axis][index];
+    const annotationsOfSlice = annotations[axis as Axis][index.toString()];
     if (!annotationsOfSlice) return;
 
     const label = labelMap[labelId];
 
     if (!label) return;
 
-    result.concat({
-      tag: labelId,
-      type: label.type,
-      ...annotationsOfSlice,
+    annotationsOfSlice.forEach((item) => {
+      result.push({
+        type: label.type,
+        tag: labelId,
+        ...item,
+      });
     });
   });
 
@@ -86,11 +95,18 @@ router.get("/:groupId/:datasetId/:axis/:index", async (req, res) => {
 });
 
 /**
- * add an annotation of dataset slice in a group
+ * set annotations of a dataset slice in a group
  */
 router.post("/:group/:dataset/:axis/:index", async (req, res) => {
   const { group: groupId, dataset: datasetId, axis } = req.params;
-  const { tag, comment, coordinates } = req.body;
+
+  // TODO: validate req.body
+  type ReqAnnotation = {
+    tag: string;
+    comment: string;
+    coordinates: Annotation["coordinates"];
+  };
+  const list: ReqAnnotation[] = req.body;
   const index = parseInt(req.params.index);
 
   const error = validate(axis, index);
@@ -105,17 +121,31 @@ router.post("/:group/:dataset/:axis/:index", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("groups");
 
+  const updateExp: Record<string, Array<Annotation>> = {};
+  list.map(({ tag, comment, coordinates }) => {
+    const key = `datasets.${datasetId}.labels.${tag}.${axis}.${index}`;
+
+    if (updateExp[key]) {
+      updateExp[key].push({
+        comment,
+        coordinates,
+      });
+    } else {
+      updateExp[key] = [
+        {
+          comment,
+          coordinates,
+        },
+      ];
+    }
+  });
+
   await collection.updateOne(
     {
       _id: new ObjectId(groupId),
     },
     {
-      $push: {
-        [`datasets.${datasetId}.labels.${tag}.${axis}.${index}`]: {
-          comment,
-          coordinates,
-        },
-      },
+      $set: updateExp,
     }
   );
 
@@ -123,49 +153,5 @@ router.post("/:group/:dataset/:axis/:index", async (req, res) => {
     code: 200,
   });
 });
-
-/* router.post("/:dataset/:axis/:index/:id", async (req, res) => {
-  const { dataset, axis, id } = req.params;
-  const { comment, coordinates } = req.body;
-  const index = parseInt(req.params.index);
-
-  const error = validate(axis, index);
-  if (error.length > 0) {
-    res.send({
-      code: 400,
-      data: error,
-    });
-    return;
-  }
-
-  const database: mongodb.Db = req.app.get("database");
-  const collection = database.collection("datasets");
-
-  const item = await collection.findOne({
-    _id: dataset
-  });
-
-  if (!item) {
-    res.send({
-      code: 404,
-      data: "dataset not found.",
-    });
-    return;
-  }
-
-  if (comment) {
-    item.comment = comment;
-  }
-
-  if (coordinates) {
-    item.coordinates = JSON.stringify(coordinates);
-  }
-
-  await item.save();
-
-  res.send({
-    code: 200,
-  });
-}); */
 
 export default router;

@@ -7,7 +7,7 @@ interface Annotation {
   coordinates: Array<[number, number, number, number]> | Array<Array<number>>;
 }
 
-export type SliceAnnotations = Record<number, Array<Annotation>>;
+export type SliceAnnotations = Record<string, Array<Annotation>>;
 
 export type DatasetAnnotations = {
   z: SliceAnnotations;
