@@ -8,7 +8,7 @@ router.get("/", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("pipelines");
 
-  const pipelines: Pipeline[] = await collection.find().project({ comment: true }).toArray();
+  const pipelines: Pipeline[] = await collection.find().project({ comment: true, type: true }).toArray();
   res.send({
     code: 200,
     data: pipelines.map(pipeline => ({
