@@ -4,6 +4,7 @@ interface Pipeline {
   _id: ObjectID;
   comment: string;
   tfcns: Array<Array<{ x: number; y: number; color: string }>>;
+  type?: string;
   volumes: Array<{
     dataset: ObjectID;
     tfcn: number;

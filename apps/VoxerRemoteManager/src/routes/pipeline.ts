@@ -13,7 +13,8 @@ router.get("/", async (req, res) => {
     code: 200,
     data: pipelines.map(pipeline => ({
       id: pipeline._id.toHexString(),
-      comment: pipeline.comment
+      comment: pipeline.comment,
+      type: pipeline.type
     })),
   });
 });
