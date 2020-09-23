@@ -9,21 +9,24 @@ Remote scientific visualization service
 ## Getting Started
 
 You can
-- build and run the server using Docker 
+
+- build and run the server using Docker
 - or build voxer server from source manually
 
 ### Using the Docker Image
 
-``` shell
-$ cd voxer
-$ docker build . -t voxer # build the image
-$ mkdir data
-$ docker run --rm -p 3000:3000 --mount type=bind,source="$(pwd)/data",target=/tmp/data voxer
+You should use `nvidia-docker 2.0` to enable GPU rendering capability.
+For more information and system requirement about `nvidia-docker` please check [nvidia-docker](https://github.com/NVIDIA/nvidia-docker).
+
+```shell
+cd voxer
+docker build . -t voxer # build the image
 ```
 
 ### Building from Source
 
 #### Prerequisites
+
 1. Any c++ compiler supporting **C++17**
 1. CMake v3.11 or newer
 1. [OSPRay](http://www.ospray.org) >= v1.8.5. (v2.0.0 not supported)
@@ -32,7 +35,7 @@ $ docker run --rm -p 3000:3000 --mount type=bind,source="$(pwd)/data",target=/tm
 
 #### Compiling on Linux
 
-``` shell
+```shell
 $ cd voxer
 $ mkdir build && cd build
 $ cmake .. \
@@ -40,7 +43,7 @@ $ cmake .. \
   -DCMAKE_INSTALL_PREFIX=/target/directory \
   -Dospray_DIR=/path/to/ospray-config.cmake \
 $ cmake --build . -j 4
-$ cmake --build . --target install # install command 
+$ cmake --build . --target install # install command
 ```
 
 to build `voxer-server`.
@@ -50,7 +53,9 @@ to build `voxer-server`.
 TODO
 
 ## Citing
+
 If you find `voxer` useful in your research, you can consider citing:
+
 ```
 @article{yang2019voxer,
   title={Voxer—a platform for creating, customizing, and sharing scientific visualizations},

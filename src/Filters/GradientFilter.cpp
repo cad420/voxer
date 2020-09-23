@@ -1,4 +1,3 @@
-#pragma once
 #include <cmath>
 #include <voxer/Filters/GradientFilter.hpp>
 
@@ -20,12 +19,12 @@ float intpGrad(float v0, float v1, float v2) {
 
 namespace voxer {
 
-vector<float> GradientFilter::process(StructuredGrid &data) {
+vector<uint8_t> GradientFilter::process(StructuredGrid &data) {
   auto &info = data.info;
   auto &buffer = data.buffer;
   auto &dimension = info.dimensions;
 
-  auto getValue = [&buffer, &dimension](size_t x, size_t y, size_t z) {
+  auto getValue = [&buffer, &dimension](int x, int y, int z) {
     if (x < 0 || y < 0 || z < 0 || x >= dimension[0] || y >= dimension[1] ||
         z >= dimension[2])
       return static_cast<uint8_t>(0);
@@ -92,7 +91,7 @@ vector<float> GradientFilter::process(StructuredGrid &data) {
         result[4 * index + 3] = buffer[index];
         auto gradient = calGradient(x, y, z);
         if (norm(gradient[0], gradient[1], gradient[2]) > 1e-3) {
-          gradient = normalize(gradient);
+//          gradient = normalize(gradient);
           result[4 * index + 0] =
               static_cast<uint8_t>((gradient[0] + 1.0) / 2.0 * 255 + 0.5);
           result[4 * index + 1] =

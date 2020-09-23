@@ -1,33 +1,33 @@
-FROM ubuntu:19.10 as builder
+# use ubuntu:20.04 if GPU is not used
+FROM nvidia/opengl:1.2-glvnd-devel-ubuntu20.04 as builder
 
-RUN apt-get update
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/New_York
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apt-get update && apt upgrade -y
 RUN apt-get install -y \
-  build-essential \
-  git \
-  cmake \
-  zlib1g-dev \
-  wget
+      build-essential \
+      cmake \
+      git \
+      zlib1g-dev
 
-WORKDIR /tmp
-
-RUN wget https://github.com/ospray/OSPRay/releases/download/v1.8.5/ospray-1.8.5.x86_64.linux.tar.gz \
- && tar -xzf ospray-1.8.5.x86_64.linux.tar.gz
-
-ADD . /tmp/voxer
-WORKDIR /tmp/voxer
-RUN git submodule update --init
-RUN mkdir build && cd build && \
-  cmake .. \
-  -DCMAKE_BUILD_TYPE=Release \
-  -Dospray_DIR=/tmp/ospray-1.8.5.x86_64.linux/lib/cmake/ospray-1.8.5 \
-  -DCMAKE_INSTALL_PREFIX=/opt/voxer && \
-  cmake --build . --target install
-
-RUN cp -r /tmp/ospray-1.8.5.x86_64.linux/lib/* /opt/voxer/lib
+COPY . /tmp/voxer
+ADD ./third_party/ospray-2.2.0.x86_64.linux.tar.gz /tmp/voxer/third_party
+WORKDIR /tmp/voxer/build
+RUN cmake .. \
+      -DCMAKE_INSTALL_PREFIX=/opt/voxer/ \
+      -DCMAKE_BUILD_TYPE=Release \
+      # change to OFF if GPU is not used
+      -DVOXER_BUILD_BACKEND_GL=ON \
+      -Dospray_DIR=/tmp/voxer/third_party/ospray-2.2.0.x86_64.linux/lib/cmake/ospray-2.2.0
+RUN cmake --build . && cmake --install .
 RUN cp /usr/lib/x86_64-linux-gnu/libz.so* /opt/voxer/lib/
+RUN cp -r /tmp/voxer/third_party/ospray-2.2.0.x86_64.linux/lib/* /opt/voxer/lib/
 
-FROM ubuntu:19.10
+# use ubuntu:20.04 if GPU is not used
+FROM nvidia/opengl:1.2-glvnd-runtime-ubuntu20.04
 COPY --from=builder /opt/voxer /opt/voxer
-EXPOSE 3000
+EXPOSE 3040
 
-CMD ["/opt/voxer/bin/voxer-server"]
+CMD ["/opt/voxer/bin/VoxerRemote"]

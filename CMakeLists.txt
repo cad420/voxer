@@ -1,10 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
 
-if (DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-  set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-      CACHE STRING "")
-endif ()
-
 project(
     voxer
     LANGUAGES CXX C
@@ -18,7 +13,7 @@ SET(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../lib")
 
 include(cmake/utils.cmake)
 
-option(VOXER_INSTALL "install voxer library and headers" ON)
+option(VOXER_INSTALL "create target to install voxer library and headers" ON)
 option(VOXER_BUILD_BACKEND_GL "whether to build OpenGL rendering backend " ON)
 option(VOXER_BUILD_BACKEND_OSPRAY "whether to build OSPRay rendering backend" ON)
 option(VOXER_BUILD_SERVER "whether to build voxer server" ON)

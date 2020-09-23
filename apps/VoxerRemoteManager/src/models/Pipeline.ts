@@ -3,6 +3,7 @@ import { ObjectID } from "mongodb";
 interface Pipeline {
   _id: ObjectID;
   comment: string;
+  type?: string;
   tfcns: Array<Array<{ x: number; y: number; color: string }>>;
   type?: string;
   volumes: Array<{

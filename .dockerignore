@@ -1,7 +1,10 @@
-build
 .vscode
 .idea
+**/.git
+build
 data
 yarn-error.log
-apps/manage_server/node_modules
+**/node_modules/
+**/*.egg-info/
+**/dist/
 Dockerfile

@@ -5,7 +5,7 @@ include(FetchContent)
 FetchContent_Declare(
     vmcore
     GIT_REPOSITORY https://github.com/cad420/VMCore.git
-    GIT_TAG acf5624d4269feb1333b69b3df67720eab16a1e5
+    GIT_TAG c25a4b4d3339c03679f9c4cad945e1caa994da04
     GIT_SHALLOW true
     GIT_PROGRESS TRUE
 )
