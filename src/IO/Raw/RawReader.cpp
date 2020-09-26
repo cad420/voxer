@@ -59,14 +59,14 @@ auto RawReader::load() -> unique_ptr<StructuredGrid> {
   auto dataset = make_unique<StructuredGrid>();
   dataset->info.dimensions = dimensions;
   if (value_type == ValueType::UINT8) {
-    dataset->buffer.resize(dataset->info.byte_count());
+    dataset->buffer.reserve(dataset->info.byte_count());
     dataset->buffer.insert(dataset->buffer.begin(),
                            istream_iterator<uint8_t>(fs),
                            istream_iterator<uint8_t>());
   } else {
     uint64_t total = dimensions[0] * dimensions[1] * dimensions[2];
     vector<float> buffer;
-    buffer.resize(total);
+    buffer.reserve(total);
     buffer.insert(buffer.begin(), istream_iterator<float>(fs),
                   istream_iterator<float>{});
     dataset->buffer = convert_float_to_uint8(buffer.data(), total);

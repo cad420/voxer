@@ -2,82 +2,50 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <voxer/SliceRenderer.hpp>
-#include <voxer/VolumeRenderer.hpp>
-#include <voxer/utils.hpp>
+#include <voxer/Rendering/VolumeRenderer.hpp>
 
 using namespace std;
 using namespace voxer;
 namespace py = pybind11;
 
 PYBIND11_MODULE(pyvoxer, m) {
-  py::class_<Dataset> dataset(m, "Dataset");
+  py::class_<StructuredGrid, std::shared_ptr<StructuredGrid>> dataset(
+      m, "Dataset");
   dataset.def(py::init())
-      .def("get_slice", &Dataset::get_slice)
-      .def_static("Load", &Dataset::Load);
+      .def("get_slice", &StructuredGrid::get_slice)
+      .def("get_histogram", &StructuredGrid::get_histogram,
+           py::return_value_policy::take_ownership)
+      .def_static("Load", &StructuredGrid::Load);
 
-  py::enum_<Dataset::Axis>(dataset, "Axis")
-      .value("X", Dataset::Axis::X)
-      .value("Y", Dataset::Axis::Y)
-      .value("Z", Dataset::Axis::Z)
+  py::enum_<StructuredGrid::Axis>(dataset, "Axis")
+      .value("X", StructuredGrid::Axis::X)
+      .value("Y", StructuredGrid::Axis::Y)
+      .value("Z", StructuredGrid::Axis::Z)
       .export_values();
 
-  py::class_<DatasetStore>(m, "DatasetStore")
+  py::class_<TransferFunction, std::shared_ptr<TransferFunction>>(
+      m, "TransferFunction")
       .def(py::init())
-      .def("load", &DatasetStore::load)
-      .def("load_from_file", &DatasetStore::load_from_file)
-      .def("load_from_json", &DatasetStore::load_from_json)
-      .def("load_one", &DatasetStore::load_one)
-      .def("add_from_json", &DatasetStore::add_from_json)
-      .def("print", &DatasetStore::print)
-      .def(
-          "get",
-          py::overload_cast<const std::string &, const std::string &, uint32_t>(
-              &DatasetStore::get, py::const_),
-          py::return_value_policy::reference);
+      .def("add_point", &TransferFunction::add_point);
 
-  py::class_<Scene>(m, "Scene")
+  py::class_<Volume, std::shared_ptr<Volume>>(m, "Volume")
       .def(py::init())
-      .def_readwrite("datasets", &Scene::datasets)
-      .def_readwrite("tfcns", &Scene::tfcns)
-      .def_readwrite("volumes", &Scene::volumes)
-      .def_readwrite("isosurfaces", &Scene::isosurfaces)
-      .def_readwrite("camera", &Scene::camera);
-
-  py::class_<SceneDataset>(m, "SceneDataset")
-      .def(py::init())
-      .def_readwrite("name", &SceneDataset::name)
-      .def_readwrite("variable", &SceneDataset::variable)
-      .def_readwrite("timestep", &SceneDataset::timestep);
-
-  py::class_<ControlPoint>(m, "ControlPoint")
-      .def(py::init())
-      .def_readwrite("x", &ControlPoint::x)
-      .def_readwrite("y", &ControlPoint::y)
-      .def_readwrite("hex_color", &ControlPoint::hex_color)
-      .def_property(
-          "color", [](ControlPoint &point) { return point.hex_color; },
-          [](ControlPoint &point, const string &value) {
-            point.hex_color = value;
-            point.color = hex_color_to_float(value);
-          });
-
-  py::bind_vector<vector<ControlPoint>>(m, "TransferFunction");
-
-  py::class_<Volume>(m, "Volume")
-      .def(py::init())
-      .def_readwrite("dataset", &Volume::dataset_idx)
-      .def_readwrite("tfcn", &Volume::tfcn_idx)
+      .def("set_dataset",
+           [](Volume &volume, std::shared_ptr<StructuredGrid> dataset) {
+             volume.dataset = move(dataset);
+           })
+      .def("set_transfer_function",
+           [](Volume &volume, std::shared_ptr<TransferFunction> tfcn) {
+             volume.tfcn = move(tfcn);
+           })
       .def_readwrite("spacing", &Volume::spacing)
-      .def_readwrite("range", &Volume::range)
-      .def_readwrite("render", &Volume::render);
+      .def_readwrite("range", &Volume::range);
 
-  py::class_<Isosurface>(m, "Isosurface")
+  py::class_<Isosurface, std::shared_ptr<Isosurface>>(m, "Isosurface")
       .def(py::init())
       .def_readwrite("value", &Isosurface::value)
-      .def_readwrite("dataset", &Isosurface::dataset_idx)
-      .def_readwrite("color", &Isosurface::color)
-      .def_readwrite("render", &Isosurface::render);
+      .def_readwrite("dataset", &Isosurface::dataset)
+      .def_readwrite("color", &Isosurface::color);
 
   py::class_<Camera>(m, "Camera")
       .def(py::init())
@@ -119,16 +87,20 @@ PYBIND11_MODULE(pyvoxer, m) {
       .value("OpenGL", VolumeRenderer::Type::OpenGL)
       .export_values();
   volume_renderer.def(py::init<VolumeRenderer::Type>())
+      .def("set_camera", &VolumeRenderer::set_camera)
+      .def("add_volume", &VolumeRenderer::add_volume)
+      .def("add_isosurface", &VolumeRenderer::add_isosurface)
+      .def("clear_scene", &VolumeRenderer::clear_scene)
       .def("render", &VolumeRenderer::render)
       .def("get_colors", &VolumeRenderer::get_colors,
            py::return_value_policy::reference);
 
-  py::class_<SliceRenderer>(m, "SliceRenderer")
-      .def(py::init())
-      .def("set_dataset", &SliceRenderer::set_dataset)
-      .def("add_mark", py::overload_cast<Dataset *, const string &>(
-                           &SliceRenderer::add_mark))
-      .def("render", &SliceRenderer::render);
+  //  py::class_<SliceRenderer>(m, "SliceRenderer")
+  //      .def(py::init())
+  //      .def("set_dataset", &SliceRenderer::set_dataset)
+  //      .def("add_mark", py::overload_cast<Dataset *, const string &>(
+  //                           &SliceRenderer::add_mark))
+  //      .def("render", &SliceRenderer::render);
 
   m.doc() = R"pbdoc(
         python bindings for voxer

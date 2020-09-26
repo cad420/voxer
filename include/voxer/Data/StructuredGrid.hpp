@@ -67,6 +67,8 @@ struct StructuredGrid {
 
   [[nodiscard]] auto get_slice(Axis axis, uint32_t slice) const -> Image;
 
+  [[nodiscard]] auto get_histogram() const -> std::vector<uint32_t>;
+
   [[nodiscard]] static auto Load(const char *path)
       -> std::shared_ptr<StructuredGrid>;
 };

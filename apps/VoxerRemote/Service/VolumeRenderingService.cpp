@@ -98,9 +98,11 @@ void VolumeRenderingService::traverse_scene(VolumeRenderer &renderer,
     if (tfcns_map.find(volume_desc.tfcn_idx) == tfcns_map.end()) {
       auto tfcn = make_shared<voxer::TransferFunction>();
       auto &tfcn_desc = scene.tfcns[volume_desc.tfcn_idx];
-      auto data = interpolate_tfcn(tfcn_desc);
-      tfcn->opacities = move(data.first);
-      tfcn->colors = move(data.second);
+      for (auto &item : tfcn_desc) {
+        voxer::RGBColor color;
+        color.from_hex(item.color.data());
+        tfcn->add_point(item.x, item.y, color.data);
+      }
       auto res = tfcns_map.emplace(volume_desc.tfcn_idx, move(tfcn));
       volume->tfcn = res.first->second;
     } else {

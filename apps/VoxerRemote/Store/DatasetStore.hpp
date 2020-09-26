@@ -1,5 +1,5 @@
 #pragma once
-#include "DataModel/Dataset.hpp"
+#include "DataModel/StructuredGrid.hpp"
 #include <array>
 #include <memory>
 #include <rapidjson/document.h>

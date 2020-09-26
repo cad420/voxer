@@ -1,11 +1,11 @@
 #include "DatasetService.hpp"
-#include "DataModel/Dataset.hpp"
+#include "DataModel/StructuredGrid.hpp"
+#include <iostream>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-#include <seria/serialize.hpp>
 #include <seria/object.hpp>
+#include <seria/serialize.hpp>
 #include <voxer/Filters/histogram.hpp>
-#include <iostream>
 
 using namespace std;
 

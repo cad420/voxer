@@ -1,5 +1,5 @@
 #pragma once
-#include "DataModel/Dataset.hpp"
+#include "DataModel/StructuredGrid.hpp"
 #include "Service/AbstractService.hpp"
 #include "Store/DatasetStore.hpp"
 #include <voxer/Data/Annotation.hpp>

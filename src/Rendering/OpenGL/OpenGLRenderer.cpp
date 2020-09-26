@@ -134,8 +134,8 @@ OpenGLRenderer::OpenGLRenderer() : width(400), height(400) {
     throw runtime_error("failed to load gl");
   }
 
-  cout << "Detected " << numDevices << " devices, using first one: "
-       << "OpenGL Version: " << GLVersion.major << "." << GLVersion.minor
+  cout << "Detected " << to_string(numDevices) << " devices, using first one: "
+       << "OpenGL Version: " << to_string(GLVersion.major) << "." << to_string(GLVersion.minor)
        << endl;
 
   Point3f CubeVertices[8];
@@ -309,13 +309,13 @@ void OpenGLRenderer::render() {
   if (!render_isosurface) {
     for (auto &volume : m_volumes) {
       render_volume = true;
-
       auto &tfcn = volume->tfcn;
-      vector<array<float, 4>> tfcn_data(tfcn->colors.size());
+      auto data = tfcn->interpolate();
+      vector<array<float, 4>> tfcn_data(data.second.size());
       // TODO: inefficient
       for (size_t i = 0; i < tfcn_data.size(); i++) {
-        auto opacity = tfcn->opacities[i];
-        auto &color = tfcn->colors[i];
+        auto opacity = data.first[i];
+        auto &color = data.second[i];
         tfcn_data[i] = {color[0], color[1], color[2], opacity};
       }
 

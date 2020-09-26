@@ -1,8 +1,8 @@
 #pragma once
+#include "DataModel/StructuredGrid.hpp"
 #include <seria/object.hpp>
 #include <string>
 #include <voxer/Data/Slice.hpp>
-#include "DataModel/Dataset.hpp"
 
 namespace voxer::remote {
 

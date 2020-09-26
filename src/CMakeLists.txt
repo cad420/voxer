@@ -10,7 +10,8 @@ list(
     ${CMAKE_CURRENT_SOURCE_DIR}/Data/Annotation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Data/Color.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Data/Image.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Data/Dataset.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Data/StructuredGrid.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Data/TransferFunction.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/differ.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/histogram.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/BlurFilter.cpp

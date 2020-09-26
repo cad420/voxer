@@ -2,6 +2,7 @@
 #include <voxer/IO/MRCReader.hpp>
 #include <voxer/IO/RawReader.hpp>
 #include <voxer/IO/utils.hpp>
+#include <voxer/Filters/histogram.hpp>
 
 using namespace std;
 
@@ -79,6 +80,10 @@ auto StructuredGrid::Load(const char *path) -> std::shared_ptr<StructuredGrid> {
   }
 
   throw runtime_error(string("unsupported dataset extension: ") + ext);
+}
+
+auto StructuredGrid::get_histogram() const -> std::vector<uint32_t> {
+  return calculate_histogram(*this);
 }
 
 } // namespace voxer
