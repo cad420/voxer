@@ -67,11 +67,9 @@ class Renderer(DOMWidget):
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode('^0.1.0').tag(sync=True)
 
-    backend = Unicode('OSPRay').tag(sync=True)
     image = Bytes().tag(sync=True)
 
-    OpenGLRenderer = pyvoxer.VolumeRenderer(pyvoxer.VolumeRenderer.Type.OpenGL)
-    OSPRayRenderer = pyvoxer.VolumeRenderer(pyvoxer.VolumeRenderer.Type.OSPRay)
+    renderer = Instance(pyvoxer.VolumeRenderer)
     camera = pyvoxer.Camera()
 
     pos = List([0, 0, 1]).tag(sync=True)
@@ -81,13 +79,13 @@ class Renderer(DOMWidget):
 
     def __init__(self, backend):
         super(Renderer, self).__init__()
-        self.backend = backend
+        if backend == 'OSPRay':
+            self.renderer = pyvoxer.VolumeRenderer(pyvoxer.VolumeRenderer.Type.OSPRay)
+        else:
+            self.renderer = pyvoxer.VolumeRenderer(pyvoxer.VolumeRenderer.Type.OpenGL)
 
     def add_volume(self, volume):
-        if (self.backend == 'OSPRay'):
-            self.OSPRayRenderer.add_volume(volume)
-        else:
-            self.OpenGLRenderer.add_volume(volume)
+        self.renderer.add_volume(volume)
 
     def set_camera(self, **kw):
         self.canRender = False
@@ -114,15 +112,9 @@ class Renderer(DOMWidget):
         self.camera.pos = self.pos
         self.camera.target = self.target
         self.camera.up = self.up
-        raw_image = pyvoxer.Image()
-        if (self.backend == 'OSPRay'):
-            self.OSPRayRenderer.set_camera(self.camera)
-            self.OSPRayRenderer.render()
-            raw_image = self.OSPRayRenderer.get_colors()
-        else:
-            self.OpenGLRenderer.set_camera(self.camera)
-            self.OpenGLRenderer.render()
-            raw_image = self.OpenGLRenderer.get_colors()
+        self.renderer.set_camera(self.camera)
+        self.renderer.render()
+        raw_image = self.renderer.get_colors()
         jpeg = pyvoxer.Image.encode(
             raw_image, pyvoxer.Image.Format.JPEG, pyvoxer.Image.Quality.HIGH)
         self.image = bytes(jpeg.data)
