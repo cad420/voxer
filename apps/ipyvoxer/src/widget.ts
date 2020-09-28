@@ -116,7 +116,15 @@ class TransferFunctionView extends DOMWidgetView {
     });
 
     this.value_changed();
+    this.histogram_changed();
     this.model.on("change:points", this.value_changed, this);
+    this.model.on("change:histogram", this.histogram_changed, this);
+  }
+
+  histogram_changed() {
+    const histogram = this.model.get("histogram");
+    this.editor.setHistogram(histogram);
+    this.editor.render();
   }
 
   value_changed() {

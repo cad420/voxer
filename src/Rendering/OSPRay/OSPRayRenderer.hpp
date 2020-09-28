@@ -1,5 +1,6 @@
 #pragma once
 #include "Rendering/IRenderer.hpp"
+#include <unordered_map>
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
 
@@ -21,7 +22,9 @@ private:
   OSPVolume& create_osp_volume(StructuredGrid *volume);
   OSPVolume &get_osp_volume(StructuredGrid *volume);
 
-  std::map<StructuredGrid *, OSPVolume> m_osp_volume_cache{};
+  std::unordered_map<StructuredGrid *, OSPVolume> m_osp_volume_cache{};
+  std::unordered_map<Volume *, OSPVolumetricModel> m_osp_volume_models_cache{};
+  std::unordered_map<Isosurface *, OSPGeometricModel> m_osp_isosurface_models_cache{};
   Image m_image{};
   std::vector<std::shared_ptr<Volume>> m_volumes;
   std::vector<std::shared_ptr<Isosurface>> m_isosurfaces;

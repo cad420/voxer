@@ -3,28 +3,28 @@
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
 #include <stdexcept>
+#include <string>
 
 using namespace std;
 
 namespace voxer {
 
 OSPRayRenderer::OSPRayRenderer() {
-  ospInit();
-  osp_device = ospGetCurrentDevice();
-  //  ospLoadModule("ispc");
-  //  osp_device = ospNewDevice("cpu");
-  //  if (osp_device == nullptr) {
-  //    throw runtime_error("Failed to initialize OSPRay");
-  //  }
-  //#ifndef NDEBUG
-  ////  auto logLevel = OSP_LOG_INFO;
-  ////  ospDeviceSetParam(osp_device, "logLevel", OSP_INT, &logLevel);
-  //  ospDeviceSetParam(osp_device, "logOutput", OSP_STRING, "cout");
-  //  ospDeviceSetParam(osp_device, "errorOutput", OSP_STRING, "cerr");
-  //#endif
-  //  ospDeviceCommit(osp_device);
-  //  ospSetCurrentDevice(osp_device);
-  std::cout << "OSPRay initialized" << std::endl;
+  ospLoadModule("ispc");
+  osp_device = ospNewDevice("cpu");
+  if (osp_device == nullptr) {
+    throw runtime_error("Failed to initialize OSPRay");
+  }
+#ifndef NDEBUG
+//  auto logLevel = OSP_LOG_DEBUG;
+//  ospDeviceSetParam(osp_device, "logLevel", OSP_INT, &logLevel);
+//  ospDeviceSetParam(osp_device, "logOutput", OSP_STRING, "cout");
+//  ospDeviceSetParam(osp_device, "errorOutput", OSP_STRING, "cerr");
+#endif
+  ospDeviceCommit(osp_device);
+  ospSetCurrentDevice(osp_device);
+  std::cout << "OSPRay initialized: "
+            << to_string(reinterpret_cast<uint64_t>(osp_device)) << std::endl;
 }
 
 OSPRayRenderer::~OSPRayRenderer() {
@@ -54,16 +54,17 @@ void OSPRayRenderer::render() {
   vector<OSPInstance> osp_instances;
 
   for (const auto &volume : m_volumes) {
-    const auto &tfcn = *(volume->tfcn);
-    auto tmp = ospNewSharedData(tfcn.opacities.data(), OSP_FLOAT,
-                                tfcn.opacities.size());
-    auto osp_opacity_data = ospNewData(OSP_FLOAT, tfcn.opacities.size());
+    auto &tfcn = *(volume->tfcn);
+    auto data = tfcn.interpolate();
+    auto tmp = ospNewSharedData(data.first.data(), OSP_FLOAT,
+                                data.first.size());
+    auto osp_opacity_data = ospNewData(OSP_FLOAT, data.first.size());
     ospCopyData(tmp, osp_opacity_data);
     ospRelease(tmp);
     ospCommit(osp_opacity_data);
 
-    tmp = ospNewSharedData(tfcn.colors.data(), OSP_VEC3F, tfcn.colors.size());
-    auto osp_colors_data = ospNewData(OSP_VEC3F, tfcn.colors.size());
+    tmp = ospNewSharedData(data.second.data(), OSP_VEC3F, data.second.size());
+    auto osp_colors_data = ospNewData(OSP_VEC3F, data.second.size());
     ospCopyData(tmp, osp_colors_data);
     ospRelease(tmp);
     ospCommit(osp_colors_data);
