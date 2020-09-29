@@ -2,6 +2,7 @@
 #include "Rendering/IRenderer.hpp"
 #include "Rendering/NewOpenGL/ShaderProgram.hpp"
 #include <EGL/egl.h>
+#include <unordered_map>
 #include <voxer/Data/Image.hpp>
 
 namespace voxer {
@@ -25,8 +26,14 @@ public:
   void clear_scene() override;
 
 private:
-  Camera m_camera;
   Image m_image;
+  Camera m_camera;
+  std::vector<std::shared_ptr<Volume>> m_volumes;
+  std::vector<std::shared_ptr<Isosurface>> m_isosurfaces;
+  std::unordered_map<StructuredGrid *, GLuint> m_dataset_cache;
+  std::unordered_map<StructuredGrid *, GLuint> m_dataset_gradient_cache;
+  std::unordered_map<TransferFunction *, GLuint> m_tfcn_cache;
+
   std::unique_ptr<ShaderProgram> m_position_program;
   std::unique_ptr<ShaderProgram> m_raycast_program;
   std::unique_ptr<ShaderProgram> m_screen_program;
@@ -34,10 +41,17 @@ private:
   std::unique_ptr<ShaderProgram> m_essraycast_program;
 
   EGLDisplay m_egl_display;
+
   GLuint m_VBO = 0;
-  GLuint m_VAO = 0;
   GLuint m_EBO = 0;
+  GLuint m_VAO = 0;
+
+  GLuint m_entry_texture = 0;
+  GLuint m_exit_texture = 0;
+  GLuint m_RBO = 0;
   GLuint m_FBO = 0;
+
+  void setup_context();
 
   void setup_resources();
 

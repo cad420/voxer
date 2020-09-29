@@ -102,6 +102,16 @@ float screen_quad_vertices[24] = {
 namespace voxer {
 
 OpenGLVolumeRenderer::OpenGLVolumeRenderer() {
+  setup_context();
+  setup_resources();
+  setup_proxy_cude();
+}
+
+OpenGLVolumeRenderer::~OpenGLVolumeRenderer() noexcept {
+  eglTerminate(m_egl_display);
+}
+
+void OpenGLVolumeRenderer::setup_context() {
   static const int MAX_DEVICES = 4;
   EGLDeviceEXT egl_devices[MAX_DEVICES];
   EGLint num_devices;
@@ -159,24 +169,89 @@ OpenGLVolumeRenderer::OpenGLVolumeRenderer() {
        << endl;
 }
 
-OpenGLVolumeRenderer::~OpenGLVolumeRenderer() noexcept {
-  eglTerminate(m_egl_display);
-}
-
 void OpenGLVolumeRenderer::set_camera(const Camera &camera) {
   m_camera = camera;
+
+  glDeleteTextures(1, &m_entry_texture);
+  glDeleteTextures(1, &m_exit_texture);
+  glDeleteRenderbuffers(1, &m_RBO);
+
+  glGenTextures(1, &m_entry_texture);
+  glActiveTexture(GL_TEXTURE3);
+  glBindTexture(GL_TEXTURE_2D, m_entry_texture);
+  glTextureStorage2D(m_entry_texture, 1, GL_RGBA32F, camera.width,
+                     camera.height);
+  glBindImageTexture(1, m_entry_texture, 0, GL_FALSE, 0, GL_READ_ONLY,
+                     GL_RGBA32F);
+
+  glGenTextures(1, &m_exit_texture);
+  glActiveTexture(GL_TEXTURE4);
+  glBindTexture(GL_TEXTURE_2D, m_exit_texture);
+  glTextureStorage2D(m_exit_texture, 1, GL_RGBA32F, camera.width,
+                     camera.height);
+  glBindImageTexture(2, m_exit_texture, 0, GL_FALSE, 0, GL_READ_ONLY,
+                     GL_RGBA32F);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D,
+                         m_exit_texture, 0);
+
+  glGenRenderbuffers(1, &m_RBO);
+  glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width,
+                        camera.height);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                            GL_RENDERBUFFER, m_RBO);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                            GL_RENDERBUFFER, m_RBO);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                         m_entry_texture, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D,
+                         m_exit_texture, 0);
+
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    throw runtime_error("Framebuffer Object is not complete");
+  }
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void OpenGLVolumeRenderer::add_volume(const std::shared_ptr<Volume> &volume) {
-  // calculate volume data gradient
+  auto dataset = volume->dataset.get();
+  auto tfcn = volume->tfcn.get();
 
-  // process tfcn
+  if (m_dataset_cache.count(dataset) == 0) {
+    auto texture = create_dataset_texture(*dataset);
+    m_dataset_cache.emplace(dataset, texture);
+  }
 
-  // cache volume and gradient data
+  if (m_dataset_gradient_cache.count(dataset) == 0) {
+    // TODO
+  }
+
+  if (m_tfcn_cache.find(tfcn) == m_tfcn_cache.end()) {
+    auto texture = create_tfcn_texture(*tfcn);
+    m_tfcn_cache.emplace(tfcn, texture);
+  }
+
+  m_volumes.emplace_back(volume);
 }
 
 void OpenGLVolumeRenderer::add_isosurface(
-    const std::shared_ptr<voxer::Isosurface> &isosurface) {}
+    const std::shared_ptr<voxer::Isosurface> &isosurface) {
+  auto dataset = isosurface->dataset.get();
+
+  if (m_dataset_cache.count(dataset) == 0) {
+    auto texture = create_dataset_texture(*dataset);
+    m_dataset_cache.emplace(dataset, texture);
+  }
+
+  if (m_dataset_gradient_cache.count(dataset) == 0) {
+    // TODO
+  }
+
+  m_isosurfaces.emplace_back(isosurface);
+}
 
 void OpenGLVolumeRenderer::render() {
   auto distance =
@@ -192,26 +267,6 @@ void OpenGLVolumeRenderer::render() {
   model = glm::translate(model, glm::vec3(-0.5f, -0.5f, -0.5f));
   auto mvp_matrix = projection * view * model;
 
-  glEnable(GL_DEPTH_TEST);
-  // render pass 1
-  glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
-  glBindVertexArray(m_VAO);
-  m_position_program->use();
-  m_position_program->setMat4("MVPMatrix", mvp_matrix);
-  glDrawBuffer(GL_COLOR_ATTACHMENT0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
-
-  // render pass 2
-  glDrawBuffer(GL_COLOR_ATTACHMENT1);
-  glClear(GL_COLOR_BUFFER_BIT);
-  glDepthFunc(GL_GREATER);
-  glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-  glDepthFunc(GL_LESS);
-
-  // render pass 3
-  glBindVertexArray(0);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
   m_raycast_program->use();
   m_raycast_program->setMat4("projection", projection);
   m_raycast_program->setMat4("view", view);
@@ -232,17 +287,53 @@ void OpenGLVolumeRenderer::render() {
     m_raycast_program->setVec3("cameraPos", m_camera.pos);
   }
 
-  glDisable(GL_CULL_FACE);
-  glBindVertexArray(m_VAO);
-  // glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-  glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+  if (!m_isosurfaces.empty()) {
+    for (auto &isosurface : m_isosurfaces) {
+    }
+  }
+
+  for (auto &volume : m_volumes) {
+    glEnable(GL_DEPTH_TEST);
+    // render pass 1
+    glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
+    glBindVertexArray(m_VAO);
+    m_position_program->use();
+    m_position_program->setMat4("MVPMatrix", mvp_matrix);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+
+    // render pass 2
+    glDrawBuffer(GL_COLOR_ATTACHMENT1);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDepthFunc(GL_GREATER);
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    glDepthFunc(GL_LESS);
+
+    // render pass 3
+    glBindVertexArray(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDisable(GL_CULL_FACE);
+    glBindVertexArray(m_VAO);
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+  }
 
   glFlush();
 }
 
 auto OpenGLVolumeRenderer::get_colors() -> const Image & { return m_image; }
 
-void OpenGLVolumeRenderer::clear_scene() {}
+void OpenGLVolumeRenderer::clear_scene() {
+  for (auto &volume : m_volumes) {
+    auto dataset = volume->dataset.get();
+  }
+
+  for (auto &isosurface : m_isosurfaces) {
+    auto dataset = isosurface->dataset.get();
+  }
+  m_volumes.clear();
+  m_isosurfaces.clear();
+}
 
 void OpenGLVolumeRenderer::setup_resources() {
   m_position_program =
@@ -255,6 +346,8 @@ void OpenGLVolumeRenderer::setup_resources() {
       make_unique<ShaderProgram>(shader::essposition_v, shader::essposition_f);
   m_essraycast_program =
       make_unique<ShaderProgram>(shader::essraycast_v, shader::essraycast_f);
+
+  glGenFramebuffers(1, &m_FBO);
 }
 
 void OpenGLVolumeRenderer::setup_proxy_cude() {
@@ -267,16 +360,14 @@ void OpenGLVolumeRenderer::setup_proxy_cude() {
       volume_vertices[6 * 3 + 2] = volume_vertices[7 * 3 + 2] = 1.0f;
 
   glGenVertexArrays(1, &m_VAO);
-  glGenBuffers(1, &m_VBO);
-  glGenBuffers(1, &m_EBO);
-
   glBindVertexArray(m_VAO);
 
+  glGenBuffers(1, &m_VBO);
   glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-
   glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 24, volume_vertices.data(),
                GL_STATIC_DRAW);
 
+  glGenBuffers(1, &m_EBO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(volume_vertex_indices),
                volume_vertex_indices, GL_STATIC_DRAW);
@@ -288,35 +379,6 @@ void OpenGLVolumeRenderer::setup_proxy_cude() {
 }
 
 void OpenGLVolumeRenderer::setup_framebuffer() {
-  glGenFramebuffers(1,&m_FBO);
-  glBindFramebuffer(GL_FRAMEBUFFER,m_FBO);
-
-  glGenTextures(1,&entryTexture);
-  glActiveTexture(GL_TEXTURE3);
-  glBindTexture(GL_TEXTURE_2D,entryTexture);
-  glTextureStorage2D(entryTexture,1,GL_RGBA32F,volumeInfo.ScreenW,volumeInfo.ScreenH);
-  glBindImageTexture(1,entryTexture,0,GL_FALSE,0,GL_READ_ONLY,GL_RGBA32F);
-  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,entryTexture,0);
-
-  glGenRenderbuffers(1, &RBO);
-  glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, volumeInfo.ScreenW, volumeInfo.ScreenH); // use a single renderbuffer object for both a depth AND stencil buffer.
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
-
-
-  glGenTextures(1,&exitTexture);
-  glActiveTexture(GL_TEXTURE4);
-  glBindTexture(GL_TEXTURE_2D,exitTexture);
-  glTextureStorage2D(exitTexture,1,GL_RGBA32F,volumeInfo.ScreenW,volumeInfo.ScreenH);
-  glBindImageTexture(2,exitTexture,0,GL_FALSE,0,GL_READ_ONLY,GL_RGBA32F);
-  glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,exitTexture,0);
-
-  if(glCheckFramebufferStatus(GL_FRAMEBUFFER)!=GL_FRAMEBUFFER_COMPLETE){
-    cout<<"Framebuffer object is not complete!"<<endl;
-    exit(-1);
-  }
-
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 } // namespace voxer
