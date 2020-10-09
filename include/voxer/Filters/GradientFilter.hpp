@@ -5,7 +5,7 @@
 namespace voxer {
 
 struct GradientFilter {
-  std::vector<float> process(StructuredGrid &data);
+  std::vector<uint8_t> process(StructuredGrid &data);
 };
 
 } // namespace voxer

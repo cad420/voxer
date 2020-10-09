@@ -31,8 +31,6 @@ private:
   std::vector<std::shared_ptr<Volume>> m_volumes;
   std::vector<std::shared_ptr<Isosurface>> m_isosurfaces;
   std::unordered_map<StructuredGrid *, GLuint> m_dataset_cache;
-  std::unordered_map<StructuredGrid *, GLuint> m_dataset_gradient_cache;
-  std::unordered_map<TransferFunction *, GLuint> m_tfcn_cache;
 
   std::unique_ptr<ShaderProgram> m_position_program;
   std::unique_ptr<ShaderProgram> m_raycast_program;
@@ -40,7 +38,7 @@ private:
   std::unique_ptr<ShaderProgram> m_essposition_program;
   std::unique_ptr<ShaderProgram> m_essraycast_program;
 
-  EGLDisplay m_egl_display;
+  EGLDisplay m_egl_display{};
 
   GLuint m_VBO = 0;
   GLuint m_EBO = 0;
@@ -56,8 +54,6 @@ private:
   void setup_resources();
 
   void setup_proxy_cude();
-
-  void setup_framebuffer();
 };
 
 } // namespace voxer

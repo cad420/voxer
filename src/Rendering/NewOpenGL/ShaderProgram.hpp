@@ -1,10 +1,10 @@
 #pragma once
 #include <fstream>
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <glm/glm.hpp>
 
 namespace voxer {
 
@@ -18,8 +18,8 @@ using ivec4 = std::array<int32_t, 4>;
 class ShaderProgram {
 public:
   unsigned int ID;
-  ShaderProgram(const char *vertexPath, const char *fragmentPath,
-         const char *geometryPath = nullptr);
+  ShaderProgram(const char *vertexShader, const char *fragmentShader,
+                const char *geometryShader = nullptr);
   void use() const;
   void setBool(const std::string &name, bool value) const;
   void setInt(const std::string &name, int value) const;
@@ -32,14 +32,15 @@ public:
   void setVec4(const std::string &name, const vec4 &value) const;
   void setVec4(const std::string &name, float x, float y, float z,
                float w) const;
-  void setMat2(const std::string& name,const glm::mat2& mat) const;
-  void setMat3(const std::string& name,const glm::mat3& mat) const;
-  void setMat4(const std::string& name,const glm::mat4& mat) const;
+  void setMat2(const std::string &name, const glm::mat2 &mat) const;
+  void setMat3(const std::string &name, const glm::mat3 &mat) const;
+  void setMat4(const std::string &name, const glm::mat4 &mat) const;
   static void checkCompileErrors(GLuint id, const std::string &type);
 };
 
-inline ShaderProgram::ShaderProgram(const char *vertexPath, const char *fragmentPath,
-                      const char *geometryPath) {
+inline ShaderProgram::ShaderProgram(const char *vertexShader,
+                                    const char *fragmentShader,
+                                    const char *geometryShader) {
   // 1.load glsl file
   std::string vertexCode;
   std::string fragmentCode;
@@ -50,33 +51,9 @@ inline ShaderProgram::ShaderProgram(const char *vertexPath, const char *fragment
   fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
   gShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
-  try {
-    vShaderFile.open(vertexPath);
-    fShaderFile.open(fragmentPath);
-    std::stringstream vShaderStream, fShaderStream;
-
-    vShaderStream << vShaderFile.rdbuf();
-    fShaderStream << fShaderFile.rdbuf();
-
-    vShaderFile.close();
-    fShaderFile.close();
-
-    vertexCode = vShaderStream.str();
-    fragmentCode = fShaderStream.str();
-
-    if (geometryPath != nullptr) {
-      gShaderFile.open(geometryPath);
-      std::stringstream gShaderStream;
-      gShaderStream << gShaderFile.rdbuf();
-      gShaderFile.close();
-      fragmentCode = gShaderStream.str();
-    }
-  } catch (std::ifstream::failure &e) {
-    std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
-  }
   // 2.compile shaders
-  const char *vShaderCode = vertexCode.c_str();
-  const char *fShaderCode = fragmentCode.c_str();
+  const char *vShaderCode = vertexShader;
+  const char *fShaderCode = fragmentShader;
 
   unsigned int vShader, fShader, gShader;
 
@@ -90,7 +67,7 @@ inline ShaderProgram::ShaderProgram(const char *vertexPath, const char *fragment
   glCompileShader(fShader);
   checkCompileErrors(fShader, "FRAGMENT");
 
-  if (geometryPath != nullptr) {
+  if (geometryShader != nullptr) {
     const char *gShaderCode = geometryCode.c_str();
 
     gShader = glCreateShader(GL_GEOMETRY_SHADER);
@@ -102,14 +79,14 @@ inline ShaderProgram::ShaderProgram(const char *vertexPath, const char *fragment
   ID = glCreateProgram();
   glAttachShader(ID, vShader);
   glAttachShader(ID, fShader);
-  if (geometryPath != nullptr)
+  if (geometryShader != nullptr)
     glAttachShader(ID, gShader);
   glLinkProgram(ID);
   checkCompileErrors(ID, "PROGRAM");
 
   glDeleteShader(vShader);
   glDeleteShader(fShader);
-  if (geometryPath != nullptr)
+  if (geometryShader != nullptr)
     glDeleteShader(gShader);
 }
 
@@ -123,57 +100,66 @@ inline void ShaderProgram::setInt(const std::string &name, int value) const {
   glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
 }
 
-inline void ShaderProgram::setFloat(const std::string &name, float value) const {
+inline void ShaderProgram::setFloat(const std::string &name,
+                                    float value) const {
   glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
 }
 
-inline void ShaderProgram::setVec2(const std::string &name, const vec2 &value) const {
+inline void ShaderProgram::setVec2(const std::string &name,
+                                   const vec2 &value) const {
   glUniform2fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
 }
 
-inline void ShaderProgram::setVec2(const std::string &name, float x, float y) const {
+inline void ShaderProgram::setVec2(const std::string &name, float x,
+                                   float y) const {
   glUniform2f(glGetUniformLocation(ID, name.c_str()), x, y);
 }
 
-inline void ShaderProgram::setVec3(const std::string &name, const vec3 &value) const {
+inline void ShaderProgram::setVec3(const std::string &name,
+                                   const vec3 &value) const {
   glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
 }
 
 inline void ShaderProgram::setVec3(const std::string &name, float x, float y,
-                            float z) const {
+                                   float z) const {
   glUniform3f(glGetUniformLocation(ID, name.c_str()), x, y, z);
 }
 
 inline void ShaderProgram::setIVec3(const std::string &name,
-                             const ivec3 &value) const {
+                                    const ivec3 &value) const {
   glUniform3iv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
 }
 
-inline void ShaderProgram::setVec4(const std::string &name, const vec4 &value) const {
+inline void ShaderProgram::setVec4(const std::string &name,
+                                   const vec4 &value) const {
   glUniform4fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
 }
 
-inline void ShaderProgram::setVec4(const std::string &name, float x, float y, float z,
-                            float w) const {
+inline void ShaderProgram::setVec4(const std::string &name, float x, float y,
+                                   float z, float w) const {
   glUniform4f(glGetUniformLocation(ID, name.c_str()), x, y, z, w);
 }
 
-inline void ShaderProgram::setMat2(const std::string& name,const glm::mat2& mat) const
-{
-  glUniformMatrix2fv(glGetUniformLocation(ID,name.c_str()),1,GL_FALSE,&mat[0][0]);
+inline void ShaderProgram::setMat2(const std::string &name,
+                                   const glm::mat2 &mat) const {
+  glUniformMatrix2fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE,
+                     &mat[0][0]);
 }
 
-inline void ShaderProgram::setMat3(const std::string& name,const glm::mat3& mat) const
-{
-  glUniformMatrix3fv(glGetUniformLocation(ID,name.c_str()),1,GL_FALSE,&mat[0][0]);
+inline void ShaderProgram::setMat3(const std::string &name,
+                                   const glm::mat3 &mat) const {
+  glUniformMatrix3fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE,
+                     &mat[0][0]);
 }
 
-inline void ShaderProgram::setMat4(const std::string& name,const glm::mat4& mat) const
-{
-  glUniformMatrix4fv(glGetUniformLocation(ID,name.c_str()),1,GL_FALSE,&mat[0][0]);
+inline void ShaderProgram::setMat4(const std::string &name,
+                                   const glm::mat4 &mat) const {
+  glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE,
+                     &mat[0][0]);
 }
 
-inline void ShaderProgram::checkCompileErrors(GLuint id, const std::string &type) {
+inline void ShaderProgram::checkCompileErrors(GLuint id,
+                                              const std::string &type) {
   GLint success;
   GLchar infoLog[1024];
   if (type != "PROGRAM") {

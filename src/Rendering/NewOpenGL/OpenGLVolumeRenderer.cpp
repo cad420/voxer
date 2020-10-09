@@ -9,6 +9,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+#include <voxer/Filters/GradientFilter.hpp>
 
 using namespace std;
 
@@ -28,8 +29,8 @@ const EGLint egl_config_attribs[] = {EGL_SURFACE_TYPE,
                                      EGL_OPENGL_BIT,
                                      EGL_NONE};
 
-const int pbuffer_width = 800;
-const int pbuffer_height = 800;
+const int pbuffer_width = 1024;
+const int pbuffer_height = 1024;
 
 const EGLint pbuffer_attribs[] = {
     EGL_WIDTH, pbuffer_width, EGL_HEIGHT, pbuffer_height, EGL_NONE,
@@ -74,6 +75,9 @@ GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
   auto &dimension = info.dimensions;
   auto &buffer = dataset.buffer;
 
+  voxer::GradientFilter filter{};
+  auto filterd = filter.process(dataset);
+
   GLuint volume_texture = 0;
   glGenTextures(1, &volume_texture);
   glActiveTexture(GL_TEXTURE2);
@@ -84,7 +88,7 @@ GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
   glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, dimension[0], dimension[1],
-               dimension[2], 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());
+               dimension[2], 0, GL_RGBA, GL_UNSIGNED_BYTE, filterd.data());
 
   return volume_texture;
 }
@@ -94,7 +98,6 @@ unsigned int volume_vertex_indices[36] = {0, 1, 2, 0, 2, 3, 0, 4, 1, 4, 5, 1,
                                           7, 4, 3, 3, 4, 0, 4, 7, 6, 4, 6, 5};
 float screen_quad_vertices[24] = {
     -1.0f, 1.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f,
-
     -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f};
 
 } // namespace
@@ -171,13 +174,14 @@ void OpenGLVolumeRenderer::setup_context() {
 
 void OpenGLVolumeRenderer::set_camera(const Camera &camera) {
   m_camera = camera;
+  glViewport(0, 0, camera.width, camera.height);
 
   glDeleteTextures(1, &m_entry_texture);
   glDeleteTextures(1, &m_exit_texture);
   glDeleteRenderbuffers(1, &m_RBO);
 
   glGenTextures(1, &m_entry_texture);
-  glActiveTexture(GL_TEXTURE3);
+  glActiveTexture(GL_TEXTURE0 + 3);
   glBindTexture(GL_TEXTURE_2D, m_entry_texture);
   glTextureStorage2D(m_entry_texture, 1, GL_RGBA32F, camera.width,
                      camera.height);
@@ -185,7 +189,7 @@ void OpenGLVolumeRenderer::set_camera(const Camera &camera) {
                      GL_RGBA32F);
 
   glGenTextures(1, &m_exit_texture);
-  glActiveTexture(GL_TEXTURE4);
+  glActiveTexture(GL_TEXTURE0 + 4);
   glBindTexture(GL_TEXTURE_2D, m_exit_texture);
   glTextureStorage2D(m_exit_texture, 1, GL_RGBA32F, camera.width,
                      camera.height);
@@ -218,20 +222,10 @@ void OpenGLVolumeRenderer::set_camera(const Camera &camera) {
 
 void OpenGLVolumeRenderer::add_volume(const std::shared_ptr<Volume> &volume) {
   auto dataset = volume->dataset.get();
-  auto tfcn = volume->tfcn.get();
 
   if (m_dataset_cache.count(dataset) == 0) {
     auto texture = create_dataset_texture(*dataset);
     m_dataset_cache.emplace(dataset, texture);
-  }
-
-  if (m_dataset_gradient_cache.count(dataset) == 0) {
-    // TODO
-  }
-
-  if (m_tfcn_cache.find(tfcn) == m_tfcn_cache.end()) {
-    auto texture = create_tfcn_texture(*tfcn);
-    m_tfcn_cache.emplace(tfcn, texture);
   }
 
   m_volumes.emplace_back(volume);
@@ -246,37 +240,46 @@ void OpenGLVolumeRenderer::add_isosurface(
     m_dataset_cache.emplace(dataset, texture);
   }
 
-  if (m_dataset_gradient_cache.count(dataset) == 0) {
-    // TODO
-  }
-
   m_isosurfaces.emplace_back(isosurface);
 }
 
 void OpenGLVolumeRenderer::render() {
   auto distance =
       glm::length(glm::vec3(m_camera.pos[0], m_camera.pos[1], m_camera.pos[2]));
-  auto projection =
-      glm::ortho(-distance, distance, -distance, distance, 0.1f, 50.0f);
+  auto aspect =
+      static_cast<float>(m_camera.width) / static_cast<float>(m_camera.height);
+  auto projection = glm::ortho(-distance, distance, -distance / aspect,
+                               distance / aspect, 0.1f, 5000.0f);
   auto view = glm::lookAt(
       glm::vec3(m_camera.pos[0], m_camera.pos[1], m_camera.pos[2]),
       glm::vec3(m_camera.target[0], m_camera.target[1], m_camera.target[2]),
       glm::vec3(m_camera.up[0], m_camera.up[1], m_camera.up[2]));
-  auto model = glm::identity<glm::mat4>();
-  // TODO
-  model = glm::translate(model, glm::vec3(-0.5f, -0.5f, -0.5f));
-  auto mvp_matrix = projection * view * model;
 
   m_raycast_program->use();
   m_raycast_program->setMat4("projection", projection);
   m_raycast_program->setMat4("view", view);
-  m_raycast_program->setMat4("model", model);
   m_raycast_program->setMat4("InverseView", glm::inverse(view));
-  m_raycast_program->setMat4("InverseModel", glm::inverse(model));
   m_raycast_program->setVec3("cameraFront",
                              m_camera.target[0] - m_camera.pos[0],
                              m_camera.target[1] - m_camera.pos[1],
                              m_camera.target[2] - m_camera.pos[2]);
+  m_raycast_program->setInt("TF", 0);
+  m_raycast_program->setInt("preIntTF", 1);
+  m_raycast_program->setInt("Block", 2);
+  m_raycast_program->setInt("entryPosTexture", 3);
+  m_raycast_program->setInt("exitPosTexture", 4);
+  m_raycast_program->setFloat("ka", 0.5f);
+  m_raycast_program->setFloat("kd", 0.8f);
+  m_raycast_program->setFloat("ks", 1.0f);
+  m_raycast_program->setFloat("shininess", 100.0f);
+  m_raycast_program->setVec3("lightDir", -1.0f, 0.0f, 0.0f);
+  m_raycast_program->setVec3("bgColor", 1.0f, 0.0f, 0.0f);
+  m_raycast_program->setBool("usePreIntTF", false);
+  m_raycast_program->setBool("isPerspective",
+                             m_camera.type == Camera::Type::PERSPECTIVE);
+  m_raycast_program->setBool("gradPreCal", true);
+  m_raycast_program->setInt("width", m_camera.width);
+  m_raycast_program->setInt("height", m_camera.height);
 
   if (m_camera.pos[0] <= -0.1 || m_camera.pos[0] >= 1.1 ||
       m_camera.pos[1] <= -0.1 || m_camera.pos[1] >= 1.1 ||
@@ -287,12 +290,83 @@ void OpenGLVolumeRenderer::render() {
     m_raycast_program->setVec3("cameraPos", m_camera.pos);
   }
 
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
   if (!m_isosurfaces.empty()) {
+    m_raycast_program->setInt("drawMode", 2);
     for (auto &isosurface : m_isosurfaces) {
+      auto dataset = isosurface->dataset.get();
+      auto &dimensions = dataset->info.dimensions;
+      auto max = static_cast<float>(
+          std::max(dimensions[0], std::max(dimensions[1], dimensions[2])));
+
+      auto model = glm::identity<glm::mat4>();
+      model = glm::scale(
+          model, glm::vec3(dimensions[0], dimensions[1], dimensions[2]));
+      model = glm::translate(model, glm::vec3(-0.5f, -0.5f, -0.5f));
+      auto mvp_matrix = projection * view * model;
+
+      glEnable(GL_DEPTH_TEST);
+      // render pass 1
+      glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
+      glBindVertexArray(m_VAO);
+      m_position_program->use();
+      m_position_program->setMat4("MVPMatrix", mvp_matrix);
+      glDrawBuffer(GL_COLOR_ATTACHMENT0);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+
+      // render pass 2
+      glDrawBuffer(GL_COLOR_ATTACHMENT1);
+      glClear(GL_COLOR_BUFFER_BIT);
+      glDepthFunc(GL_GREATER);
+      glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+      glDepthFunc(GL_LESS);
+
+      // render pass 3
+      m_raycast_program->use();
+      m_raycast_program->setFloat("isoValue", isosurface->value / 255.0f);
+      m_raycast_program->setVec3("isoColor", isosurface->color.data[0],
+                                 isosurface->color.data[1],
+                                 isosurface->color.data[2]);
+      m_raycast_program->setMat4("model", model);
+      m_raycast_program->setMat4("InverseModel", glm::inverse(model));
+      m_raycast_program->setVec3("boundRatio", 1.0f / max * dimensions[0],
+                                 1.0f / max * dimensions[1],
+                                 1.0f / max * dimensions[2]);
+      m_raycast_program->setInt("drawMode", 1);
+      m_raycast_program->setVec3("boundRatio", 1.0f / max * dimensions[0],
+                                 1.0f / max * dimensions[1],
+                                 1.0f / max * dimensions[2]);
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      glDisable(GL_CULL_FACE);
+      glBindVertexArray(m_VAO);
+      glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
     }
   }
 
   for (auto &volume : m_volumes) {
+    auto dataset = volume->dataset.get();
+
+    auto tfcn_texture = create_tfcn_texture(*volume->tfcn);
+    glActiveTexture(GL_TEXTURE0 + 0);
+    glBindTexture(GL_TEXTURE_1D, tfcn_texture);
+
+    auto dataset_texture = m_dataset_cache.at(dataset);
+    glActiveTexture(GL_TEXTURE0 + 2);
+    glBindTexture(GL_TEXTURE_3D, dataset_texture);
+
+    auto &dimensions = dataset->info.dimensions;
+    auto max = static_cast<float>(
+        std::max(dimensions[0], std::max(dimensions[1], dimensions[2])));
+
+    auto model = glm::identity<glm::mat4>();
+    model = glm::scale(model,
+                       glm::vec3(dimensions[0], dimensions[1], dimensions[2]));
+    model = glm::translate(model, glm::vec3(-0.5f, -0.5f, -0.5f));
+    auto mvp_matrix = projection * view * model;
+
     glEnable(GL_DEPTH_TEST);
     // render pass 1
     glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
@@ -307,21 +381,40 @@ void OpenGLVolumeRenderer::render() {
     glDrawBuffer(GL_COLOR_ATTACHMENT1);
     glClear(GL_COLOR_BUFFER_BIT);
     glDepthFunc(GL_GREATER);
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
     glDepthFunc(GL_LESS);
 
     // render pass 3
-    glBindVertexArray(0);
+    m_raycast_program->use();
+    m_raycast_program->setMat4("model", model);
+    m_raycast_program->setMat4("InverseModel", glm::inverse(model));
+    m_raycast_program->setVec3("boundRatio", 1.0f / max * dimensions[0],
+                               1.0f / max * dimensions[1],
+                               1.0f / max * dimensions[2]);
+    m_raycast_program->setInt("drawMode", 2);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_CULL_FACE);
     glBindVertexArray(m_VAO);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+
+    glDeleteTextures(1, &tfcn_texture);
   }
 
   glFlush();
 }
 
-auto OpenGLVolumeRenderer::get_colors() -> const Image & { return m_image; }
+auto OpenGLVolumeRenderer::get_colors() -> const Image & {
+  m_image.width = m_camera.width;
+  m_image.height = m_camera.height;
+  m_image.channels = 3;
+  m_image.data.resize(m_image.width * m_image.height * 3);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glReadPixels(0, 0, m_image.width, m_image.height, GL_RGB, GL_UNSIGNED_BYTE,
+               reinterpret_cast<void *>(m_image.data.data()));
+
+  return m_image;
+}
 
 void OpenGLVolumeRenderer::clear_scene() {
   for (auto &volume : m_volumes) {
@@ -331,6 +424,7 @@ void OpenGLVolumeRenderer::clear_scene() {
   for (auto &isosurface : m_isosurfaces) {
     auto dataset = isosurface->dataset.get();
   }
+
   m_volumes.clear();
   m_isosurfaces.clear();
 }
@@ -372,13 +466,10 @@ void OpenGLVolumeRenderer::setup_proxy_cude() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(volume_vertex_indices),
                volume_vertex_indices, GL_STATIC_DRAW);
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
   glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
   glBindVertexArray(0);
-}
-
-void OpenGLVolumeRenderer::setup_framebuffer() {
 }
 
 } // namespace voxer
