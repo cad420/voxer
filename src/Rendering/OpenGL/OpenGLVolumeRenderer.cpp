@@ -75,11 +75,11 @@ GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
   auto &buffer = dataset.buffer;
 
   voxer::GradientFilter filter{};
-  auto filterd = filter.process(dataset);
+  auto filtered = filter.process(dataset);
 
   GLuint volume_texture = 0;
   glGenTextures(1, &volume_texture);
-  glActiveTexture(GL_TEXTURE2);
+  glActiveTexture(GL_TEXTURE0 + 2);
   glBindTexture(GL_TEXTURE_3D, volume_texture);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -87,7 +87,7 @@ GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
   glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, dimension[0], dimension[1],
-               dimension[2], 0, GL_RGBA, GL_UNSIGNED_BYTE, filterd.data());
+               dimension[2], 0, GL_RGBA, GL_UNSIGNED_BYTE, filtered.data());
 
   return volume_texture;
 }

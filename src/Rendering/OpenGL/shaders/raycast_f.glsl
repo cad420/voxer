@@ -40,9 +40,9 @@ const float step= 1.0 / 256 * 0.3;
 vec3 phongShading(vec3 samplePos, vec3 diffuseColor) {
   vec3 N;
   if (!gradPreCal) {
-    N.x = (texture(Block, samplePos+vec3(step, 0, 0)).r - texture(Block, samplePos+vec3(-step, 0, 0)).r);
-    N.y = (texture(Block, samplePos+vec3(0, step, 0)).r - texture(Block, samplePos+vec3(0, -step, 0)).r);
-    N.z = (texture(Block, samplePos+vec3(0, 0, step)).r - texture(Block, samplePos+vec3(0, 0, -step)).r);
+    N.x = (texture(Block, samplePos + vec3(step, 0, 0)).r - texture(Block, samplePos + vec3(-step, 0, 0)).r);
+    N.y = (texture(Block, samplePos + vec3(0, step, 0)).r - texture(Block, samplePos + vec3(0, -step, 0)).r);
+    N.z = (texture(Block, samplePos + vec3(0, 0, step)).r - texture(Block, samplePos + vec3(0, 0, -step)).r);
   } else {
     N = texture(Block, samplePos).xyz;
     N = N * 2.0 - 1.0;
@@ -140,7 +140,7 @@ vec4 render_volume(vec3 startPos, vec3 rayDirection, int steps, float step) {
         sampleColor = texture(TF, scalar.a);
       }
     }
-    // sampleColor.rgb = phongShading(samplePos, sampleColor.rgb);
+    sampleColor.rgb = phongShading(samplePos, sampleColor.rgb);
     color = color + sampleColor * vec4(sampleColor.aaa, 1.0) * (1.0 - color.a);
     if (color.a > 0.99) {
       break;
