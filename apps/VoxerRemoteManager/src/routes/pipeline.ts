@@ -26,6 +26,8 @@ router.post("/", async (req, res) => {
 
   // TODO: validate scene params
   // TODO: allow `comment`
+  delete params.id;
+  delete params._id;
   const result = await collection.insertOne({
     ...params,
   });
@@ -69,7 +71,7 @@ router.put("/:id", async (req, res) => {
 
   // TODO: validate scene params
 
-  const pipeline = await collection.findOne({ _id: id });
+  const pipeline = await collection.findOne({ _id: new ObjectID(id) });
 
   if (!pipeline) {
     res.send({
@@ -79,9 +81,11 @@ router.put("/:id", async (req, res) => {
     return;
   }
 
+  delete params.id;
+  delete params._id;
   await collection.updateOne(
     {
-      _id: id,
+      _id: new ObjectID(id),
     },
     {
       $set: params,
