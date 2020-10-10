@@ -330,6 +330,10 @@ void OpenGLVolumeRenderer::render() {
       model = glm::translate(model, glm::vec3(-0.5f, -0.5f, -0.5f));
       auto mvp_matrix = projection * view * model;
 
+      auto dataset_texture = m_dataset_cache.at(dataset);
+      glActiveTexture(GL_TEXTURE0 + 2);
+      glBindTexture(GL_TEXTURE_3D, dataset_texture);
+
       glEnable(GL_DEPTH_TEST);
       // render pass 1
       glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
