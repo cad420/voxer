@@ -63,7 +63,7 @@ if (VOXER_BUILD_BACKEND_OSPRAY)
 endif ()
 
 if (VOXER_BUILD_BACKEND_GL)
-  add_subdirectory(Rendering/NewOpenGL)
+  add_subdirectory(Rendering/OpenGL)
 endif ()
 
 if (VOXER_INSTALL)

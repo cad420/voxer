@@ -1,6 +1,6 @@
 #include "OpenGLVolumeRenderer.hpp"
-#include "Rendering/NewOpenGL/ShaderProgram.hpp"
-#include "Rendering/NewOpenGL/shaders.hpp"
+#include "Rendering/OpenGL/ShaderProgram.hpp"
+#include "Rendering/OpenGL/shaders.hpp"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <glad/glad.h>
@@ -29,11 +29,8 @@ const EGLint egl_config_attribs[] = {EGL_SURFACE_TYPE,
                                      EGL_OPENGL_BIT,
                                      EGL_NONE};
 
-const int pbuffer_width = 1024;
-const int pbuffer_height = 1024;
-
 const EGLint pbuffer_attribs[] = {
-    EGL_WIDTH, pbuffer_width, EGL_HEIGHT, pbuffer_height, EGL_NONE,
+    EGL_WIDTH, 1024, EGL_HEIGHT, 1024, EGL_NONE,
 };
 
 void EGLCheck(const char *fn) {
@@ -47,15 +44,17 @@ void EGLCheck(const char *fn) {
 GLuint create_tfcn_texture(voxer::TransferFunction &tfcn) {
   constexpr int tfcn_dim = 256;
   GLuint tfcn_texture = 0;
-  vector<float> data;
+  vector<uint8_t> data;
   data.resize(tfcn_dim * 4);
-  for (size_t i = 0; i < tfcn.colors.size(); i++) {
-    auto &color = tfcn.colors[i];
-    auto &opacity = tfcn.opacities[i];
-    data[i * 4 + 0] = color[0];
-    data[i * 4 + 1] = color[1];
-    data[i * 4 + 2] = color[2];
-    data[i * 4 + 3] = opacity;
+  auto interploted = tfcn.interpolate();
+
+  for (size_t i = 0; i < interploted.first.size(); i++) {
+    auto &opacity = interploted.first[i];
+    auto &color = interploted.second[i];
+    data[i * 4 + 0] = static_cast<uint8_t>(color[0] * 255.0f);
+    data[i * 4 + 1] = static_cast<uint8_t>(color[1] * 255.0f);
+    data[i * 4 + 2] = static_cast<uint8_t>(color[2] * 255.0f);
+    data[i * 4 + 3] = static_cast<uint8_t>(opacity * 255.0f);
   }
 
   glGenTextures(1, &tfcn_texture);
@@ -64,8 +63,8 @@ GLuint create_tfcn_texture(voxer::TransferFunction &tfcn) {
   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, tfcn_dim, 0, GL_RGBA, GL_FLOAT,
-               data.data());
+  glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, tfcn_dim, 0, GL_RGBA,
+               GL_UNSIGNED_BYTE, data.data());
 
   return tfcn_texture;
 }
@@ -93,10 +92,16 @@ GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
   return volume_texture;
 }
 
-unsigned int volume_vertex_indices[36] = {0, 1, 2, 0, 2, 3, 0, 4, 1, 4, 5, 1,
-                                          1, 5, 6, 6, 2, 1, 6, 7, 2, 7, 3, 2,
-                                          7, 4, 3, 3, 4, 0, 4, 7, 6, 4, 6, 5};
-float screen_quad_vertices[24] = {
+float cube_vertices[] = {
+    0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+    0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+};
+
+unsigned int cube_vertex_indices[] = {0, 1, 2, 0, 2, 3, 0, 4, 1, 4, 5, 1,
+                                      1, 5, 6, 6, 2, 1, 6, 7, 2, 7, 3, 2,
+                                      7, 4, 3, 3, 4, 0, 4, 7, 6, 4, 6, 5};
+
+float screen_quad_vertices[] = {
     -1.0f, 1.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f,
     -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f};
 
@@ -111,6 +116,19 @@ OpenGLVolumeRenderer::OpenGLVolumeRenderer() {
 }
 
 OpenGLVolumeRenderer::~OpenGLVolumeRenderer() noexcept {
+  for (auto &item : m_dataset_cache) {
+    auto id = item.second;
+    glDeleteTextures(1, &id);
+  }
+
+  glDeleteBuffers(1, &m_VBO);
+  glDeleteBuffers(1, &m_EBO);
+  glDeleteVertexArrays(1, &m_VAO);
+  glDeleteTextures(1, &m_entry_texture);
+  glDeleteTextures(1, &m_exit_texture);
+  glDeleteRenderbuffers(1, &m_RBO);
+  glDeleteFramebuffers(1, &m_FBO);
+
   eglTerminate(m_egl_display);
 }
 
@@ -173,13 +191,16 @@ void OpenGLVolumeRenderer::setup_context() {
 }
 
 void OpenGLVolumeRenderer::set_camera(const Camera &camera) {
+  // update camera
   m_camera = camera;
   glViewport(0, 0, camera.width, camera.height);
 
+  // delete old textures
   glDeleteTextures(1, &m_entry_texture);
   glDeleteTextures(1, &m_exit_texture);
   glDeleteRenderbuffers(1, &m_RBO);
 
+  // create texture for ray entry info
   glGenTextures(1, &m_entry_texture);
   glActiveTexture(GL_TEXTURE0 + 3);
   glBindTexture(GL_TEXTURE_2D, m_entry_texture);
@@ -188,6 +209,7 @@ void OpenGLVolumeRenderer::set_camera(const Camera &camera) {
   glBindImageTexture(1, m_entry_texture, 0, GL_FALSE, 0, GL_READ_ONLY,
                      GL_RGBA32F);
 
+  // create texture for ray exit info
   glGenTextures(1, &m_exit_texture);
   glActiveTexture(GL_TEXTURE0 + 4);
   glBindTexture(GL_TEXTURE_2D, m_exit_texture);
@@ -195,16 +217,14 @@ void OpenGLVolumeRenderer::set_camera(const Camera &camera) {
                      camera.height);
   glBindImageTexture(2, m_exit_texture, 0, GL_FALSE, 0, GL_READ_ONLY,
                      GL_RGBA32F);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D,
-                         m_exit_texture, 0);
 
+  // create render buffer to store depth and stencil
   glGenRenderbuffers(1, &m_RBO);
   glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, camera.width,
                         camera.height);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
-                            GL_RENDERBUFFER, m_RBO);
 
+  // create a new frame buffer and attach resources
   glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
                             GL_RENDERBUFFER, m_RBO);
@@ -244,12 +264,16 @@ void OpenGLVolumeRenderer::add_isosurface(
 }
 
 void OpenGLVolumeRenderer::render() {
-  auto distance =
-      glm::length(glm::vec3(m_camera.pos[0], m_camera.pos[1], m_camera.pos[2]));
+  auto camera_to_target = glm::vec3(m_camera.target[0] - m_camera.pos[0],
+                                    m_camera.target[1] - m_camera.pos[1],
+                                    m_camera.target[2] - m_camera.pos[2]);
+  auto distance = glm::length(camera_to_target);
   auto aspect =
       static_cast<float>(m_camera.width) / static_cast<float>(m_camera.height);
-  auto projection = glm::ortho(-distance, distance, -distance / aspect,
-                               distance / aspect, 0.1f, 5000.0f);
+  auto projection = m_camera.type == Camera::Type::PERSPECTIVE
+                        ? glm::perspective(45.0f, aspect, 0.1f, 10000.0f)
+                        : glm::ortho(-distance, distance, -distance / aspect,
+                                     distance / aspect, 0.1f, 5000.0f);
   auto view = glm::lookAt(
       glm::vec3(m_camera.pos[0], m_camera.pos[1], m_camera.pos[2]),
       glm::vec3(m_camera.target[0], m_camera.target[1], m_camera.target[2]),
@@ -259,10 +283,8 @@ void OpenGLVolumeRenderer::render() {
   m_raycast_program->setMat4("projection", projection);
   m_raycast_program->setMat4("view", view);
   m_raycast_program->setMat4("InverseView", glm::inverse(view));
-  m_raycast_program->setVec3("cameraFront",
-                             m_camera.target[0] - m_camera.pos[0],
-                             m_camera.target[1] - m_camera.pos[1],
-                             m_camera.target[2] - m_camera.pos[2]);
+  m_raycast_program->setVec3("cameraFront", camera_to_target[0],
+                             camera_to_target[1], camera_to_target[2]);
   m_raycast_program->setInt("TF", 0);
   m_raycast_program->setInt("preIntTF", 1);
   m_raycast_program->setInt("Block", 2);
@@ -273,11 +295,12 @@ void OpenGLVolumeRenderer::render() {
   m_raycast_program->setFloat("ks", 1.0f);
   m_raycast_program->setFloat("shininess", 100.0f);
   m_raycast_program->setVec3("lightDir", -1.0f, 0.0f, 0.0f);
-  m_raycast_program->setVec3("bgColor", 1.0f, 0.0f, 0.0f);
+  m_raycast_program->setVec3("bgColor", 0.0f, 0.0f, 0.0f);
   m_raycast_program->setBool("usePreIntTF", false);
   m_raycast_program->setBool("isPerspective",
                              m_camera.type == Camera::Type::PERSPECTIVE);
   m_raycast_program->setBool("gradPreCal", true);
+  m_raycast_program->setBool("isMipMap", false);
   m_raycast_program->setInt("width", m_camera.width);
   m_raycast_program->setInt("height", m_camera.height);
 
@@ -409,6 +432,7 @@ auto OpenGLVolumeRenderer::get_colors() -> const Image & {
   m_image.channels = 3;
   m_image.data.resize(m_image.width * m_image.height * 3);
 
+  // read pixels from the default frame buffer
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glReadPixels(0, 0, m_image.width, m_image.height, GL_RGB, GL_UNSIGNED_BYTE,
                reinterpret_cast<void *>(m_image.data.data()));
@@ -417,14 +441,7 @@ auto OpenGLVolumeRenderer::get_colors() -> const Image & {
 }
 
 void OpenGLVolumeRenderer::clear_scene() {
-  for (auto &volume : m_volumes) {
-    auto dataset = volume->dataset.get();
-  }
-
-  for (auto &isosurface : m_isosurfaces) {
-    auto dataset = isosurface->dataset.get();
-  }
-
+  // remove all primitives
   m_volumes.clear();
   m_isosurfaces.clear();
 }
@@ -445,31 +462,21 @@ void OpenGLVolumeRenderer::setup_resources() {
 }
 
 void OpenGLVolumeRenderer::setup_proxy_cude() {
-  vector<float> volume_vertices(24, 0.0f);
-  volume_vertices[1 * 3 + 0] = volume_vertices[2 * 3 + 0] =
-      volume_vertices[5 * 3 + 0] = volume_vertices[6 * 3 + 0] = 1.0f;
-  volume_vertices[4 * 3 + 1] = volume_vertices[5 * 3 + 1] =
-      volume_vertices[6 * 3 + 1] = volume_vertices[7 * 3 + 1] = 1.0f;
-  volume_vertices[2 * 3 + 2] = volume_vertices[3 * 3 + 2] =
-      volume_vertices[6 * 3 + 2] = volume_vertices[7 * 3 + 2] = 1.0f;
-
   glGenVertexArrays(1, &m_VAO);
   glBindVertexArray(m_VAO);
 
   glGenBuffers(1, &m_VBO);
   glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 24, volume_vertices.data(),
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 24, cube_vertices,
                GL_STATIC_DRAW);
 
   glGenBuffers(1, &m_EBO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(volume_vertex_indices),
-               volume_vertex_indices, GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_vertex_indices),
+               cube_vertex_indices, GL_STATIC_DRAW);
 
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-
-  glBindVertexArray(0);
 }
 
 } // namespace voxer

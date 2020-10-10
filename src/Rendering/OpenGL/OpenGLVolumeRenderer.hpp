@@ -1,17 +1,11 @@
 #pragma once
 #include "Rendering/IRenderer.hpp"
-#include "Rendering/NewOpenGL/ShaderProgram.hpp"
+#include "Rendering/OpenGL/ShaderProgram.hpp"
 #include <EGL/egl.h>
 #include <unordered_map>
 #include <voxer/Data/Image.hpp>
 
 namespace voxer {
-
-struct VolumeRenderingInfo {
-  GLuint m_tfcn_texture = 0;
-  GLuint m_volume_texture = 0;
-  GLuint m_volume_gradient_texture = 0;
-};
 
 class OpenGLVolumeRenderer : public VoxerIRenderer {
 public:

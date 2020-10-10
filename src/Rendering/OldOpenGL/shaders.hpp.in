@@ -1,0 +1,15 @@
+#pragma once
+
+namespace shader {
+
+const char *position_v = R"(@position_v.glsl@)";
+
+const char *position_f = R"(@position_f.glsl@)";
+
+const char *screenquad_v = R"(@screenquad_v.glsl@)";
+
+const char *screenquad_f = R"(@screenquad_f.glsl@)";
+
+const char *naiveraycast_f = R"(@naiveraycast_f.glsl@)";
+
+} // namespace shader

@@ -1,5 +1,4 @@
 find_package(OpenGL REQUIRED COMPONENTS OpenGL EGL)
-include(${PROJECT_SOURCE_DIR}/third_party/glm.cmake)
 
 embed_shaders(
     CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/shaders.hpp.in
@@ -10,7 +9,7 @@ embed_shaders(
 list(
     APPEND
     VOXER_BACKEND_GL_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/OpenGLVolumeRenderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/OpenGLRenderer.cpp
     ${PROJECT_SOURCE_DIR}/third_party/glad/src/glad.c
 )
 
@@ -23,7 +22,7 @@ target_link_libraries(
     OpenGL::EGL
     ${CMAKE_DL_LIBS}
     PRIVATE
-    glm::glm
+    vmcore
     -static-libstdc++
 )
 target_include_directories(
