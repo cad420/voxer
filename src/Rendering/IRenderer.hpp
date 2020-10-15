@@ -8,6 +8,7 @@
 class VoxerIRenderer {
 public:
   virtual void set_camera(const voxer::Camera &) = 0;
+  virtual void set_background(float r, float g, float b) noexcept = 0;
   virtual void add_volume(const std::shared_ptr<voxer::Volume> &) = 0;
   virtual void add_isosurface(const std::shared_ptr<voxer::Isosurface> &) = 0;
   virtual void render() = 0;

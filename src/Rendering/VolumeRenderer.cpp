@@ -23,8 +23,8 @@ VolumeRenderer::VolumeRenderer(VolumeRenderer::Type type) {
   case Type::OSPRay: {
     impl = std::make_unique<OSPRayRenderer>();
     return;
-//    lib = dlopen("libvoxer_backend_ospray.so", RTLD_NOW);
-//    break;
+    //    lib = dlopen("libvoxer_backend_ospray.so", RTLD_NOW);
+    //    break;
   }
   case Type::OpenGL: {
     lib = dlopen("libvoxer_backend_gl.so", RTLD_NOW);
@@ -64,7 +64,7 @@ auto VolumeRenderer::get_colors() -> const Image & {
   return this->impl->get_colors();
 }
 
-void VolumeRenderer::set_camera(const Camera &camera) {
+void VolumeRenderer::set_camera(const Camera &camera) noexcept {
   this->impl->set_camera(camera);
 }
 
@@ -78,5 +78,9 @@ void VolumeRenderer::add_isosurface(
 }
 
 void VolumeRenderer::clear_scene() { this->impl->clear_scene(); }
+
+void VolumeRenderer::set_background(float r, float g, float b) noexcept {
+  this->impl->set_background(r, g, b);
+}
 
 } // namespace voxer

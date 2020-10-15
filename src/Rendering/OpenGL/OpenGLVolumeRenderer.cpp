@@ -186,7 +186,7 @@ void OpenGLVolumeRenderer::setup_context() {
   }
 
   cout << "Detected " << num_devices << " devices, using first one: "
-       << "OpenGL Version: " << GLVersion.major << "." << GLVersion.minor
+       << "OpenGL version " << GLVersion.major << "." << GLVersion.minor
        << endl;
 }
 
@@ -271,9 +271,9 @@ void OpenGLVolumeRenderer::render() {
   auto aspect =
       static_cast<float>(m_camera.width) / static_cast<float>(m_camera.height);
   auto projection = m_camera.type == Camera::Type::PERSPECTIVE
-                        ? glm::perspective(45.0f, aspect, 0.1f, 10000.0f)
+                        ? glm::perspective(45.0f * glm::pi<float>() / 180.0f, aspect, 1.0f, 3000.0f)
                         : glm::ortho(-distance, distance, -distance / aspect,
-                                     distance / aspect, 0.1f, 5000.0f);
+                                     distance / aspect, 1.0f, 3000.0f);
   auto view = glm::lookAt(
       glm::vec3(m_camera.pos[0], m_camera.pos[1], m_camera.pos[2]),
       glm::vec3(m_camera.target[0], m_camera.target[1], m_camera.target[2]),
@@ -295,7 +295,8 @@ void OpenGLVolumeRenderer::render() {
   m_raycast_program->setFloat("ks", 1.0f);
   m_raycast_program->setFloat("shininess", 100.0f);
   m_raycast_program->setVec3("lightDir", -1.0f, 0.0f, 0.0f);
-  m_raycast_program->setVec3("bgColor", 0.0f, 0.0f, 0.0f);
+  m_raycast_program->setVec3("bgColor", m_background[0], m_background[1],
+                             m_background[2]);
   m_raycast_program->setBool("usePreIntTF", false);
   m_raycast_program->setBool("isPerspective",
                              m_camera.type == Camera::Type::PERSPECTIVE);
@@ -314,7 +315,9 @@ void OpenGLVolumeRenderer::render() {
   }
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glClearColor(m_background[0], m_background[1], m_background[2], 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
   if (!m_isosurfaces.empty()) {
     m_raycast_program->setInt("drawMode", 2);
@@ -389,8 +392,9 @@ void OpenGLVolumeRenderer::render() {
         std::max(dimensions[0], std::max(dimensions[1], dimensions[2])));
 
     auto model = glm::identity<glm::mat4>();
-    model = glm::scale(model,
-                       glm::vec3(dimensions[0], dimensions[1], dimensions[2]));
+    model = glm::scale(model, glm::vec3(dimensions[0] * volume->spacing[0],
+                                        dimensions[1] * volume->spacing[1],
+                                        dimensions[2] * volume->spacing[2]));
     model = glm::translate(model, glm::vec3(-0.5f, -0.5f, -0.5f));
     auto mvp_matrix = projection * view * model;
 
@@ -481,6 +485,12 @@ void OpenGLVolumeRenderer::setup_proxy_cude() {
 
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+}
+
+void OpenGLVolumeRenderer::set_background(float r, float g, float b) noexcept {
+  m_background[0] = r;
+  m_background[1] = g;
+  m_background[2] = b;
 }
 
 } // namespace voxer

@@ -2,7 +2,6 @@ find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(ospray 2.0.0 REQUIRED)
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
-include(${PROJECT_SOURCE_DIR}/third_party/vmcore.cmake)
 
 list(
     APPEND
@@ -40,7 +39,7 @@ target_include_directories(
 target_link_libraries(
     voxer_core
     PUBLIC Threads::Threads fmt::fmt OpenMP::OpenMP_CXX ${CMAKE_DL_LIBS} ospray::ospray
-    PRIVATE vmcore -static-libstdc++
+    PRIVATE -static-libstdc++
 )
 target_compile_options(voxer_core PRIVATE -Wall -Wextra)
 target_compile_features(voxer_core PRIVATE cxx_std_14)
@@ -68,7 +67,7 @@ endif ()
 
 if (VOXER_INSTALL)
   install(
-      TARGETS voxer_core fmt vmcore
+      TARGETS voxer_core fmt
       DESTINATION lib
       EXPORT voxer-targets
   )

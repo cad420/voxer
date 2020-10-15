@@ -34,7 +34,7 @@ uniform int width;
 uniform int height;
 highp vec3 rayDirection;
 
-vec3 lightDir = vec3(0.0, 0.0, -1.0);
+vec3 lightDir = cameraFront;
 const float step= 1.0 / 256 * 0.3;
 
 vec3 phongShading(vec3 samplePos, vec3 diffuseColor) {

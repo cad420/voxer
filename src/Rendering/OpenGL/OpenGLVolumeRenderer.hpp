@@ -13,6 +13,7 @@ public:
   ~OpenGLVolumeRenderer() noexcept override;
 
   void set_camera(const Camera &) override;
+  void set_background(float r, float g, float b) noexcept override;
   void add_volume(const std::shared_ptr<Volume> &) override;
   void add_isosurface(const std::shared_ptr<voxer::Isosurface> &) override;
   void render() final;
@@ -22,6 +23,7 @@ public:
 private:
   Image m_image;
   Camera m_camera;
+  std::array<float, 3> m_background {};
   std::vector<std::shared_ptr<Volume>> m_volumes;
   std::vector<std::shared_ptr<Isosurface>> m_isosurfaces;
   std::unordered_map<StructuredGrid *, GLuint> m_dataset_cache;

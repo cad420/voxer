@@ -16,15 +16,20 @@ OSPRayRenderer::OSPRayRenderer() {
     throw runtime_error("Failed to initialize OSPRay");
   }
 #ifndef NDEBUG
-//  auto logLevel = OSP_LOG_DEBUG;
-//  ospDeviceSetParam(osp_device, "logLevel", OSP_INT, &logLevel);
-//  ospDeviceSetParam(osp_device, "logOutput", OSP_STRING, "cout");
-//  ospDeviceSetParam(osp_device, "errorOutput", OSP_STRING, "cerr");
+  auto logLevel = OSP_LOG_DEBUG;
+  ospDeviceSetParam(osp_device, "logLevel", OSP_INT, &logLevel);
+  ospDeviceSetParam(osp_device, "logOutput", OSP_STRING, "cout");
+  ospDeviceSetParam(osp_device, "errorOutput", OSP_STRING, "cerr");
 #endif
   ospDeviceCommit(osp_device);
   ospSetCurrentDevice(osp_device);
+
+  auto major_version =
+      ospDeviceGetProperty(osp_device, OSP_DEVICE_VERSION_MAJOR);
+  auto minor_version =
+      ospDeviceGetProperty(osp_device, OSP_DEVICE_VERSION_MINOR);
   std::cout << "OSPRay initialized: "
-            << to_string(reinterpret_cast<uint64_t>(osp_device)) << std::endl;
+            << "version " << major_version << "." << minor_version << std::endl;
 }
 
 OSPRayRenderer::~OSPRayRenderer() {
@@ -34,18 +39,21 @@ OSPRayRenderer::~OSPRayRenderer() {
   ospDeviceRelease(osp_device);
 }
 
-void OSPRayRenderer::set_camera(const Camera &camera) { m_camera = camera; }
+void OSPRayRenderer::set_camera(const Camera &camera) noexcept {
+  m_camera = camera;
+}
 
-void OSPRayRenderer::add_volume(const std::shared_ptr<Volume> &volume) {
+void OSPRayRenderer::add_volume(
+    const std::shared_ptr<Volume> &volume) noexcept {
   m_volumes.emplace_back(volume);
 }
 
 void OSPRayRenderer::add_isosurface(
-    const std::shared_ptr<voxer::Isosurface> &isosurface) {
+    const std::shared_ptr<voxer::Isosurface> &isosurface) noexcept {
   m_isosurfaces.emplace_back(isosurface);
 }
 
-void OSPRayRenderer::clear_scene() {
+void OSPRayRenderer::clear_scene() noexcept {
   m_volumes.clear();
   m_isosurfaces.clear();
 }
@@ -56,8 +64,8 @@ void OSPRayRenderer::render() {
   for (const auto &volume : m_volumes) {
     auto &tfcn = *(volume->tfcn);
     auto data = tfcn.interpolate();
-    auto tmp = ospNewSharedData(data.first.data(), OSP_FLOAT,
-                                data.first.size());
+    auto tmp =
+        ospNewSharedData(data.first.data(), OSP_FLOAT, data.first.size());
     auto osp_opacity_data = ospNewData(OSP_FLOAT, data.first.size());
     ospCopyData(tmp, osp_opacity_data);
     ospRelease(tmp);
@@ -76,6 +84,9 @@ void OSPRayRenderer::render() {
     ospCommit(osp_tfcn);
 
     auto &osp_volume = this->get_osp_volume(volume->dataset.get());
+    ospSetVec3f(osp_volume, "gridSpacing", volume->spacing[0],
+                volume->spacing[1], volume->spacing[2]);
+    ospCommit(osp_volume);
 
     auto osp_volume_model = ospNewVolumetricModel(osp_volume);
     ospSetParam(osp_volume_model, "transferFunction", OSP_TRANSFER_FUNCTION,
@@ -107,33 +118,17 @@ void OSPRayRenderer::render() {
     ospRelease(tmp);
     ospCommit(osp_opacity_data);
 
-    auto &color = isosurface->color.data;
-    array<array<float, 3>, 2> colors{color, color};
-    tmp = ospNewSharedData(colors.data(), OSP_VEC3F, colors.size());
-    auto osp_colors_data = ospNewData(OSP_VEC3F, colors.size());
-    ospCopyData(tmp, osp_colors_data);
-    ospRelease(tmp);
-    ospCommit(osp_colors_data);
-
-    auto osp_tfcn = ospNewTransferFunction("piecewiseLinear");
-    ospSetObject(osp_tfcn, "color", osp_colors_data);
-    ospSetObject(osp_tfcn, "opacity", osp_opacity_data);
-    ospSetVec2f(osp_tfcn, "valueRange", 0.0f, 255.0f);
-    ospCommit(osp_tfcn);
-
     auto &osp_volume = this->get_osp_volume(isosurface->dataset.get());
-    auto osp_volume_model = ospNewVolumetricModel(osp_volume);
-    ospSetParam(osp_volume_model, "transferFunction", OSP_TRANSFER_FUNCTION,
-                &osp_tfcn);
-    ospCommit(osp_volume_model);
 
     auto osp_isosurface = ospNewGeometry("isosurface");
     ospSetFloat(osp_isosurface, "isovalue", isosurface->value);
-    ospSetParam(osp_isosurface, "volume", OSP_VOLUMETRIC_MODEL,
-                &osp_volume_model);
+    ospSetParam(osp_isosurface, "volume", OSP_VOLUME, &osp_volume);
     ospCommit(osp_isosurface);
 
+    auto &color = isosurface->color.data;
     auto osp_isosurface_model = ospNewGeometricModel(osp_isosurface);
+    ospSetVec4f(osp_isosurface_model, "color", color[0], color[1], color[2],
+                1.0f);
     ospCommit(osp_isosurface_model);
 
     auto osp_group = ospNewGroup();
@@ -146,20 +141,35 @@ void OSPRayRenderer::render() {
 
     osp_instances.emplace_back(osp_instance);
 
-    ospRelease(osp_tfcn);
-    ospRelease(osp_volume_model);
     ospRelease(osp_isosurface);
     ospRelease(osp_isosurface_model);
     ospRelease(osp_group);
   }
 
+  vector<OSPLight> osp_lights{};
+
   auto osp_light = ospNewLight("ambient");
   ospCommit(osp_light);
+  osp_lights.emplace_back(osp_light);
+
+  auto osp_dir_light = ospNewLight("distant");
+  ospSetVec3f(osp_dir_light, "color", 1.0f, 0.0f, 0.0f);
+  ospSetVec3f(osp_dir_light, "direction", m_camera.target[0] - m_camera.pos[0],
+              m_camera.target[1] - m_camera.pos[1],
+              m_camera.target[2] - m_camera.pos[2]);
+  ospCommit(osp_dir_light);
+  osp_lights.emplace_back(osp_dir_light);
+
+  auto osp_lights_data =
+      ospNewSharedData1D(osp_lights.data(), OSP_LIGHT, osp_lights.size());
+  ospCommit(osp_lights_data);
 
   auto osp_world = ospNewWorld();
   auto osp_instance_data = ospNewSharedData1D(
       osp_instances.data(), OSP_INSTANCE, osp_instances.size());
   ospSetObject(osp_world, "instance", osp_instance_data);
+  //  ospSetObject(osp_world, "light", osp_lights_data);
+  ospSetParam(osp_world, "light", OSP_DATA, &osp_lights_data);
   ospSetObjectAsData(osp_world, "light", OSP_LIGHT, osp_light);
   ospCommit(osp_world);
 
@@ -179,10 +189,13 @@ void OSPRayRenderer::render() {
 
   auto osp_renderer = ospNewRenderer("scivis");
   ospSetInt(osp_renderer, "pixelSamples", 1);
-  ospSetInt(osp_renderer, "aoSamples", 0);
-  ospSetFloat(osp_renderer, "volumeSamplingRate", 0.125f);
   ospSetFloat(osp_renderer, "minContribution", 0.01f);
-  ospSetFloat(osp_renderer, "backgroundColor", 0.0f);
+  ospSetVec3f(osp_renderer, "backgroundColor", m_background[0], m_background[1],
+              m_background[2]);
+  ospSetInt(osp_renderer, "pixelFilter", OSP_PIXELFILTER_BOX);
+  ospSetBool(osp_renderer, "shadows", true);
+  ospSetInt(osp_renderer, "aoSamples", 0);
+  ospSetFloat(osp_renderer, "volumeSamplingRate", 0.5f);
   ospCommit(osp_renderer);
 
   const size_t iteration_times = camera.width == 64 ? 1 : 8;
@@ -247,6 +260,12 @@ OSPVolume &OSPRayRenderer::get_osp_volume(StructuredGrid *dataset) {
     return this->create_osp_volume(dataset);
   }
   return it->second;
+}
+
+void OSPRayRenderer::set_background(float r, float g, float b) noexcept {
+  m_background[0] = r;
+  m_background[1] = g;
+  m_background[2] = b;
 }
 
 } // namespace voxer

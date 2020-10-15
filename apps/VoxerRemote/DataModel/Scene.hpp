@@ -15,6 +15,7 @@ struct Scene {
   std::vector<Volume> volumes;
   std::vector<Isosurface> isosurfaces;
   Camera camera;
+  std::array<float, 3> background;
 };
 
 } // namespace voxer::remote
@@ -23,10 +24,14 @@ namespace seria {
 
 template <> inline auto register_object<voxer::remote::Scene>() {
   using Scene = voxer::remote::Scene;
-  return std::make_tuple(member("volumes", &Scene::volumes),
-                         member("tfcns", &Scene::tfcns),
-                         member("isosurfaces", &Scene::isosurfaces),
-                         member("camera", &Scene::camera));
+
+  auto default_background = std::make_unique<std::array<float, 3>>();
+  *default_background = {1.0f, 1.0f, 1.0f};
+  return std::make_tuple(
+      member("volumes", &Scene::volumes), member("tfcns", &Scene::tfcns),
+      member("isosurfaces", &Scene::isosurfaces),
+      member("camera", &Scene::camera),
+      member("background", &Scene::background, std::move(default_background)));
 }
 
 } // namespace seria

@@ -82,6 +82,8 @@ auto VolumeRenderingService::parse(const char *message, uint32_t size)
 void VolumeRenderingService::traverse_scene(VolumeRenderer &renderer,
                                             const Scene &scene) const {
   renderer.set_camera(scene.camera);
+  renderer.set_background(scene.background[0], scene.background[1],
+                          scene.background[2]);
 
   unordered_map<uint32_t, shared_ptr<voxer::TransferFunction>> tfcns_map;
 
@@ -94,6 +96,7 @@ void VolumeRenderingService::traverse_scene(VolumeRenderer &renderer,
 
     auto volume = make_shared<voxer::Volume>();
     volume->dataset = dataset;
+    volume->spacing = volume_desc.spacing;
 
     if (tfcns_map.find(volume_desc.tfcn_idx) == tfcns_map.end()) {
       auto tfcn = make_shared<voxer::TransferFunction>();
