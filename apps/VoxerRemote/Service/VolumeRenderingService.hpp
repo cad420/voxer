@@ -28,7 +28,7 @@ private:
   void traverse_scene(VolumeRenderer &renderer, const Scene &scene) const;
 
   auto parse(const char *message, uint32_t size)
-      -> std::pair<VolumeRenderer::Type, Scene>;
+      -> std::pair<std::string, Scene>;
 };
 
 } // namespace voxer::remote

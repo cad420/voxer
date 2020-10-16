@@ -1,6 +1,5 @@
 #include "Common/Logger.hpp"
 #include "Rendering/IRenderer.hpp"
-#include "Rendering/OSPRay/OSPRayRenderer.hpp"
 #include <chrono>
 #include <dlfcn.h>
 #include <functional>
@@ -17,27 +16,17 @@ using GetRenderingBackend = VoxerIRenderer *(*)();
 
 VolumeRenderer::~VolumeRenderer() = default;
 
-VolumeRenderer::VolumeRenderer(VolumeRenderer::Type type) {
-  void *lib = nullptr;
-  switch (type) {
-  case Type::OSPRay: {
-    impl = std::make_unique<OSPRayRenderer>();
-    return;
-    //    lib = dlopen("libvoxer_backend_ospray.so", RTLD_NOW);
-    //    break;
-  }
-  case Type::OpenGL: {
-    lib = dlopen("libvoxer_backend_gl.so", RTLD_NOW);
-    break;
-  }
-  }
+VolumeRenderer::VolumeRenderer(const char *backend) {
+  auto lib_name = string("libvoxer_backend_") + backend + ".so";
+  void *lib = dlopen(lib_name.c_str(), RTLD_NOW);
   if (lib == nullptr) {
     throw runtime_error(dlerror());
   }
 
   void *symbol = dlsym(lib, "voxer_get_backend");
   if (symbol == nullptr) {
-    throw runtime_error("Cannot find symbol `voxer_get_backend`");
+    throw runtime_error("Cannot find symbol `voxer_get_backend` in " +
+                        lib_name);
   }
 
   std::function<VoxerIRenderer *()> get_backend =

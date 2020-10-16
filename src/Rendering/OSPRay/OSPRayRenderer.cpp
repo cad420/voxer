@@ -28,8 +28,8 @@ OSPRayRenderer::OSPRayRenderer() {
       ospDeviceGetProperty(osp_device, OSP_DEVICE_VERSION_MAJOR);
   auto minor_version =
       ospDeviceGetProperty(osp_device, OSP_DEVICE_VERSION_MINOR);
-  std::cout << "OSPRay initialized: "
-            << "version " << major_version << "." << minor_version << std::endl;
+  std::cout << "OSPRay initialized: version " << to_string(major_version) << "."
+            << to_string(minor_version) << std::endl;
 }
 
 OSPRayRenderer::~OSPRayRenderer() {

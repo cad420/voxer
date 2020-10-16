@@ -10,10 +10,8 @@ namespace voxer {
 
 class VolumeRenderer {
 public:
-  enum struct Type { OSPRay, OpenGL };
-
-  explicit VolumeRenderer(Type type);
-  ~VolumeRenderer() noexcept;
+  explicit VolumeRenderer(const char *backend);
+  ~VolumeRenderer();
 
   void set_background(float r, float g, float b) noexcept;
   void set_camera(const Camera &) noexcept;

@@ -82,11 +82,7 @@ PYBIND11_MODULE(pyvoxer, m) {
               &Image::encode));
 
   py::class_<VolumeRenderer> volume_renderer(m, "VolumeRenderer");
-  py::enum_<VolumeRenderer::Type>(volume_renderer, "Type")
-      .value("OSPRay", VolumeRenderer::Type::OSPRay)
-      .value("OpenGL", VolumeRenderer::Type::OpenGL)
-      .export_values();
-  volume_renderer.def(py::init<VolumeRenderer::Type>())
+  volume_renderer.def(py::init<const char *>())
       .def("set_camera", &VolumeRenderer::set_camera)
       .def("add_volume", &VolumeRenderer::add_volume)
       .def("add_isosurface", &VolumeRenderer::add_isosurface)

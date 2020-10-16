@@ -79,10 +79,7 @@ class Renderer(DOMWidget):
 
     def __init__(self, backend):
         super(Renderer, self).__init__()
-        if backend == 'OSPRay':
-            self.renderer = pyvoxer.VolumeRenderer(pyvoxer.VolumeRenderer.Type.OSPRay)
-        else:
-            self.renderer = pyvoxer.VolumeRenderer(pyvoxer.VolumeRenderer.Type.OpenGL)
+        self.renderer = pyvoxer.VolumeRenderer(backend)
 
     def add_volume(self, volume):
         self.renderer.add_volume(volume)

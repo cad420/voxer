@@ -10,8 +10,8 @@ using namespace fmt;
 namespace voxer::remote {
 
 VolumeRenderingService::VolumeRenderingService() {
-  m_opengl = make_unique<VolumeRenderer>(VolumeRenderer::Type::OpenGL);
-  m_ospray = make_unique<VolumeRenderer>(VolumeRenderer::Type::OSPRay);
+  m_opengl = make_unique<VolumeRenderer>("opengl");
+  m_ospray = make_unique<VolumeRenderer>("ospray");
 }
 
 void VolumeRenderingService::on_message(const char *message, uint32_t size) {
@@ -20,8 +20,7 @@ void VolumeRenderingService::on_message(const char *message, uint32_t size) {
 
   try {
     auto command = parse(message, size);
-    auto &renderer =
-        command.first == VolumeRenderer::Type::OSPRay ? *m_ospray : *m_opengl;
+    auto &renderer = command.first == "ospray" ? *m_ospray : *m_opengl;
 
     traverse_scene(renderer, command.second);
 
@@ -40,7 +39,7 @@ void VolumeRenderingService::on_message(const char *message, uint32_t size) {
 }
 
 auto VolumeRenderingService::parse(const char *message, uint32_t size)
-    -> pair<VolumeRenderer::Type, Scene> {
+    -> pair<string, Scene> {
   m_document.Parse(message, size);
 
   if (!m_document.IsObject()) {
@@ -55,14 +54,14 @@ auto VolumeRenderingService::parse(const char *message, uint32_t size)
   }
   string command_type = it->value.GetString();
 
-  auto engine = VolumeRenderer::Type::OSPRay;
+  string engine;
   it = json.FindMember("engine");
   if (it != json.end() && it->value.IsString()) {
     auto type = it->value.GetString();
     if (strcmp(type, "OpenGL") == 0) {
-      engine = VolumeRenderer::Type::OpenGL;
+      engine = "opengl";
     } else if (strcmp(type, "OSPRay") == 0) {
-      engine = VolumeRenderer::Type::OSPRay;
+      engine = "ospray";
     } else {
       throw runtime_error("Unsupported rendering engine: " + string(type));
     }

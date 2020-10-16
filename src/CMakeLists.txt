@@ -21,7 +21,6 @@ list(
     ${CMAKE_CURRENT_SOURCE_DIR}/IO/Raw/RawReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/VolumeRenderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SliceRenderer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/OSPRay/OSPRayRenderer.cpp
 )
 
 add_library(voxer_core STATIC ${VOXER_CORE_SRCS})
@@ -61,7 +60,7 @@ if (VOXER_BUILD_BACKEND_OSPRAY)
   add_subdirectory(Rendering/OSPRay)
 endif ()
 
-if (VOXER_BUILD_BACKEND_GL)
+if (VOXER_BUILD_BACKEND_OPENGL)
   add_subdirectory(Rendering/OpenGL)
 endif ()
 
