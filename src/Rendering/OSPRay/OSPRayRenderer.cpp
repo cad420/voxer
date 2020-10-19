@@ -1,4 +1,5 @@
 #include "Rendering/OSPRay/OSPRayRenderer.hpp"
+#include <cmath>
 #include <iostream>
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
@@ -6,6 +7,19 @@
 #include <string>
 
 using namespace std;
+
+namespace {
+constexpr float PI = 3.1415926f;
+
+float camera_to_target(const voxer::Camera &camera) {
+  auto dx = camera.target[0] - camera.pos[0];
+  auto dy = camera.target[1] - camera.pos[1];
+  auto dz = camera.target[2] - camera.pos[2];
+
+  auto tmp = dx * dx + dy * dy + dz * dz;
+  return std::sqrt(tmp);
+}
+} // namespace
 
 namespace voxer {
 
@@ -168,17 +182,23 @@ void OSPRayRenderer::render() {
   auto osp_instance_data = ospNewSharedData1D(
       osp_instances.data(), OSP_INSTANCE, osp_instances.size());
   ospSetObject(osp_world, "instance", osp_instance_data);
-  //  ospSetObject(osp_world, "light", osp_lights_data);
   ospSetParam(osp_world, "light", OSP_DATA, &osp_lights_data);
   ospSetObjectAsData(osp_world, "light", OSP_LIGHT, osp_light);
   ospCommit(osp_world);
 
   auto &camera = m_camera;
   auto osp_camera = ospNewCamera("perspective");
-  ospSetFloat(osp_camera, "fovy", 45.0f);
-  ospSetFloat(osp_camera, "aspect",
-              static_cast<float>(camera.width) /
-                  static_cast<float>(camera.height));
+  auto aspect =
+      static_cast<float>(camera.width) / static_cast<float>(camera.height);
+  if (m_camera.type == Camera::Type::PERSPECTIVE) {
+    auto fov = 2 * atan(tan(45.0f * PI / 180.0f / 2.0f) / m_camera.zoom);
+    ospSetFloat(osp_camera, "fovy", fov * 180.0f / PI);
+  } else {
+    osp_camera = ospNewCamera("orthographic");
+    auto distance = camera_to_target(m_camera);
+    ospSetFloat(osp_camera, "height", distance / aspect / m_camera.zoom);
+  }
+  ospSetFloat(osp_camera, "aspect", aspect);
   ospSetVec3f(osp_camera, "position", camera.pos[0], camera.pos[1],
               camera.pos[2]);
   ospSetVec3f(osp_camera, "up", camera.up[0], camera.up[1], camera.up[2]);

@@ -1,3 +1,4 @@
+#include <array>
 #include <memory>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -54,7 +55,7 @@ PYBIND11_MODULE(pyvoxer, m) {
       .def_readwrite("pos", &Camera::pos)
       .def_readwrite("up", &Camera::up)
       .def_readwrite("target", &Camera::target)
-      .def_readwrite("enable_ao", &Camera::enable_ao);
+      .def_readwrite("zoom", &Camera::zoom);
 
   py::class_<Image> image(m, "Image");
   py::enum_<Image::Format>(image, "Format")

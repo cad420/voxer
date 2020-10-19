@@ -270,11 +270,17 @@ void OpenGLVolumeRenderer::render() {
   auto distance = glm::length(camera_to_target);
   auto aspect =
       static_cast<float>(m_camera.width) / static_cast<float>(m_camera.height);
-  auto projection = m_camera.type == Camera::Type::PERSPECTIVE
-                        ? glm::perspective(45.0f * glm::pi<float>() / 180.0f,
-                                           aspect, 1.0f, 3000.0f)
-                        : glm::ortho(-distance, distance, -distance / aspect,
-                                     distance / aspect, 1.0f, 3000.0f);
+  auto projection = glm::identity<glm::mat4>();
+  if (m_camera.type == Camera::Type::PERSPECTIVE) {
+    auto fov =
+        2 * atan(tan(45.0f * glm::pi<float>() / 180.0f / 2.0f) / m_camera.zoom);
+    projection = glm::perspective(fov, aspect, 1.0f, 3000.0f);
+  } else {
+    projection = glm::ortho(-distance / m_camera.zoom / 2.0f, distance / m_camera.zoom / 2.0f,
+                            -distance / aspect / m_camera.zoom / 2.0f,
+                            distance / aspect / m_camera.zoom / 2.0f, 1.0f, 3000.0f);
+  }
+
   auto view = glm::lookAt(
       glm::vec3(m_camera.pos[0], m_camera.pos[1], m_camera.pos[2]),
       glm::vec3(m_camera.target[0], m_camera.target[1], m_camera.target[2]),
