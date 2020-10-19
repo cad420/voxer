@@ -23,7 +23,7 @@ public:
 private:
   Image m_image;
   Camera m_camera;
-  std::array<float, 3> m_background {};
+  std::array<float, 3> m_background{};
   std::vector<std::shared_ptr<Volume>> m_volumes;
   std::vector<std::shared_ptr<Isosurface>> m_isosurfaces;
   std::unordered_map<StructuredGrid *, GLuint> m_dataset_cache;
@@ -55,7 +55,5 @@ private:
 } // namespace voxer
 
 extern "C" {
-VoxerIRenderer *voxer_get_backend() {
-  return new voxer::OpenGLVolumeRenderer();
-}
+VoxerIRenderer *voxer_get_backend();
 }

@@ -22,7 +22,7 @@ inline auto convert_float_to_uint8(const float *source, size_t size, float max,
   return data;
 }
 
-inline auto convert_float_to_uint8(const float *source, size_t size)
+inline auto convert_float_to_uint8(const float *source, size_t size, std::array<float, 2> &range)
     -> std::vector<uint8_t> {
   auto min = source[0];
   auto max = source[0];
@@ -34,6 +34,8 @@ inline auto convert_float_to_uint8(const float *source, size_t size)
       min = value;
     }
   }
+  range[0] = min;
+  range[1] = max;
   return convert_float_to_uint8(source, size, max, min);
 }
 

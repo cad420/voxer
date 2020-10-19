@@ -12,25 +12,31 @@ namespace voxer {
 
 static Logger logger("renderer");
 
-using GetRenderingBackend = VoxerIRenderer *(*)();
-
 VolumeRenderer::~VolumeRenderer() = default;
 
 VolumeRenderer::VolumeRenderer(const char *backend) {
-  auto lib_name = string("libvoxer_backend_") + backend + ".so";
-  void *lib = dlopen(lib_name.c_str(), RTLD_NOW);
-  if (lib == nullptr) {
-    throw runtime_error(dlerror());
+  auto it = symbols.find(backend);
+
+  std::function<VoxerIRenderer *()> get_backend = nullptr;
+  if (it != symbols.end()) {
+    get_backend = it->second;
+  } else {
+    auto lib_name = string("libvoxer_backend_") + backend + ".so";
+    void *lib = dlopen(lib_name.c_str(), RTLD_NOW);
+    if (lib == nullptr) {
+      throw runtime_error(dlerror());
+    }
+
+    void *symbol = dlsym(lib, "voxer_get_backend");
+    if (symbol == nullptr) {
+      throw runtime_error("Cannot find symbol `voxer_get_backend` in " +
+                          lib_name);
+    }
+
+    get_backend = reinterpret_cast<GetRenderingBackend>(symbol);
+    symbols.emplace(string(backend), reinterpret_cast<GetRenderingBackend>(symbol));
   }
 
-  void *symbol = dlsym(lib, "voxer_get_backend");
-  if (symbol == nullptr) {
-    throw runtime_error("Cannot find symbol `voxer_get_backend` in " +
-                        lib_name);
-  }
-
-  std::function<VoxerIRenderer *()> get_backend =
-      reinterpret_cast<GetRenderingBackend>(symbol);
   auto context = get_backend();
   impl.reset(context);
 }

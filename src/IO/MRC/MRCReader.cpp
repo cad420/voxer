@@ -473,8 +473,10 @@ auto MRCReader::load() -> std::unique_ptr<StructuredGrid> {
         header.dmin);
     dataset->info.value_type = ValueType::UINT8;
     dataset->buffer = move(uint8_buffer);
+    dataset->original_range = {header.dmin, header.dmax};
   } else if (header.mode == MRC_MODE_BYTE) {
     dataset->buffer = move(data_buffer);
+    dataset->original_range = {0.0f, 255.0f};
   } else {
     throw runtime_error("unsupported MRC data type");
   }

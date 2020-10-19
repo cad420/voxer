@@ -13,8 +13,9 @@ namespace {
 
 struct LoadDatasetResponse {
   voxer::remote::DatasetId id;
-  std::array<uint32_t, 3> dimensions {};
-  std::vector<uint32_t> histogram {};
+  std::array<uint32_t, 3> dimensions{};
+  std::vector<uint32_t> histogram{};
+  std::array<float, 2> range{};
 };
 
 } // namespace
@@ -22,10 +23,10 @@ struct LoadDatasetResponse {
 namespace seria {
 
 template <> inline auto register_object<LoadDatasetResponse>() {
-  return std::make_tuple(
-      member("id", &LoadDatasetResponse::id),
-      member("dimensions", &LoadDatasetResponse::dimensions),
-                         member("histogram", &LoadDatasetResponse::histogram));
+  return std::make_tuple(member("id", &LoadDatasetResponse::id),
+                         member("dimensions", &LoadDatasetResponse::dimensions),
+                         member("histogram", &LoadDatasetResponse::histogram),
+                         member("range", &LoadDatasetResponse::range));
 }
 
 } // namespace seria
@@ -57,6 +58,7 @@ void DatasetService::load_dataset(const char *msg, uint32_t size) {
     res.id = item.first;
     res.histogram = voxer::calculate_histogram(*item.second);
     res.dimensions = item.second->info.dimensions;
+    res.range = item.second->original_range;
     auto serialized = seria::serialize(res);
 
     rapidjson::StringBuffer buffer;

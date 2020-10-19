@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_map>
 #include <voxer/Data/Image.hpp>
 #include <voxer/Rendering/Camera.hpp>
 #include <voxer/Rendering/Isosurface.hpp>
@@ -7,6 +8,8 @@
 class VoxerIRenderer;
 
 namespace voxer {
+
+using GetRenderingBackend = VoxerIRenderer *(*)();
 
 class VolumeRenderer {
 public:
@@ -25,6 +28,7 @@ public:
 
 private:
   std::unique_ptr<VoxerIRenderer> impl;
+  std::unordered_map<std::string, GetRenderingBackend> symbols;
 };
 
 } // namespace voxer

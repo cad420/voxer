@@ -269,3 +269,7 @@ void OSPRayRenderer::set_background(float r, float g, float b) noexcept {
 }
 
 } // namespace voxer
+
+extern "C" {
+VoxerIRenderer *voxer_get_backend() { return new voxer::OSPRayRenderer(); }
+}

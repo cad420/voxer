@@ -61,6 +61,7 @@ struct VolumeInfo {
 struct StructuredGrid {
   std::string name;
   VolumeInfo info{};
+  std::array<float, 2> original_range;
   std::vector<uint8_t> buffer{};
 
   enum struct Axis { X, Y, Z };

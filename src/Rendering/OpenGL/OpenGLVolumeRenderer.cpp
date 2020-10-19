@@ -271,7 +271,8 @@ void OpenGLVolumeRenderer::render() {
   auto aspect =
       static_cast<float>(m_camera.width) / static_cast<float>(m_camera.height);
   auto projection = m_camera.type == Camera::Type::PERSPECTIVE
-                        ? glm::perspective(45.0f * glm::pi<float>() / 180.0f, aspect, 1.0f, 3000.0f)
+                        ? glm::perspective(45.0f * glm::pi<float>() / 180.0f,
+                                           aspect, 1.0f, 3000.0f)
                         : glm::ortho(-distance, distance, -distance / aspect,
                                      distance / aspect, 1.0f, 3000.0f);
   auto view = glm::lookAt(
@@ -494,3 +495,9 @@ void OpenGLVolumeRenderer::set_background(float r, float g, float b) noexcept {
 }
 
 } // namespace voxer
+
+extern "C" {
+VoxerIRenderer *voxer_get_backend() {
+  return new voxer::OpenGLVolumeRenderer();
+}
+}

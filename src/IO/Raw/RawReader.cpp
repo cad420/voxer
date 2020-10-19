@@ -59,6 +59,7 @@ auto RawReader::load() -> unique_ptr<StructuredGrid> {
   auto dataset = make_unique<StructuredGrid>();
   dataset->info.dimensions = dimensions;
   if (value_type == ValueType::UINT8) {
+    dataset->original_range = {0.0f, 255.0f};
     dataset->buffer.reserve(dataset->info.byte_count());
     dataset->buffer.insert(dataset->buffer.begin(),
                            istream_iterator<uint8_t>(fs),
@@ -69,7 +70,7 @@ auto RawReader::load() -> unique_ptr<StructuredGrid> {
     buffer.reserve(total);
     buffer.insert(buffer.begin(), istream_iterator<float>(fs),
                   istream_iterator<float>{});
-    dataset->buffer = convert_float_to_uint8(buffer.data(), total);
+    dataset->buffer = convert_float_to_uint8(buffer.data(), total, dataset->original_range);
   }
   dataset->info.value_type = ValueType::UINT8;
   return dataset;
