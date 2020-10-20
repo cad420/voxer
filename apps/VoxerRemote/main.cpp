@@ -3,6 +3,7 @@
 #include "Service/VolumeRenderingService.hpp"
 #include "Store/DatasetStore.hpp"
 #include "uWebSockets/App.h"
+#include <cxxopts.hpp>
 #include <iostream>
 #include <utility>
 #include <voxer/Data/Image.hpp>
@@ -12,7 +13,34 @@ using namespace voxer::remote;
 
 struct UserData {};
 
-int main(int argc, const char **argv) {
+int main(int argc, char **argv) {
+  cxxopts::Options options(
+      "VoxerRemote", "VoxerRemote: scientific visualization cloud service");
+  auto add_option = options.add_options();
+  add_option("h,help", "Show usage");
+  add_option("m,manager", "manager address", cxxopts::value<std::string>());
+  add_option("p,port", "port listening",
+             cxxopts::value<uint16_t>()->default_value("3040"));
+  add_option("d,debug", "Enable debugging");
+  add_option("v,verbose", "Verbose output",
+             cxxopts::value<bool>()->default_value("false"));
+
+  uint16_t port = 0;
+  try {
+    auto result = options.parse(argc, argv);
+    options.show_positional_help();
+    if (result.count("help") != 0) {
+      cout << options.help() << endl;
+      return 0;
+    }
+
+    port = result["port"].as<uint16_t>();
+  } catch (exception &error) {
+    cout << error.what() << "\n";
+    cout << "Try `VoxerRemote --help` for more information.\n";
+    return 1;
+  }
+
   DatasetStore datasets;
 
   DatasetService dataset_service{};
@@ -22,13 +50,10 @@ int main(int argc, const char **argv) {
   SliceService slice_service{};
   slice_service.m_datasets = &datasets;
 
-  vector<AbstractService *> services{};
-  services.emplace_back(&dataset_service);
-  services.emplace_back(&slice_service);
-  services.emplace_back(&volume_rendering_service);
+  vector<AbstractService *> services{&dataset_service, &slice_service,
+                                     &volume_rendering_service};
 
   auto app = uWS::App();
-
   // configure websocket server
   for (auto service : services) {
     uWS::App::WebSocketBehavior behavior{uWS::SHARED_COMPRESSOR, 1024 * 1024,
@@ -46,7 +71,6 @@ int main(int argc, const char **argv) {
   }
 
   // run server
-  const auto port = 3040;
   auto on_success = [port](auto *token) {
     if (!token) {
       cout << " failed to listen on port " << port << endl;

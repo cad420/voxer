@@ -16,6 +16,7 @@ option(VOXER_BUILD_TESTS "whether to build tests" OFF)
 # global settings
 include(cmake/utils.cmake)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(FETCHCONTENT_QUIET FALSE)
 SET(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../lib")
 
 add_subdirectory(src)

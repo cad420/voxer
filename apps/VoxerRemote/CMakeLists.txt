@@ -4,6 +4,7 @@ project(VoxerRemote LANGUAGES CXX C VERSION 0.1.0)
 
 include(${PROJECT_SOURCE_DIR}/third_party/uWebSockets.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
+include(${PROJECT_SOURCE_DIR}/third_party/cxxopts.cmake)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 
@@ -26,10 +27,11 @@ target_link_libraries(
     PRIVATE
     voxer::voxer_core
     seria::seria
-    Threads::Threads
-    ZLIB::ZLIB
     uWebSockets
     fmt::fmt
+    cxxopts
+    ZLIB::ZLIB
+    Threads::Threads
 )
 target_compile_features(VoxerRemote PRIVATE cxx_std_17)
 
