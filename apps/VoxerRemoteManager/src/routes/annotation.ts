@@ -122,20 +122,15 @@ router.post("/:group/:dataset/:axis/:index", async (req, res) => {
   const collection = database.collection("groups");
 
   const updateExp: Record<string, Array<Annotation>> = {};
-  list.map(({ tag, comment, coordinates }) => {
+  list.map((annotation) => {
+    const { tag } = annotation;
     const key = `datasets.${datasetId}.labels.${tag}.${axis}.${index}`;
 
     if (updateExp[key]) {
-      updateExp[key].push({
-        comment,
-        coordinates,
-      });
+      updateExp[key].push(annotation);
     } else {
       updateExp[key] = [
-        {
-          comment,
-          coordinates,
-        },
+        annotation,
       ];
     }
   });
@@ -145,7 +140,9 @@ router.post("/:group/:dataset/:axis/:index", async (req, res) => {
       _id: new ObjectId(groupId),
     },
     {
-      $set: updateExp,
+      $set: list.length === 0 ? {
+        [`datasets.${datasetId}.labels`]: {}
+      } : updateExp,
     }
   );
 
