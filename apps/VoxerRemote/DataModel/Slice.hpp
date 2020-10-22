@@ -16,14 +16,6 @@ struct Slice {
 
 namespace seria {
 
-template <> inline auto register_object<voxer::Annotation>() {
-  using Annotation = voxer::Annotation;
-  return std::make_tuple(member("type", &Annotation::type),
-                         member("coordinates", &Annotation::coordinates),
-                         member("tag", &Annotation::label),
-                         member("comment", &Annotation::comment));
-}
-
 template <> inline auto register_object<voxer::remote::Slice>() {
   using Slice = voxer::remote::Slice;
   using Axis = voxer::StructuredGrid::Axis;

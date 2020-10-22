@@ -15,9 +15,13 @@ public:
 
   void on_message(const char *message, uint32_t size) final;
 
-  [[nodiscard]] auto get_path() const -> std::string final {
+  [[nodiscard]] auto get_path() const noexcept -> std::string final {
     return "/render";
   }
+
+  [[nodiscard]] auto get_protocol() const noexcept -> Protocol override {
+    return Protocol::WebSocket;
+  };
 
   voxer::remote::DatasetStore *m_datasets = nullptr;
 

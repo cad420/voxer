@@ -64,7 +64,7 @@ struct StructuredGrid {
   std::array<float, 2> original_range;
   std::vector<uint8_t> buffer{};
 
-  enum struct Axis { X, Y, Z };
+  enum struct Axis { X = 0, Y = 1, Z = 2 };
 
   [[nodiscard]] auto get_slice(Axis axis, uint32_t slice) const -> Image;
 
@@ -72,6 +72,8 @@ struct StructuredGrid {
 
   [[nodiscard]] static auto Load(const char *path)
       -> std::shared_ptr<StructuredGrid>;
+
+  static Axis get_axis(const char* str);
 };
 
 } // namespace voxer

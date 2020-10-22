@@ -18,10 +18,14 @@ public:
   auto load_one(const rapidjson::Value &json)
       -> std::shared_ptr<voxer::StructuredGrid>;
   void add_from_json(const char *text, uint32_t size);
+
+  auto add(const std::string &id, const std::string &name,
+            const std::string &path) -> voxer::StructuredGrid *;
+
   [[nodiscard]] auto get(const voxer::remote::Dataset &desc) const
       -> const std::shared_ptr<voxer::StructuredGrid> &;
   [[nodiscard]] auto get(const DatasetId &id) const
-  -> const std::shared_ptr<voxer::StructuredGrid> &;
+      -> const std::shared_ptr<voxer::StructuredGrid> &;
   //  [[nodiscard]] auto
   //  get_or_create(const voxer::remote::Dataset &scene_dataset,
   //                const std::vector<voxer::remote::Dataset> &scene_datasets)

@@ -120,13 +120,41 @@ DatasetStore::load_one(const rapidjson::Value &json) {
   }*/
 }
 
+auto DatasetStore::add(const std::string &id, const std::string &name,
+                       const std::string &path) -> voxer::StructuredGrid * {
+  auto it = m_datasets.find(id);
+  if (it != m_datasets.end()) {
+    return it->second.get();
+  }
+
+  shared_ptr<StructuredGrid> dataset{};
+  auto ext = get_file_extension(path);
+  if (ext == ".raw") {
+    RawReader reader(path.c_str());
+    dataset = reader.load();
+  } else if (ext == ".mrc") {
+    MRCReader reader(path);
+    dataset = reader.load();
+  } else {
+    throw runtime_error("unknown dataset format: " + ext);
+  }
+
+  auto result = m_datasets.emplace(id, dataset);
+
+  if (!result.second) {
+    throw runtime_error("Failed to add dataset.");
+  }
+
+  return result.first->second.get();
+}
+
 auto DatasetStore::get(const voxer::remote::Dataset &desc) const
     -> const shared_ptr<StructuredGrid> & {
   return get(desc.id);
 }
 
 auto DatasetStore::get(const DatasetId &id) const
--> const shared_ptr<StructuredGrid> & {
+    -> const shared_ptr<StructuredGrid> & {
   const auto it = m_datasets.find(id);
   if (it == m_datasets.end()) {
     throw runtime_error("cannot find dataset");

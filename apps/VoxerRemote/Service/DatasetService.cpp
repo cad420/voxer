@@ -1,32 +1,27 @@
 #include "DatasetService.hpp"
-#include "DataModel/StructuredGrid.hpp"
-#include <iostream>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <seria/deserialize.hpp>
 #include <seria/object.hpp>
 #include <seria/serialize.hpp>
 #include <voxer/Filters/histogram.hpp>
 
 using namespace std;
 
-namespace {
-
-struct LoadDatasetResponse {
-  voxer::remote::DatasetId id;
-  std::array<uint32_t, 3> dimensions{};
-  std::vector<uint32_t> histogram{};
-  std::array<float, 2> range{};
-};
-
-} // namespace
-
 namespace seria {
 
-template <> inline auto register_object<LoadDatasetResponse>() {
-  return std::make_tuple(member("id", &LoadDatasetResponse::id),
-                         member("dimensions", &LoadDatasetResponse::dimensions),
-                         member("histogram", &LoadDatasetResponse::histogram),
-                         member("range", &LoadDatasetResponse::range));
+template <> inline auto register_object<voxer::remote::LoadDataSetParams>() {
+  using Object = voxer::remote::LoadDataSetParams;
+  return std::make_tuple(member("id", &Object::id),
+                         member("name", &Object::name),
+                         member("path", &Object::path));
+}
+
+template <> inline auto register_object<voxer::remote::LoadDatasetResponse>() {
+  using Object = voxer::remote::LoadDatasetResponse;
+  return std::make_tuple(
+      member("id", &Object::id), member("dimensions", &Object::dimensions),
+      member("histogram", &Object::histogram), member("range", &Object::range));
 }
 
 } // namespace seria
@@ -38,29 +33,19 @@ void DatasetService::on_message(const char *message, uint32_t size) {
     return;
   }
 
-  load_dataset(message, size);
-}
+  auto [function_name, json] = extract(message, size);
 
-void DatasetService::load_dataset(const char *msg, uint32_t size) {
-  if (m_datasets == nullptr) {
-    throw runtime_error("No dataset store");
-  }
+  if (function_name == "load_dataset") {
+    std::vector<LoadDataSetParams> params{};
+    seria::deserialize(params, json);
 
-  if (m_send == nullptr) {
-    throw runtime_error("No send function");
-  }
+    std::vector<LoadDatasetResponse> result;
+    result.reserve(params.size());
+    for (auto &item : params) {
+      result.emplace_back(load_dataset(item));
+    }
 
-  m_datasets->load_from_json(msg, size);
-
-  LoadDatasetResponse res;
-  const auto &items = m_datasets->get();
-  for (auto &item : items) {
-    res.id = item.first;
-    res.histogram = voxer::calculate_histogram(*item.second);
-    res.dimensions = item.second->info.dimensions;
-    res.range = item.second->original_range;
-    auto serialized = seria::serialize(res);
-
+    auto serialized = seria::serialize(result);
     rapidjson::StringBuffer buffer;
     buffer.Clear();
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
@@ -68,7 +53,25 @@ void DatasetService::load_dataset(const char *msg, uint32_t size) {
 
     m_send(reinterpret_cast<const uint8_t *>(buffer.GetString()),
            buffer.GetSize(), false);
+    return;
   }
+
+  auto error_msg = "unknown function: " + function_name;
+  m_send(reinterpret_cast<const uint8_t *>(error_msg.c_str()), error_msg.size(),
+         false);
+}
+
+auto DatasetService::load_dataset(const LoadDataSetParams &params) const
+    -> LoadDatasetResponse {
+  auto dataset = m_datasets->add(params.id, params.name, params.path);
+
+  LoadDatasetResponse result;
+  result.id = params.id;
+  result.histogram = voxer::calculate_histogram(*dataset);
+  result.dimensions = dataset->info.dimensions;
+  result.range = dataset->original_range;
+
+  return result;
 }
 
 } // namespace voxer::remote

@@ -11,11 +11,13 @@ find_package(ZLIB REQUIRED)
 add_executable(
     VoxerRemote
     main.cpp
+    Service/AbstractService.cpp
     Service/DatasetService.cpp
     Service/SliceService.cpp
     Service/VolumeRenderingService.cpp
+    Service/AnnotationService.cpp
     Store/DatasetStore.cpp
-#    Store/PipelineStore.cpp
+    # Store/PipelineStore.cpp
 )
 target_include_directories(
     VoxerRemote
