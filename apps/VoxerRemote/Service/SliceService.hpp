@@ -16,7 +16,7 @@ public:
   }
 
   [[nodiscard]] auto get_protocol() const noexcept -> Protocol override {
-    return Protocol::HTTP;
+    return Protocol::WebSocket;
   };
 
   [[nodiscard]] auto get_dataset_slice(const DatasetId &id,

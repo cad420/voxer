@@ -3,7 +3,6 @@ import mongodb, { ObjectId, ObjectID } from "mongodb";
 import DatasetGroup from "../models/DatasetGroup";
 import Dataset from "../models/Dataset";
 import { DatasetAnnotations } from "../models/Annotation";
-import messager from "../messager";
 
 const router = express.Router();
 
@@ -83,11 +82,13 @@ router.get("/:id", async (req, res) => {
     return;
   }
 
+  const cache: Record<string, any> = req.app.get("datasets");
+
   const group = { ...result[0] };
   const datasets = Object.entries(group.datasets || []).map(([id, info]) => ({
     id,
     ...info,
-    ...messager.cache[id],
+    ...cache[id],
   }));
   const labels = (group.labels || []).map((item) => ({
     ...item,

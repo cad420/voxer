@@ -4,14 +4,14 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 import routes from "./routes";
 import { PUBLIC_PATH, RENDER_SERVICE } from "./config";
 import connect from "./models";
-import messager from "./messager";
+import { getExistDatasetInfo } from "./models/Dataset";
 
 const app = express();
 
 const services: string[] = ["/render", "/slice"];
 services.forEach((service) => {
   const serviceProxy = createProxyMiddleware(service, {
-    target: RENDER_SERVICE,
+    target: `ws://${RENDER_SERVICE}`,
     ws: true,
   });
   app.use(serviceProxy);
@@ -31,8 +31,12 @@ const port = process.env.PORT || 3001;
 
 export default async function run() {
   const database = await connect();
-  messager.connect(database);
+  const datasets: Record<string, any> = {};
+
+  getExistDatasetInfo(database, datasets);
+
   app.set("database", database);
+  app.set("datasets", datasets);
   app.listen(port, () => {
     console.log(`listening on port ${port}`);
   });

@@ -62,13 +62,24 @@ int main(int argc, char **argv) {
     auto protocol = service->get_protocol();
     switch (protocol) {
     case AbstractService::Protocol::HTTP: {
-      app.post(service->get_path(), [service](uWS::HttpResponse<false> *res,
+      std::string body;
+      app.post(service->get_path(), [service, &body](uWS::HttpResponse<false> *res,
                                               uWS::HttpRequest *req) {
+        res->onAborted([&body]() {
+          body = "";
+        });
+        res->onData([service, &body](std::string_view data, bool last) {
+          body += data;
+          if (last) {
+            service->on_message(reinterpret_cast<const char *>(body.data()),
+                                body.size());
+            body = "";
+          }
+        });
         service->m_send = [res](const uint8_t *data, uint32_t size,
                                 bool is_binary) {
           res->end(string_view(reinterpret_cast<const char *>(data), size));
         };
-        service->on_message(nullptr, 0);
       });
       break;
     }

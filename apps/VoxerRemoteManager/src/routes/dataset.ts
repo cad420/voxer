@@ -3,8 +3,8 @@ import multer from "multer";
 import mongodb, { ObjectId } from "mongodb";
 import { resolve } from "path";
 import Dataset from "../models/Dataset";
-import messager from "../messager";
-import { UPLOAD_PATH } from "../config";
+import { RENDER_SERVICE, UPLOAD_PATH } from "../config";
+import { getDatasetInfo } from "../rpc";
 
 const router = express.Router();
 
@@ -20,6 +20,7 @@ const upload = multer({ storage });
 
 router.get("/", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
+  const cache: Record<string, any> = req.app.get("datasets");
 
   const collection = database.collection("datasets");
   const datasets = await collection.find().toArray();
@@ -27,7 +28,7 @@ router.get("/", async (req, res) => {
   res.send({
     code: 200,
     data: datasets.map((dataset: Dataset) => {
-      const info = messager.cache[dataset._id.toString()];
+      const info = cache[dataset._id.toString()];
       return {
         id: dataset._id,
         name: dataset.name,
@@ -49,11 +50,13 @@ router.post("/", upload.single("dataset"), async (req, res) => {
   });
   const id = result.insertedId;
 
-  messager.post({
+  const info = await getDatasetInfo(RENDER_SERVICE, {
     id,
     name: filename,
     path: resolve(UPLOAD_PATH, filename),
   });
+  const cache = req.app.get("datasets");
+  cache[id] = info;
 
   res.send({
     code: 200,
@@ -63,7 +66,10 @@ router.post("/", upload.single("dataset"), async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
+
   const database: mongodb.Db = req.app.get("database");
+  const cache = req.app.get("datasets");
+
   const collection = database.collection("datasets");
 
   const dataset: Dataset = await collection.findOne({ _id: new ObjectId(id) });
@@ -78,7 +84,7 @@ router.get("/:id", async (req, res) => {
 
   return res.send({
     code: 200,
-    data: messager.cache[id],
+    data: cache[id],
   });
 });
 

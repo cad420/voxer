@@ -1,4 +1,5 @@
 #include "DatasetService.hpp"
+#include <iostream>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 #include <seria/deserialize.hpp>
@@ -36,14 +37,11 @@ void DatasetService::on_message(const char *message, uint32_t size) {
   auto [function_name, json] = extract(message, size);
 
   if (function_name == "load_dataset") {
-    std::vector<LoadDataSetParams> params{};
+    LoadDataSetParams params{};
     seria::deserialize(params, json);
 
-    std::vector<LoadDatasetResponse> result;
-    result.reserve(params.size());
-    for (auto &item : params) {
-      result.emplace_back(load_dataset(item));
-    }
+    LoadDatasetResponse result = load_dataset(params);
+    cout << "Load dataset " << params.name << "\n";
 
     auto serialized = seria::serialize(result);
     rapidjson::StringBuffer buffer;

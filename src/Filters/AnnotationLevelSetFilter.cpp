@@ -13,7 +13,11 @@ Annotation AnnotationLevelSetFilter::process(const Annotation &annotation,
 
   auto originalImg = cv::Mat(image.width, image.height, CV_8UC1);
   std::vector<cv::Point> contour{};
-  for (auto &item : annotation.coordinates) {
+  if (annotation.coordinates.empty()) {
+    return {};
+  }
+
+  for (auto &item : annotation.coordinates[0]) {
     contour.emplace_back(
         cv::Point{static_cast<int>(item[0]), static_cast<int>(item[1])});
   }
@@ -53,10 +57,10 @@ Annotation AnnotationLevelSetFilter::process(const Annotation &annotation,
 
   Annotation result{};
   result.type = annotation.type;
-  result.comment = annotation.comment;
   result.label = annotation.label;
+  result.coordinates.emplace_back();
   for (auto &item : maxContour) {
-    result.coordinates.emplace_back(Annotation::Point{
+    result.coordinates[0].emplace_back(Annotation::Point{
         static_cast<uint32_t>(item.x), static_cast<uint32_t>(item.y)});
   }
 

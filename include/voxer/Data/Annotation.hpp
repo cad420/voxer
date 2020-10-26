@@ -12,8 +12,8 @@ struct Annotation {
   std::string type;
 
   using Point = std::array<uint32_t, 2>;
-  uint32_t label = 0;
-  std::vector<Point> coordinates;
+  std::string label;
+  std::vector<std::vector<Point>> coordinates;
 
   bool has_hole_inside();
 };

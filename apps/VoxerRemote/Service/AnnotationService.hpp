@@ -17,7 +17,7 @@ public:
   void on_message(const char *message, uint32_t size) override;
 
   [[nodiscard]] auto get_path() const noexcept -> std::string override {
-    return "annotations";
+    return "/annotations";
   };
 
   [[nodiscard]] auto get_protocol() const noexcept -> Protocol override {

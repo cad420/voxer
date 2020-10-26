@@ -1,4 +1,5 @@
 #include "AnnotationService.hpp"
+#include "DataModel/Annotation.hpp"
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 #include <seria/deserialize.hpp>

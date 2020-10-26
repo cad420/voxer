@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import mongodb from "mongodb";
-import { RENDER_SERVICE, UPLOAD_PATH } from "./config";
 import { resolve } from "path";
+import { RENDER_SERVICE, UPLOAD_PATH } from "./config";
 import Dataset from "./models/Dataset";
 
 class Messager {
@@ -42,7 +42,7 @@ class Messager {
     this.ws.on("open", async () => {
       console.log("DatasetMessager: connected");
 
-      const collection = database.collection('datasets');
+      const collection = database.collection("datasets");
       const datasets = await collection.find().toArray();
 
       this.post(
