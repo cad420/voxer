@@ -1,4 +1,3 @@
-#pragma once
 #include "AbstractService.hpp"
 
 using namespace std;

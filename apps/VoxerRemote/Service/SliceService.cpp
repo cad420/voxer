@@ -1,5 +1,6 @@
 #include "Service/SliceService.hpp"
 #include "DataModel/Slice.hpp"
+#include <fmt/format.h>
 #include <seria/deserialize.hpp>
 
 using namespace voxer;
@@ -7,25 +8,33 @@ using namespace std;
 
 namespace voxer::remote {
 
-void SliceService::on_message(const char *message, uint32_t size) {
-  m_document.Parse(message, size);
+void SliceService::on_message(const char *message, uint32_t size) noexcept {
+  assert(m_datasets != nullptr);
 
-  if (!m_document.IsObject()) {
-    throw std::runtime_error("root should be an object");
-  }
+  try {
+    m_document.Parse(message, size);
 
-  auto params = m_document.GetObject();
-  if (!params.HasMember("type") || !params["type"].IsString()) {
-    throw std::runtime_error("root.type should be a string");
-  }
+    if (!m_document.IsObject()) {
+      throw std::runtime_error("root should be an object");
+    }
 
-  std::string type = params["type"].GetString();
-  if (type == "slice") {
-    Slice slice{};
-    seria::deserialize(slice, params);
-    auto image = get_dataset_slice(slice.dataset, slice.axis, slice.index);
-    m_send(reinterpret_cast<const uint8_t *>(image.data.data()),
-           image.data.size(), true);
+    auto params = m_document.GetObject();
+    if (!params.HasMember("type") || !params["type"].IsString()) {
+      throw std::runtime_error("root.type should be a string");
+    }
+
+    std::string type = params["type"].GetString();
+    if (type == "slice") {
+      Slice slice{};
+      seria::deserialize(slice, params);
+      auto image = get_dataset_slice(slice.dataset, slice.axis, slice.index);
+      m_send(reinterpret_cast<const uint8_t *>(image.data.data()),
+             image.data.size(), true);
+    }
+  } catch (exception &error) {
+    auto error_msg = fmt::format(R"({{"error": "{}"}})", error.what());
+    m_send(reinterpret_cast<const uint8_t *>(error_msg.data()),
+           error_msg.size(), false);
   }
 }
 

@@ -14,7 +14,9 @@ VolumeRenderingService::VolumeRenderingService() {
   m_ospray = make_unique<VolumeRenderer>("ospray");
 }
 
-void VolumeRenderingService::on_message(const char *message, uint32_t size) {
+void VolumeRenderingService::on_message(const char *message, uint32_t size) noexcept {
+  assert(m_datasets != nullptr && m_send != nullptr);
+
   if (m_datasets == nullptr || m_send == nullptr)
     return;
 

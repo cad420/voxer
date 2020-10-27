@@ -10,7 +10,7 @@ public:
 
   ~AbstractService() = default;
 
-  virtual void on_message(const char *message, uint32_t size) = 0;
+  virtual void on_message(const char *message, uint32_t size) noexcept = 0;
 
   [[nodiscard]] virtual auto extract(const char *message, uint32_t size)
       -> std::pair<std::string, rapidjson::Value>;

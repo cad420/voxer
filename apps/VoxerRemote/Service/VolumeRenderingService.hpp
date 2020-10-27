@@ -9,13 +9,13 @@
 
 namespace voxer::remote {
 
-class VolumeRenderingService final : public AbstractService {
+class VolumeRenderingService : public AbstractService {
 public:
   VolumeRenderingService();
 
-  void on_message(const char *message, uint32_t size) final;
+  void on_message(const char *message, uint32_t size) noexcept override;
 
-  [[nodiscard]] auto get_path() const noexcept -> std::string final {
+  [[nodiscard]] auto get_path() const noexcept -> std::string override {
     return "/render";
   }
 

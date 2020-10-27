@@ -14,7 +14,7 @@ struct AnnotationLevelSetParams {
 
 class AnnotationService : public AbstractService {
 public:
-  void on_message(const char *message, uint32_t size) override;
+  void on_message(const char *message, uint32_t size) noexcept override;
 
   [[nodiscard]] auto get_path() const noexcept -> std::string override {
     return "/annotations";

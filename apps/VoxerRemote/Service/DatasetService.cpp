@@ -1,4 +1,5 @@
 #include "DatasetService.hpp"
+#include <fmt/format.h>
 #include <iostream>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
@@ -29,34 +30,42 @@ template <> inline auto register_object<voxer::remote::LoadDatasetResponse>() {
 
 namespace voxer::remote {
 
-void DatasetService::on_message(const char *message, uint32_t size) {
+void DatasetService::on_message(const char *message, uint32_t size) noexcept {
+  assert(m_datasets != nullptr && m_send != nullptr);
+
   if (m_datasets == nullptr || m_send == nullptr) {
     return;
   }
 
-  auto [function_name, json] = extract(message, size);
+  try {
+    auto [function_name, json] = extract(message, size);
 
-  if (function_name == "load_dataset") {
-    LoadDataSetParams params{};
-    seria::deserialize(params, json);
+    if (function_name == "load_dataset") {
+      LoadDataSetParams params{};
+      seria::deserialize(params, json);
 
-    LoadDatasetResponse result = load_dataset(params);
-    cout << "Load dataset " << params.name << "\n";
+      LoadDatasetResponse result = load_dataset(params);
+      cout << "Load dataset " << params.name << "\n";
 
-    auto serialized = seria::serialize(result);
-    rapidjson::StringBuffer buffer;
-    buffer.Clear();
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    serialized.Accept(writer);
+      auto serialized = seria::serialize(result);
+      rapidjson::StringBuffer buffer;
+      buffer.Clear();
+      rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+      serialized.Accept(writer);
 
-    m_send(reinterpret_cast<const uint8_t *>(buffer.GetString()),
-           buffer.GetSize(), false);
-    return;
+      m_send(reinterpret_cast<const uint8_t *>(buffer.GetString()),
+             buffer.GetSize(), false);
+      return;
+    }
+
+    auto error_msg = "unknown function: " + function_name;
+    m_send(reinterpret_cast<const uint8_t *>(error_msg.c_str()),
+           error_msg.size(), false);
+  } catch (exception &error) {
+    auto error_msg = fmt::format(R"({{"error": "{}"}})", error.what());
+    m_send(reinterpret_cast<const uint8_t *>(error_msg.data()),
+           error_msg.size(), false);
   }
-
-  auto error_msg = "unknown function: " + function_name;
-  m_send(reinterpret_cast<const uint8_t *>(error_msg.c_str()), error_msg.size(),
-         false);
 }
 
 auto DatasetService::load_dataset(const LoadDataSetParams &params) const

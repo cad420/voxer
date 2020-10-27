@@ -1,4 +1,4 @@
-#include "Service/AnnotationService.hpp"
+//#include "Service/AnnotationService.hpp"
 #include "Service/DatasetService.hpp"
 #include "Service/SliceService.hpp"
 #include "Service/VolumeRenderingService.hpp"
@@ -49,12 +49,11 @@ int main(int argc, char **argv) {
   volume_rendering_service.m_datasets = &datasets;
   SliceService slice_service{};
   slice_service.m_datasets = &datasets;
-  AnnotationService annotation_service{};
-  annotation_service.m_datasets = &datasets;
+  //  AnnotationService annotation_service{};
+  //  annotation_service.m_datasets = &datasets;
 
   vector<AbstractService *> services{&dataset_service, &slice_service,
-                                     &volume_rendering_service,
-                                     &annotation_service};
+                                     &volume_rendering_service};
 
   auto app = uWS::App();
   // configure websocket server
@@ -63,24 +62,23 @@ int main(int argc, char **argv) {
     switch (protocol) {
     case AbstractService::Protocol::HTTP: {
       std::string body;
-      app.post(service->get_path(), [service, &body](uWS::HttpResponse<false> *res,
-                                              uWS::HttpRequest *req) {
-        res->onAborted([&body]() {
-          body = "";
-        });
-        res->onData([service, &body](std::string_view data, bool last) {
-          body += data;
-          if (last) {
-            service->on_message(reinterpret_cast<const char *>(body.data()),
-                                body.size());
-            body = "";
-          }
-        });
-        service->m_send = [res](const uint8_t *data, uint32_t size,
-                                bool is_binary) {
-          res->end(string_view(reinterpret_cast<const char *>(data), size));
-        };
-      });
+      app.post(
+          service->get_path(), [service, &body](uWS::HttpResponse<false> *res,
+                                                uWS::HttpRequest *req) {
+            res->onAborted([&body]() { body = ""; });
+            res->onData([service, &body](std::string_view data, bool last) {
+              body += data;
+              if (last) {
+                service->on_message(reinterpret_cast<const char *>(body.data()),
+                                    body.size());
+                body = "";
+              }
+            });
+            service->m_send = [res](const uint8_t *data, uint32_t size,
+                                    bool is_binary) {
+              res->end(string_view(reinterpret_cast<const char *>(data), size));
+            };
+          });
       break;
     }
     case AbstractService::Protocol::WebSocket: {

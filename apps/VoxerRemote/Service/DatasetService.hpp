@@ -20,7 +20,7 @@ struct LoadDatasetResponse {
 
 class DatasetService final : public AbstractService {
 public:
-  void on_message(const char *message, uint32_t size) final;
+  void on_message(const char *message, uint32_t size) noexcept final;
 
   [[nodiscard]] auto get_path() const noexcept -> std::string final {
     return "/datasets";
