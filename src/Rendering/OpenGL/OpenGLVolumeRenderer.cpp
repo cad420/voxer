@@ -295,8 +295,6 @@ void OpenGLVolumeRenderer::render() {
   m_raycast_program->setInt("TF", 0);
   m_raycast_program->setInt("preIntTF", 1);
   m_raycast_program->setInt("Block", 2);
-  m_raycast_program->setInt("entryPosTexture", 3);
-  m_raycast_program->setInt("exitPosTexture", 4);
   m_raycast_program->setFloat("ka", 0.5f);
   m_raycast_program->setFloat("kd", 0.8f);
   m_raycast_program->setFloat("ks", 1.0f);

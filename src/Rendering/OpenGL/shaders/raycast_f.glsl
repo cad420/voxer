@@ -7,8 +7,10 @@ highp out vec4 fragColor;
 layout(location=0) uniform sampler1D TF;
 layout(location=1) uniform sampler2D preIntTF;
 layout(location=2) uniform sampler3D Block;
-layout(location=3) uniform sampler2D entryPosTexture;
-layout(location=4) uniform sampler2D exitPosTexture;
+
+layout(binding=1, rgba32f) uniform image2D entryPosTexture;
+layout(binding=2, rgba32f) uniform image2D exitPosTexture;
+
 uniform float ka;
 uniform float kd;
 uniform float shininess;
@@ -151,24 +153,24 @@ vec4 render_volume(vec3 startPos, vec3 rayDirection, int steps, float step) {
 }
 
 vec4 calColor() {
-  vec2 screenCoord = vec2(float(gl_FragCoord.x) / float(width), float(gl_FragCoord.y) / float(height));
-  vec3 startPos = texture(entryPosTexture, screenCoord).xyz;
-  vec3 exitPos = texture(exitPosTexture, screenCoord).xyz;
+  ivec2 screenCoord = ivec2(gl_FragCoord.x, gl_FragCoord.y);
+  vec3 startPos = imageLoad(entryPosTexture, screenCoord).xyz;
+  vec3 exitPos = imageLoad(exitPosTexture, screenCoord).xyz;
 
   rayDirection = normalize(exitPos - startPos);
   float distance = dot((exitPos - startPos), rayDirection);
 
-  if (inner) {
-    startPos = cameraPos;
-  } else {
-    startPos = (InverseModel * worldPos).xyz;
-  }
-
-  if (isPerspective) {
-    rayDirection = normalize((InverseModel * InverseView * rayCastDir).xyz);
-  } else {
-    rayDirection = normalize((InverseModel * vec4(cameraFront, 0.0)).xyz);
-  }
+  //  if (inner) {
+  //    startPos = cameraPos;
+  //  } else {
+  //    startPos = (InverseModel * worldPos).xyz;
+  //  }
+  //
+  //  if (isPerspective) {
+  //    rayDirection = normalize((InverseModel * InverseView * rayCastDir).xyz);
+  //  } else {
+  //    rayDirection = normalize((InverseModel * vec4(cameraFront, 0.0)).xyz);
+  //  }
 
   int steps = int(distance / step);
 
