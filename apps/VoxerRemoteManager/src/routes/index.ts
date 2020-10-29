@@ -6,6 +6,10 @@ import GroupRoutes from "./group";
 
 const router = express.Router();
 
+router.use((req, res, next) => {
+  res.status(200);
+  next();
+})
 router.use("/datasets", DatasetRoutes);
 router.use("/pipelines", PipelineRoutes);
 router.use("/annotations", AnnotationRoutes);

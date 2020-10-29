@@ -4,7 +4,7 @@ project(VoxerRemote LANGUAGES CXX C VERSION 0.1.0)
 
 include(${PROJECT_SOURCE_DIR}/third_party/uWebSockets.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
-include(${PROJECT_SOURCE_DIR}/third_party/cxxopts.cmake)
+include(${PROJECT_SOURCE_DIR}/third_party/poco.cmake)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 
@@ -15,8 +15,10 @@ add_executable(
     Service/DatasetService.cpp
     Service/SliceService.cpp
     Service/VolumeRenderingService.cpp
-#    Service/AnnotationService.cpp
+    #    Service/AnnotationService.cpp
     Store/DatasetStore.cpp
+    Server.cpp
+    Application.cpp
 )
 target_include_directories(
     VoxerRemote
@@ -33,6 +35,7 @@ target_link_libraries(
     cxxopts
     ZLIB::ZLIB
     Threads::Threads
+    Poco::Net
 )
 target_compile_features(VoxerRemote PRIVATE cxx_std_17)
 

@@ -1,4 +1,5 @@
 //#include "Service/AnnotationService.hpp"
+#include "Server.cpp"
 #include "Service/DatasetService.hpp"
 #include "Service/SliceService.hpp"
 #include "Service/VolumeRenderingService.hpp"
@@ -8,39 +9,19 @@
 #include <iostream>
 #include <utility>
 #include <voxer/Data/Image.hpp>
+#include "Application.hpp"
 
 using namespace std;
 using namespace voxer::remote;
 
 struct UserData {};
 
+int main(int argc, char** argv) {
+  HTTPServerApplication app;
+  return app.run(argc, argv);
+}
+
 int main(int argc, char **argv) {
-  cxxopts::Options options(
-      "VoxerRemote", "VoxerRemote: scientific visualization cloud service");
-  auto add_option = options.add_options();
-  add_option("h,help", "Show usage");
-  add_option("p,port", "Port listening",
-             cxxopts::value<uint16_t>()->default_value("3040"));
-  add_option("d,debug", "Enable debugging");
-  add_option("v,verbose", "Verbose output",
-             cxxopts::value<bool>()->default_value("false"));
-
-  uint16_t port;
-  try {
-    auto result = options.parse(argc, argv);
-
-    if (result.count("help") != 0) {
-      cout << options.help() << endl;
-      return 0;
-    }
-
-    port = result["port"].as<uint16_t>();
-  } catch (exception &error) {
-    cout << error.what() << "\n";
-    cout << "Try `VoxerRemote --help` for more information.\n";
-    return 1;
-  }
-
   DatasetStore datasets;
 
   DatasetService dataset_service{};
