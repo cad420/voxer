@@ -5,6 +5,9 @@ import { resolve } from "path";
 import Dataset from "../models/Dataset";
 import { RENDER_SERVICE, UPLOAD_PATH } from "../config";
 import { getDatasetInfo } from "../rpc";
+import childProcess from "child_process";
+
+const { exec } = childProcess;
 
 const router = express.Router();
 
@@ -85,6 +88,30 @@ router.get("/:id", async (req, res) => {
   return res.send({
     code: 200,
     data: cache[id],
+  });
+});
+
+router.post("/refine", async (req, res) => {
+  exec("sh /tmp/test.sh", (err, stdout, stderr) => {
+    if (err ) {
+      return res.send({
+        code: 400,
+        data: err.message,
+      });
+    } else if (stderr) {
+      return res.send({
+        code: 400,
+        data: stderr,
+      });
+    } else {
+      return res.send({
+        code: 200,
+        data: {
+          id: stdout.substring(0, 100),
+          name: stdout.substring(0, 100)
+        },
+      });
+    }
   });
 });
 
