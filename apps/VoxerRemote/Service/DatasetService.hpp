@@ -20,14 +20,15 @@ struct LoadDatasetResponse {
 
 class DatasetService final : public AbstractService {
 public:
-  void on_message(const char *message, uint32_t size) noexcept final;
+  void on_message(const char *message, uint32_t size,
+                  const MessageCallback &callback) noexcept final;
 
   [[nodiscard]] auto get_path() const noexcept -> std::string final {
     return "/datasets";
   }
 
   [[nodiscard]] auto get_protocol() const noexcept -> Protocol override {
-    return Protocol::HTTP;
+    return Protocol::RPC;
   };
 
   voxer::remote::DatasetStore *m_datasets = nullptr;

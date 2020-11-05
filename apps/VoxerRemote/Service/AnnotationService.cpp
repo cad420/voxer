@@ -24,11 +24,11 @@ inline auto register_object<voxer::remote::AnnotationLevelSetParams>() {
 
 namespace voxer::remote {
 
-void AnnotationService::on_message(const char *message,
-                                   uint32_t size) noexcept {
-  assert(m_send != nullptr && m_datasets != nullptr);
+void AnnotationService::on_message(const char *message, uint32_t size,
+                                   const MessageCallback &callback) noexcept {
+  assert(m_datasets != nullptr);
 
-  if (m_send == nullptr || m_datasets == nullptr) {
+  if (m_datasets == nullptr) {
     return;
   }
 
@@ -51,18 +51,18 @@ void AnnotationService::on_message(const char *message,
       rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
       serialized.Accept(writer);
 
-      m_send(reinterpret_cast<const uint8_t *>(buffer.GetString()),
-             buffer.GetSize(), false);
+      callback(reinterpret_cast<const uint8_t *>(buffer.GetString()),
+               buffer.GetSize(), false);
       return;
     }
 
     auto error_msg = "unknown function: " + function_name;
-    m_send(reinterpret_cast<const uint8_t *>(error_msg.c_str()),
-           error_msg.size(), false);
+    callback(reinterpret_cast<const uint8_t *>(error_msg.c_str()),
+             error_msg.size(), false);
   } catch (std::exception &error) {
     auto error_msg = fmt::format(R"({{"error": "{}"}})", error.what());
-    m_send(reinterpret_cast<const uint8_t *>(error_msg.data()),
-           error_msg.size(), false);
+    callback(reinterpret_cast<const uint8_t *>(error_msg.data()),
+             error_msg.size(), false);
   }
 }
 

@@ -9,7 +9,8 @@ namespace voxer::remote {
 
 class SliceService final : public AbstractService {
 public:
-  void on_message(const char *message, uint32_t size) noexcept override;
+  void on_message(const char *message, uint32_t size,
+                  const MessageCallback &callback) noexcept override;
 
   [[nodiscard]] auto get_path() const noexcept -> std::string override {
     return "/slice";

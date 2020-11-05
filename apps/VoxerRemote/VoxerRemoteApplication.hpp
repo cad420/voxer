@@ -6,7 +6,7 @@
 
 namespace voxer::remote {
 
-class HTTPServerApplication : public Poco::Util::ServerApplication {
+class VoxerRemoteApplication : public Poco::Util::ServerApplication {
 protected:
   void initialize(Application &self) override;
 

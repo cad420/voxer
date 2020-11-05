@@ -14,10 +14,11 @@ VolumeRenderingService::VolumeRenderingService() {
   m_ospray = make_unique<VolumeRenderer>("ospray");
 }
 
-void VolumeRenderingService::on_message(const char *message, uint32_t size) noexcept {
-  assert(m_datasets != nullptr && m_send != nullptr);
+void VolumeRenderingService::on_message(const char *message, uint32_t size,
+                                        const MessageCallback &callback) noexcept {
+  assert(m_datasets != nullptr && callback != nullptr);
 
-  if (m_datasets == nullptr || m_send == nullptr)
+  if (m_datasets == nullptr)
     return;
 
   try {
@@ -30,13 +31,13 @@ void VolumeRenderingService::on_message(const char *message, uint32_t size) noex
     auto &image = renderer.get_colors();
 
     auto compressed = Image::encode(image, Image::Format::JPEG);
-    m_send(reinterpret_cast<const uint8_t *>(compressed.data.data()),
-           compressed.data.size(), true);
+    callback(reinterpret_cast<const uint8_t *>(compressed.data.data()),
+             compressed.data.size(), true);
     renderer.clear_scene();
   } catch (exception &e) {
     auto error_msg = fmt::format(R"({{"error": "{}"}})", e.what());
-    m_send(reinterpret_cast<const uint8_t *>(error_msg.data()),
-           error_msg.size(), false);
+    callback(reinterpret_cast<const uint8_t *>(error_msg.data()),
+             error_msg.size(), false);
   }
 }
 

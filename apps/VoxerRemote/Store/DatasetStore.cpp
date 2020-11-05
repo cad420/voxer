@@ -122,6 +122,8 @@ DatasetStore::load_one(const rapidjson::Value &json) {
 
 auto DatasetStore::add(const std::string &id, const std::string &name,
                        const std::string &path) -> voxer::StructuredGrid * {
+  std::lock_guard lock(m_mutex);
+
   auto it = m_datasets.find(id);
   if (it != m_datasets.end()) {
     return it->second.get();

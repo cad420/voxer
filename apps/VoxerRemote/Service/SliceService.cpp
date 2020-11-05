@@ -8,8 +8,8 @@ using namespace std;
 
 namespace voxer::remote {
 
-void SliceService::on_message(const char *message, uint32_t size) noexcept {
-  assert(m_datasets != nullptr);
+void SliceService::on_message(const char *message, uint32_t size, const MessageCallback &callback) noexcept {
+  assert(m_datasets != nullptr && callback != nullptr);
 
   try {
     m_document.Parse(message, size);
@@ -28,12 +28,12 @@ void SliceService::on_message(const char *message, uint32_t size) noexcept {
       Slice slice{};
       seria::deserialize(slice, params);
       auto image = get_dataset_slice(slice.dataset, slice.axis, slice.index);
-      m_send(reinterpret_cast<const uint8_t *>(image.data.data()),
+      callback(reinterpret_cast<const uint8_t *>(image.data.data()),
              image.data.size(), true);
     }
   } catch (exception &error) {
     auto error_msg = fmt::format(R"({{"error": "{}"}})", error.what());
-    m_send(reinterpret_cast<const uint8_t *>(error_msg.data()),
+    callback(reinterpret_cast<const uint8_t *>(error_msg.data()),
            error_msg.size(), false);
   }
 }

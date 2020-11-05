@@ -11,14 +11,14 @@ find_package(ZLIB REQUIRED)
 add_executable(
     VoxerRemote
     main.cpp
+    VoxerRemoteApplication.cpp
+    Server.cpp
     Service/AbstractService.cpp
     Service/DatasetService.cpp
     Service/SliceService.cpp
     Service/VolumeRenderingService.cpp
     #    Service/AnnotationService.cpp
     Store/DatasetStore.cpp
-    Server.cpp
-    Application.cpp
 )
 target_include_directories(
     VoxerRemote
@@ -32,10 +32,10 @@ target_link_libraries(
     seria::seria
     uWebSockets
     fmt::fmt
-    cxxopts
     ZLIB::ZLIB
     Threads::Threads
     Poco::Net
+    Poco::Util
 )
 target_compile_features(VoxerRemote PRIVATE cxx_std_17)
 
