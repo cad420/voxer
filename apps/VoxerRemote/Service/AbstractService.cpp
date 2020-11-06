@@ -6,6 +6,7 @@ namespace voxer::remote {
 
 auto AbstractService::extract(const char *message, uint32_t size)
     -> std::pair<std::string, rapidjson::Value> {
+  std::lock_guard lock(m_mutex);
   m_document.Parse(message, size);
 
   if (!m_document.IsObject()) {

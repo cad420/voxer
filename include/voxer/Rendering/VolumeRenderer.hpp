@@ -16,6 +16,7 @@ public:
   explicit VolumeRenderer(const char *backend);
   ~VolumeRenderer();
 
+  auto get_backend() const noexcept -> const char*;
   void set_background(float r, float g, float b) noexcept;
   void set_camera(const Camera &) noexcept;
   void add_volume(const std::shared_ptr<Volume> &volume);
@@ -27,6 +28,7 @@ public:
   auto get_colors() -> const Image &;
 
 private:
+  std::string m_backend;
   std::unique_ptr<VoxerIRenderer> impl;
   std::unordered_map<std::string, GetRenderingBackend> symbols;
 };

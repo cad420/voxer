@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <voxer/Data/StructuredGrid.hpp>
+#include <mutex>
 
 namespace voxer::remote {
 
@@ -42,6 +43,7 @@ private:
       m_temp_datasets;
   std::unordered_map<DatasetId, std::shared_ptr<voxer::StructuredGrid>>
       m_datasets;
+  std::mutex m_mutex;
 };
 
 } // namespace voxer::remote

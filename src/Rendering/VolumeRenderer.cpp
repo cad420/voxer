@@ -15,13 +15,19 @@ static Logger logger("renderer");
 VolumeRenderer::~VolumeRenderer() = default;
 
 VolumeRenderer::VolumeRenderer(const char *backend) {
+  m_backend = backend;
   auto it = symbols.find(backend);
+
+  string postfix;
+#ifndef NDEBUG
+  postfix = "d";
+#endif
 
   std::function<VoxerIRenderer *()> get_backend = nullptr;
   if (it != symbols.end()) {
     get_backend = it->second;
   } else {
-    auto lib_name = string("libvoxer_backend_") + backend + ".so";
+    auto lib_name = string("libvoxer_backend_") + backend + postfix + ".so";
     void *lib = dlopen(lib_name.c_str(), RTLD_NOW);
     if (lib == nullptr) {
       throw runtime_error(dlerror());
@@ -34,7 +40,8 @@ VolumeRenderer::VolumeRenderer(const char *backend) {
     }
 
     get_backend = reinterpret_cast<GetRenderingBackend>(symbol);
-    symbols.emplace(string(backend), reinterpret_cast<GetRenderingBackend>(symbol));
+    symbols.emplace(string(backend),
+                    reinterpret_cast<GetRenderingBackend>(symbol));
   }
 
   auto context = get_backend();
@@ -76,6 +83,10 @@ void VolumeRenderer::clear_scene() { this->impl->clear_scene(); }
 
 void VolumeRenderer::set_background(float r, float g, float b) noexcept {
   this->impl->set_background(r, g, b);
+}
+
+auto VolumeRenderer::get_backend() const noexcept -> const char * {
+  return m_backend.c_str();
 }
 
 } // namespace voxer
