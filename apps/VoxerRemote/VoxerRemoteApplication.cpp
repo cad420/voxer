@@ -21,23 +21,23 @@ void VoxerRemoteApplication::defineOptions(Poco::Util::OptionSet &options) {
 
   using Option = Poco::Util::Option;
   using OptionCallback = Poco::Util::OptionCallback<VoxerRemoteApplication>;
-  options.addOption(
-      Option("help", "h", "display argument help information")
-          .required(false)
-          .repeatable(false)
-          .callback(OptionCallback(this, &VoxerRemoteApplication::hanldle_option)));
+  options.addOption(Option("help", "h", "display argument help information")
+                        .required(false)
+                        .repeatable(false)
+                        .callback(OptionCallback(
+                            this, &VoxerRemoteApplication::hanldle_option)));
 
-  options.addOption(
-      Option("port", "p", "port listening")
-          .required(false)
-          .argument("port")
-          .repeatable(false)
-          .validator(new Poco::Util::IntValidator(0, 65536))
-          .callback(OptionCallback(this, &VoxerRemoteApplication::hanldle_option)));
+  options.addOption(Option("port", "p", "port listening")
+                        .required(false)
+                        .argument("port")
+                        .repeatable(false)
+                        .validator(new Poco::Util::IntValidator(0, 65536))
+                        .callback(OptionCallback(
+                            this, &VoxerRemoteApplication::hanldle_option)));
 }
 
 void VoxerRemoteApplication::hanldle_option(const std::string &name,
-                                 const std::string &value) {
+                                            const std::string &value) {
   if (name == "help") {
     using HelpFormatter = Poco::Util::HelpFormatter;
     HelpFormatter helpFormatter(options());
@@ -68,18 +68,26 @@ int VoxerRemoteApplication::main(const std::vector<std::string> &args) {
   auto routes = Poco::makeShared<MyHTTPRequestHandlerFactory>();
   DatasetStore datasets;
 
-  auto dataset_service = std::make_unique<DatasetService>();
-  dataset_service->m_datasets = &datasets;
-  auto volume_rendering_service = std::make_unique<VolumeRenderingService>();
-  volume_rendering_service->m_datasets = &datasets;
-  auto slice_service = std::make_unique<SliceService>();
-  slice_service->m_datasets = &datasets;
-  //  AnnotationService annotation_service{};
-  //  annotation_service.m_datasets = &datasets;
-
-  routes->add_service(std::move(dataset_service));
-  routes->add_service(std::move(volume_rendering_service));
-  routes->add_service(std::move(slice_service));
+  routes->register_service("/datasets", [&datasets]() {
+    auto service = new DatasetService();
+    service->m_datasets = &datasets;
+    return service;
+  });
+  routes->register_service("/render", [&datasets]() {
+    auto service = new VolumeRenderingService();
+    service->m_datasets = &datasets;
+    return service;
+  });
+  routes->register_service("/slice", [&datasets]() {
+    auto service = new SliceService();
+    service->m_datasets = &datasets;
+    return service;
+  });
+  //  routes->register_service("/annotation", [&datasets]() {
+  //    auto service = new AnnotationService();
+  //    service->m_datasets = &datasets;
+  //    return service;
+  //  });
 
   ServerSocket svs(m_port);
   HTTPServer srv(routes, svs, Poco::makeAuto<HTTPServerParams>());

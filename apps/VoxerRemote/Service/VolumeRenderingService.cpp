@@ -9,13 +9,11 @@ using namespace fmt;
 
 namespace voxer::remote {
 
-VolumeRenderingService::VolumeRenderingService() {
-  m_opengl = make_unique<VolumeRenderer>("opengl");
-  m_ospray = make_unique<VolumeRenderer>("ospray");
-}
+VolumeRenderingService::VolumeRenderingService() = default;
 
-void VolumeRenderingService::on_message(const char *message, uint32_t size,
-                                        const MessageCallback &callback) noexcept {
+void VolumeRenderingService::on_message(
+    const char *message, uint32_t size,
+    const MessageCallback &callback) noexcept {
   assert(m_datasets != nullptr && callback != nullptr);
 
   if (m_datasets == nullptr)
@@ -23,17 +21,20 @@ void VolumeRenderingService::on_message(const char *message, uint32_t size,
 
   try {
     auto command = parse(message, size);
-    auto &renderer = command.first == "ospray" ? *m_ospray : *m_opengl;
+    auto &engine = command.first;
+    if (m_renderer == nullptr || m_renderer->get_backend() != engine) {
+      m_renderer = make_unique<VolumeRenderer>(engine.c_str());
+    }
 
-    traverse_scene(renderer, command.second);
+    traverse_scene(*m_renderer, command.second);
 
-    renderer.render();
-    auto &image = renderer.get_colors();
+    m_renderer->render();
+    auto &image = m_renderer->get_colors();
 
     auto compressed = Image::encode(image, Image::Format::JPEG);
     callback(reinterpret_cast<const uint8_t *>(compressed.data.data()),
              compressed.data.size(), true);
-    renderer.clear_scene();
+    m_renderer->clear_scene();
   } catch (exception &e) {
     auto error_msg = fmt::format(R"({{"error": "{}"}})", e.what());
     callback(reinterpret_cast<const uint8_t *>(error_msg.data()),

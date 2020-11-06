@@ -16,22 +16,22 @@ public:
 
 class RPCRequestHandler : public Poco::Net::HTTPRequestHandler {
 public:
-  explicit RPCRequestHandler(AbstractService *service);
+  explicit RPCRequestHandler(std::unique_ptr<AbstractService> service);
   void handleRequest(Poco::Net::HTTPServerRequest &request,
                      Poco::Net::HTTPServerResponse &response) override;
 
 private:
-  AbstractService *m_service;
+  std::unique_ptr<AbstractService> m_service;
 };
 
 class WebSocketRequestHandler : public Poco::Net::HTTPRequestHandler {
 public:
-  explicit WebSocketRequestHandler(AbstractService *service);
+  explicit WebSocketRequestHandler(std::unique_ptr<AbstractService> service);
   void handleRequest(Poco::Net::HTTPServerRequest &request,
                      Poco::Net::HTTPServerResponse &response) override;
 
 private:
-  AbstractService *m_service;
+  std::unique_ptr<AbstractService> m_service;
 };
 
 class MyHTTPRequestHandlerFactory
@@ -40,10 +40,12 @@ public:
   Poco::Net::HTTPRequestHandler *
   createRequestHandler(const Poco::Net::HTTPServerRequest &request) override;
 
-  void add_service(std::unique_ptr<AbstractService> &&service) noexcept;
+  void register_service(
+      const char *path,
+      const std::function<AbstractService *()> &constructor) noexcept;
 
 private:
-  std::vector<std::unique_ptr<AbstractService>> services;
+  std::unordered_map<std::string, std::function<AbstractService *()>> services;
 };
 
 } // namespace voxer::remote

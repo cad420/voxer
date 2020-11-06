@@ -47,13 +47,15 @@ void RPCRequestHandler::handleRequest(Poco::Net::HTTPServerRequest &request,
       });
 }
 
-RPCRequestHandler::RPCRequestHandler(AbstractService *service) {
+RPCRequestHandler::RPCRequestHandler(std::unique_ptr<AbstractService> service) {
   assert(service != nullptr);
-  m_service = service;
+  m_service = move(service);
 }
 
-WebSocketRequestHandler::WebSocketRequestHandler(AbstractService *service) {
-  m_service = service;
+WebSocketRequestHandler::WebSocketRequestHandler(
+    std::unique_ptr<AbstractService> service) {
+  assert(service != nullptr);
+  m_service = move(service);
 }
 
 void WebSocketRequestHandler::handleRequest(
@@ -104,26 +106,26 @@ MyHTTPRequestHandlerFactory::createRequestHandler(
     const Poco::Net::HTTPServerRequest &request) {
   auto &uri = request.getURI();
 
-  for (auto &service : services) {
-    auto path = service->get_path();
-    if (uri != path) {
-      continue;
-    }
+  auto it = services.find(uri);
+  if (it == services.end()) {
+    return new DefaultRequestHandler();
+  }
 
-    if (service->get_protocol() == AbstractService::Protocol::RPC) {
-      return new RPCRequestHandler(service.get());
-    } else if (service->get_protocol() ==
-               AbstractService::Protocol::WebSocket) {
-      return new WebSocketRequestHandler(service.get());
-    }
+  const auto &construtor = it->second;
+  auto service = std::unique_ptr<AbstractService>(construtor());
+  if (service->get_protocol() == AbstractService::Protocol::RPC) {
+    return new RPCRequestHandler(std::move(service));
+  } else if (service->get_protocol() == AbstractService::Protocol::WebSocket) {
+    return new WebSocketRequestHandler(std::move(service));
   }
 
   return new DefaultRequestHandler();
 }
 
-void MyHTTPRequestHandlerFactory::add_service(
-    std::unique_ptr<AbstractService> &&service) noexcept {
-  services.emplace_back(move(service));
+void MyHTTPRequestHandlerFactory::register_service(
+    const char *path,
+    const std::function<AbstractService *()> &constructor) noexcept {
+  services.emplace(path, constructor);
 }
 
 } // namespace voxer::remote

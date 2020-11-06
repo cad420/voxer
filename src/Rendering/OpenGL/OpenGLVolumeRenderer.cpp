@@ -233,8 +233,10 @@ void OpenGLVolumeRenderer::set_camera(const Camera &camera) {
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D,
                          m_exit_texture, 0);
 
-  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-    throw runtime_error("Framebuffer Object is not complete");
+  auto fbo_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  if (fbo_status != GL_FRAMEBUFFER_COMPLETE) {
+    throw runtime_error("Framebuffer Object is not complete: " +
+                        to_string(fbo_status));
   }
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -276,9 +278,10 @@ void OpenGLVolumeRenderer::render() {
         2 * atan(tan(45.0f * glm::pi<float>() / 180.0f / 2.0f) / m_camera.zoom);
     projection = glm::perspective(fov, aspect, 1.0f, 3000.0f);
   } else {
-    projection = glm::ortho(-distance / m_camera.zoom / 2.0f, distance / m_camera.zoom / 2.0f,
-                            -distance / aspect / m_camera.zoom / 2.0f,
-                            distance / aspect / m_camera.zoom / 2.0f, 1.0f, 3000.0f);
+    auto half_width = distance / m_camera.zoom / 2.0f;
+    auto half_height = distance / aspect / m_camera.zoom / 2.0f;
+    projection = glm::ortho(-half_width, half_width, -half_height, half_height,
+                            1.0f, 3000.0f);
   }
 
   auto view = glm::lookAt(

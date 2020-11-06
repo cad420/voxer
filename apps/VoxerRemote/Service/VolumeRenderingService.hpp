@@ -27,8 +27,7 @@ public:
   voxer::remote::DatasetStore *m_datasets = nullptr;
 
 private:
-  std::unique_ptr<voxer::VolumeRenderer> m_opengl;
-  std::unique_ptr<voxer::VolumeRenderer> m_ospray;
+  std::unique_ptr<voxer::VolumeRenderer> m_renderer;
 
   void traverse_scene(VolumeRenderer &renderer, const Scene &scene) const;
 
