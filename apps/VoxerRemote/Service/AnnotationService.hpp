@@ -14,14 +14,15 @@ struct AnnotationLevelSetParams {
 
 class AnnotationService : public AbstractService {
 public:
-  void on_message(const char *message, uint32_t size) noexcept override;
+  void on_message(const char *message, uint32_t size,
+                  const MessageCallback &callback) noexcept override;
 
   [[nodiscard]] auto get_path() const noexcept -> std::string override {
     return "/annotations";
   };
 
   [[nodiscard]] auto get_protocol() const noexcept -> Protocol override {
-    return Protocol::HTTP;
+    return Protocol::RPC;
   };
 
   DatasetStore *m_datasets = nullptr;

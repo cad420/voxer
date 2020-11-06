@@ -13,7 +13,8 @@ class VolumeRenderingService : public AbstractService {
 public:
   VolumeRenderingService();
 
-  void on_message(const char *message, uint32_t size) noexcept override;
+  void on_message(const char *message, uint32_t size,
+                  const MessageCallback &callback) noexcept override;
 
   [[nodiscard]] auto get_path() const noexcept -> std::string override {
     return "/render";
@@ -26,8 +27,7 @@ public:
   voxer::remote::DatasetStore *m_datasets = nullptr;
 
 private:
-  std::unique_ptr<voxer::VolumeRenderer> m_opengl;
-  std::unique_ptr<voxer::VolumeRenderer> m_ospray;
+  std::unique_ptr<voxer::VolumeRenderer> m_renderer;
 
   void traverse_scene(VolumeRenderer &renderer, const Scene &scene) const;
 
