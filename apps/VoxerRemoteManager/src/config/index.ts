@@ -6,3 +6,5 @@ export const DATABASE = process.env.DATABASE || '127.0.0.1:27017'
 
 export const RENDER_SERVICE =
   process.env.RENDER_SERVICE || "127.0.0.1:3040";
+
+export const REFINE_WATCH_DIR = process.env.REFINE_WATCH_DIR || process.cwd();
