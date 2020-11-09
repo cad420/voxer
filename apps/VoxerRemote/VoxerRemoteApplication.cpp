@@ -1,5 +1,6 @@
 #include "VoxerRemoteApplication.hpp"
 #include "Server.hpp"
+#include "Service/AnnotationService.hpp"
 #include "Service/DatasetService.hpp"
 #include "Service/SliceService.hpp"
 #include "Service/VolumeRenderingService.hpp"
@@ -43,6 +44,13 @@ void VoxerRemoteApplication::defineOptions(Poco::Util::OptionSet &options) {
                         .repeatable(false)
                         .callback(OptionCallback(
                             this, &VoxerRemoteApplication::hanldle_option)));
+
+  options.addOption(Option("storage", "s", "storage path")
+                        .required(false)
+                        .argument("storage")
+                        .repeatable(false)
+                        .callback(OptionCallback(
+                            this, &VoxerRemoteApplication::hanldle_option)));
 }
 
 void VoxerRemoteApplication::hanldle_option(const std::string &name,
@@ -55,6 +63,10 @@ void VoxerRemoteApplication::hanldle_option(const std::string &name,
       std::cerr << "invalid manager address" << std::endl;
       stopOptionsProcessing();
     }
+  }
+
+  if (name == "storage") {
+    m_storage_path = value;
   }
 
   if (name == "help") {
@@ -89,7 +101,7 @@ int VoxerRemoteApplication::main(const std::vector<std::string> &args) {
   using HTTPServerParams = Poco::Net::HTTPServerParams;
 
   auto routes = Poco::makeShared<MyHTTPRequestHandlerFactory>();
-  DatasetStore datasets{m_manager_address};
+  DatasetStore datasets{m_manager_address, m_storage_path};
 
   routes->register_service("/datasets", [&datasets]() {
     auto service = new DatasetService();
@@ -106,11 +118,11 @@ int VoxerRemoteApplication::main(const std::vector<std::string> &args) {
     service->m_datasets = &datasets;
     return service;
   });
-  //  routes->register_service("/annotation", [&datasets]() {
-  //    auto service = new AnnotationService();
-  //    service->m_datasets = &datasets;
-  //    return service;
-  //  });
+  routes->register_service("/annotation", [&datasets]() {
+    auto service = new AnnotationService();
+    service->m_datasets = &datasets;
+    return service;
+  });
 
   ServerSocket svs(m_port);
   HTTPServer srv(routes, svs, Poco::makeAuto<HTTPServerParams>());

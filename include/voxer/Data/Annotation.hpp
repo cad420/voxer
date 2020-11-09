@@ -10,7 +10,7 @@ struct Annotation {
   enum struct Type { Polygon, Rect };
 
   std::string type;
-
+  uint32_t id = 0;
   using Point = std::array<uint32_t, 2>;
   std::string label;
   std::vector<std::vector<Point>> coordinates;

@@ -1,19 +1,19 @@
 #pragma once
 #include "DataModel/StructuredGrid.hpp"
 #include <array>
+#include <future>
 #include <memory>
+#include <mutex>
 #include <rapidjson/document.h>
 #include <string>
 #include <unordered_map>
 #include <voxer/Data/StructuredGrid.hpp>
-#include <mutex>
-#include <future>
 
 namespace voxer::remote {
 
 class DatasetStore {
 public:
-  explicit DatasetStore(const std::string &manager);
+  DatasetStore(std::string manager, std::string storage_path);
   auto load_from_file(const std::string &filepath)
       -> std::vector<std::shared_ptr<voxer::StructuredGrid>>;
   auto load_from_json(const char *json, uint32_t size)
@@ -23,11 +23,11 @@ public:
   void add_from_json(const char *text, uint32_t size);
 
   auto add(const std::string &id, const std::string &name,
-            const std::string &path) -> voxer::StructuredGrid *;
+           const std::string &path) -> voxer::StructuredGrid *;
 
-  [[nodiscard]] auto get(const voxer::remote::Dataset &desc) const
+  [[nodiscard]] auto get(const voxer::remote::Dataset &desc)
       -> const std::shared_ptr<voxer::StructuredGrid> &;
-  [[nodiscard]] auto get(const DatasetId &id) const
+  [[nodiscard]] auto get(const DatasetId &id)
       -> const std::shared_ptr<voxer::StructuredGrid> &;
   //  [[nodiscard]] auto
   //  get_or_create(const voxer::remote::Dataset &scene_dataset,
@@ -41,6 +41,7 @@ public:
 
 private:
   std::string m_manager;
+  std::string m_storage_path;
   rapidjson::Document m_document;
   std::unordered_map<std::string, std::shared_ptr<voxer::StructuredGrid>>
       m_temp_datasets;

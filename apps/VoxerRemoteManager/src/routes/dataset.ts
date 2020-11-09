@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import mongodb, { ObjectId } from "mongodb";
+import mongodb, { ObjectID } from "mongodb";
 import { resolve } from "path";
 import Dataset from "../models/Dataset";
 import { RENDER_SERVICE, UPLOAD_PATH } from "../config";
@@ -20,7 +20,6 @@ const upload = multer({ storage });
 
 router.get("/", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
-  const cache: Record<string, any> = req.app.get("datasets");
 
   const collection = database.collection("datasets");
   const datasets = await collection.find().toArray();
@@ -28,11 +27,10 @@ router.get("/", async (req, res) => {
   res.send({
     code: 200,
     data: datasets.map((dataset: Dataset) => {
-      const info = cache[dataset._id.toString()];
       return {
         id: dataset._id,
         name: dataset.name,
-        dimensions: info ? info.dimensions : [],
+        dimensions: dataset.dimensions || [1, 1, 1],
       };
     }),
   });
@@ -55,8 +53,13 @@ router.post("/", upload.single("dataset"), async (req, res) => {
     name: filename,
     path: resolve(UPLOAD_PATH, filename),
   });
-  const cache = req.app.get("datasets");
-  cache[id] = info;
+  collection.updateOne({ id: new ObjectID(id) }, {
+    $set: {
+      dimensions: info.dimensions,
+        histogram: info.histogram,
+        range: info.range
+    }
+  })
 
   res.send({
     code: 200,
@@ -68,11 +71,10 @@ router.get("/:id", async (req, res) => {
   const { id } = req.params;
 
   const database: mongodb.Db = req.app.get("database");
-  const cache = req.app.get("datasets");
 
   const collection = database.collection("datasets");
 
-  const dataset: Dataset = await collection.findOne({ _id: new ObjectId(id) });
+  const dataset: Dataset = await collection.findOne({ _id: new ObjectID(id) });
 
   if (!dataset) {
     res.send({
@@ -84,7 +86,10 @@ router.get("/:id", async (req, res) => {
 
   return res.send({
     code: 200,
-    data: cache[id],
+    data: {
+      id: dataset._id.toHexString(),
+      ...dataset
+    },
   });
 });
 

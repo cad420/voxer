@@ -77,7 +77,7 @@ auto AnnotationService::apply_level_set(
     throw std::runtime_error("cannot find dataset " + dataset_id);
   }
 
-  auto slice = dataset->get_slice(axis, index);
+  auto slice = dataset->get_slice(axis, index + 1);
 
   std::vector<Annotation> result{};
   result.reserve(annotations.size());

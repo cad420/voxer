@@ -7,8 +7,6 @@ namespace voxer::remote {
 
 struct LoadDataSetParams {
   std::string id;
-  std::string name;
-  std::string path;
 };
 
 struct LoadDatasetResponse {
@@ -34,7 +32,7 @@ public:
   voxer::remote::DatasetStore *m_datasets = nullptr;
 
 private:
-  [[nodiscard]] auto load_dataset(const LoadDataSetParams &params) const
+  [[nodiscard]] auto query_dataset(const LoadDataSetParams &params) const
       -> LoadDatasetResponse;
 };
 

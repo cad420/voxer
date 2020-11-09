@@ -19,6 +19,7 @@ protected:
 private:
   bool m_show_help = false;
   std::string m_manager_address;
+  std::string m_storage_path = ".";
   uint32_t m_port = 3040;
 };
 

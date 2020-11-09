@@ -56,6 +56,7 @@ Annotation AnnotationLevelSetFilter::process(const Annotation &annotation,
   }
 
   Annotation result{};
+  result.id = annotation.id;
   result.type = annotation.type;
   result.label = annotation.label;
   result.coordinates.emplace_back();

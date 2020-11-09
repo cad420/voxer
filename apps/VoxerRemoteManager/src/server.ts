@@ -31,12 +31,10 @@ const port = process.env.PORT || 3001;
 
 export default async function run() {
   const database = await connect();
-  const datasets: Record<string, any> = {};
 
-  getExistDatasetInfo(database, datasets);
+  getExistDatasetInfo(database);
 
   app.set("database", database);
-  app.set("datasets", datasets);
   app.listen(port, () => {
     console.log(`listening on port ${port}`);
   });
