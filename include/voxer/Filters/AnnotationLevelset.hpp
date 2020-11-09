@@ -9,7 +9,8 @@ struct AnnotationLevelSetFilter {
   int inner_iteration = 5;
   int outer_iteration = 10;
 
-  Annotation process(const Annotation &annotations, const Image &image) const;
+  [[nodiscard]] Annotation process(const Annotation &annotations,
+                                   const Image &image) const;
 };
 
 } // namespace voxer

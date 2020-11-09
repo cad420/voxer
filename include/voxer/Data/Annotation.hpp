@@ -8,7 +8,7 @@ namespace voxer {
 
 struct Annotation {
   enum struct Type { Polygon, Rect };
-
+  std::array<uint32_t, 4> bbox;
   std::string type;
   uint32_t id = 0;
   using Point = std::array<uint32_t, 2>;

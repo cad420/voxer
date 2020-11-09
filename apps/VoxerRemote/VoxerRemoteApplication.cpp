@@ -118,7 +118,7 @@ int VoxerRemoteApplication::main(const std::vector<std::string> &args) {
     service->m_datasets = &datasets;
     return service;
   });
-  routes->register_service("/annotation", [&datasets]() {
+  routes->register_service("/annotations", [&datasets]() {
     auto service = new AnnotationService();
     service->m_datasets = &datasets;
     return service;
