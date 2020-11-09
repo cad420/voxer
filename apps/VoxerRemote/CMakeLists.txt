@@ -18,6 +18,7 @@ add_executable(
     Service/VolumeRenderingService.cpp
     #    Service/AnnotationService.cpp
     Store/DatasetStore.cpp
+    RPC/dataset.cpp
 )
 target_include_directories(
     VoxerRemote

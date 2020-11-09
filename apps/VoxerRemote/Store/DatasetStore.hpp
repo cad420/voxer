@@ -7,11 +7,13 @@
 #include <unordered_map>
 #include <voxer/Data/StructuredGrid.hpp>
 #include <mutex>
+#include <future>
 
 namespace voxer::remote {
 
 class DatasetStore {
 public:
+  explicit DatasetStore(const std::string &manager);
   auto load_from_file(const std::string &filepath)
       -> std::vector<std::shared_ptr<voxer::StructuredGrid>>;
   auto load_from_json(const char *json, uint32_t size)
@@ -38,6 +40,7 @@ public:
   //  [[nodiscard]] auto print() const -> std::string;
 
 private:
+  std::string m_manager;
   rapidjson::Document m_document;
   std::unordered_map<std::string, std::shared_ptr<voxer::StructuredGrid>>
       m_temp_datasets;

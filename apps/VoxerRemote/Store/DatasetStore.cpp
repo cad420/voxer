@@ -1,5 +1,6 @@
 #include "Store/DatasetStore.hpp"
 #include "DataModel/DatasetCollection.hpp"
+#include "RPC/dataset.hpp"
 #include "utils.hpp"
 #include <fmt/core.h>
 #include <seria/deserialize.hpp>
@@ -14,6 +15,8 @@
 using namespace std;
 
 namespace voxer::remote {
+
+DatasetStore::DatasetStore(const string &manager) : m_manager(manager) {}
 
 vector<shared_ptr<StructuredGrid>>
 DatasetStore::load_from_file(const string &filepath) {
@@ -159,6 +162,9 @@ auto DatasetStore::get(const DatasetId &id) const
     -> const shared_ptr<StructuredGrid> & {
   const auto it = m_datasets.find(id);
   if (it == m_datasets.end()) {
+
+    auto res = query_dataset(m_manager, id);
+
     throw runtime_error("cannot find dataset");
   }
 
