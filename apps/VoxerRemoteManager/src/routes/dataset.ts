@@ -144,16 +144,23 @@ async function createPipelineAndSave(filename: string, database: mongodb.Db) {
       up: [0.0, 1.0, 0.0],
       zoom: 1,
     },
-  }
+  };
   const res = await collection.insertOne(pipeline);
   console.log(`Refined data's pipeline created: ${res.insertedId}`);
   
   return info;
 }
 
-function pollingRefineResult(watchDir: string, name: string, database: mongodb.Db, cache: any) {
+const RefinedData: Record<string, {
+  finished: boolean;
+  data: string[];
+}> = {};
+
+function pollingRefineResult(watchDir: string, name: string, database: mongodb.Db) {
+  const tmpResultReg = new RegExp(name + "_it(\\S*)_half1_class001.mrc");
   const finalFilename = `${name}_class001.mrc`;
 
+  let lastIteration = 0;
   const intervalId = setInterval(async () => {
     try {
       const files = await fs.readdir(watchDir);
@@ -163,12 +170,41 @@ function pollingRefineResult(watchDir: string, name: string, database: mongodb.D
         const filepath = `${watchDir}/${finalFilename}`;
         const destFilepath = `${UPLOAD_PATH}/${finalFilename}`;
         
+        if (RefinedData[name]) {
+          RefinedData[name].finished = true;
+        }
+
         clearInterval(intervalId);
         
         await fs.copyFile(filepath, destFilepath);
         const info = await createPipelineAndSave(finalFilename, database);
-        cache[info.id] = info;
         console.log('Refined data Processed: ' + info.id);
+      } else {
+        let filename = '';
+        files.forEach((file) => {
+          const res = file.match(tmpResultReg);
+          if (res) {
+            const it = parseInt(res[1]);
+            if (!isNaN(it) && it > lastIteration) {
+              filename = file;
+              lastIteration = it;
+            }
+          }
+        });
+
+        if (filename) {
+          console.log('Find refined data');
+          const filepath = `${watchDir}/${filename}`;
+          const destFilepath = `${UPLOAD_PATH}/${filename}`;
+          await fs.copyFile(filepath, destFilepath);
+          const info = await createPipelineAndSave(filename, database);
+
+          if (RefinedData[name]) {
+            RefinedData[name].data.push(filename);
+          }
+
+          console.log('Refined data Processed: ' + info.id);
+        }
       }
     } catch (err) {
       console.error(err.message);
@@ -180,6 +216,17 @@ function pollingRefineResult(watchDir: string, name: string, database: mongodb.D
 const script = `${process.cwd()}/refine.sh`;
 console.log(`Refine Script: ${script}`)
 
+router.get("/refine/info", async (req, res) => {
+  res.send({
+    code: 200,
+    data: Object.entries(RefinedData).map(([name, info]) => {
+      return {
+        name, ...info
+      }
+    })
+  })
+});
+
 router.post("/refine/:name", async (req, res) => {
   const { name } = req.params;
   if (!name) {
@@ -189,6 +236,11 @@ router.post("/refine/:name", async (req, res) => {
     });
     return;
   }
+
+  RefinedData[name] = {
+    finished: false,
+    data: []
+  };
 
   exec(`sh ${script}`, (err, stdout, stderr) => {
     if (err) {
@@ -205,9 +257,8 @@ router.post("/refine/:name", async (req, res) => {
 
     console.log(`Task submited: ` + stdout.substring(0, 100));
     const database: mongodb.Db = req.app.get("database");
-    const cache = req.app.get("datasets");
     console.log(`Refine watch directory: ${REFINE_WATCH_DIR}`);
-    pollingRefineResult(REFINE_WATCH_DIR, name, database, cache);
+    pollingRefineResult(REFINE_WATCH_DIR, name, database);
 
     return res.send({
       code: 200,
