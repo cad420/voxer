@@ -14,9 +14,7 @@ namespace seria {
 
 template <> inline auto register_object<voxer::remote::LoadDataSetParams>() {
   using Object = voxer::remote::LoadDataSetParams;
-  return std::make_tuple(member("id", &Object::id),
-                         member("name", &Object::name),
-                         member("path", &Object::path));
+  return std::make_tuple(member("id", &Object::id));
 }
 
 template <> inline auto register_object<voxer::remote::LoadDatasetResponse>() {
@@ -41,12 +39,11 @@ void DatasetService::on_message(const char *message, uint32_t size,
   try {
     auto [function_name, json] = extract(message, size);
 
-    if (function_name == "load_dataset") {
+    if (function_name == "query_dataset") {
       LoadDataSetParams params{};
       seria::deserialize(params, json);
 
-      LoadDatasetResponse result = load_dataset(params);
-      cout << "Load dataset " << params.name << "\n";
+      LoadDatasetResponse result = query_dataset(params);
 
       auto serialized = seria::serialize(result);
       rapidjson::StringBuffer buffer;
@@ -69,9 +66,9 @@ void DatasetService::on_message(const char *message, uint32_t size,
   }
 }
 
-auto DatasetService::load_dataset(const LoadDataSetParams &params) const
+auto DatasetService::query_dataset(const LoadDataSetParams &params) const
     -> LoadDatasetResponse {
-  auto dataset = m_datasets->add(params.id, params.name, params.path);
+  auto dataset = m_datasets->get(params.id);
 
   LoadDatasetResponse result;
   result.id = params.id;

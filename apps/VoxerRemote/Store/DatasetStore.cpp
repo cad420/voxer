@@ -1,7 +1,9 @@
 #include "Store/DatasetStore.hpp"
 #include "DataModel/DatasetCollection.hpp"
+#include "RPC/dataset.hpp"
 #include "utils.hpp"
 #include <fmt/core.h>
+#include <iostream>
 #include <seria/deserialize.hpp>
 #include <stdexcept>
 #include <string>
@@ -14,6 +16,13 @@
 using namespace std;
 
 namespace voxer::remote {
+
+DatasetStore::DatasetStore(string manager, string storage_path)
+    : m_manager(std::move(manager)), m_storage_path{std::move(storage_path)} {
+  if (m_storage_path[m_storage_path.size() - 1] != '/') {
+    m_storage_path += '/';
+  }
+}
 
 vector<shared_ptr<StructuredGrid>>
 DatasetStore::load_from_file(const string &filepath) {
@@ -121,7 +130,7 @@ DatasetStore::load_one(const rapidjson::Value &json) {
 }
 
 auto DatasetStore::add(const std::string &id, const std::string &name,
-                       const std::string &path) -> voxer::StructuredGrid * {
+                       const std::string &filename) -> voxer::StructuredGrid * {
   std::lock_guard lock(m_mutex);
 
   auto it = m_datasets.find(id);
@@ -129,6 +138,7 @@ auto DatasetStore::add(const std::string &id, const std::string &name,
     return it->second.get();
   }
 
+  auto path = m_storage_path + filename;
   shared_ptr<StructuredGrid> dataset{};
   auto ext = get_file_extension(path);
   if (ext == ".raw") {
@@ -147,17 +157,25 @@ auto DatasetStore::add(const std::string &id, const std::string &name,
     throw runtime_error("Failed to add dataset.");
   }
 
+  std::cout << ("Load dataset: " + name) << std::endl;
+
   return result.first->second.get();
 }
 
-auto DatasetStore::get(const voxer::remote::Dataset &desc) const
+auto DatasetStore::get(const voxer::remote::Dataset &desc)
     -> const shared_ptr<StructuredGrid> & {
   return get(desc.id);
 }
 
-auto DatasetStore::get(const DatasetId &id) const
+auto DatasetStore::get(const DatasetId &id)
     -> const shared_ptr<StructuredGrid> & {
-  const auto it = m_datasets.find(id);
+  auto it = m_datasets.find(id);
+  if (it == m_datasets.end()) {
+    auto dataset = get_dataset_info(m_manager, id);
+    this->add(dataset.id, dataset.name, dataset.path);
+  }
+
+  it = m_datasets.find(id);
   if (it == m_datasets.end()) {
     throw runtime_error("cannot find dataset");
   }

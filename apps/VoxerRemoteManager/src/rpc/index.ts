@@ -68,7 +68,7 @@ export function getDatasetInfo(
   range: [number, number];
 }> {
   return post(server, "/datasets", {
-    function: "load_dataset",
+    function: "query_dataset",
     params: dataset,
   });
 }

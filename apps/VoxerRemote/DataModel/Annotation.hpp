@@ -8,7 +8,8 @@ template <> inline auto register_object<voxer::Annotation>() {
   using Annotation = voxer::Annotation;
   return std::make_tuple(member("type", &Annotation::type),
                          member("coordinates", &Annotation::coordinates),
-                         member("tag", &Annotation::label));
+                         member("tag", &Annotation::label),
+                         member("bbox", &Annotation::bbox));
 }
 
 } // namespace seria

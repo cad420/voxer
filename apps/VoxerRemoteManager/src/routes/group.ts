@@ -82,14 +82,30 @@ router.get("/:id", async (req, res) => {
     return;
   }
 
-  const cache: Record<string, any> = req.app.get("datasets");
-
+  const datasetCollection = database.collection("datasets");
   const group = { ...result[0] };
-  const datasets = Object.entries(group.datasets || []).map(([id, info]) => ({
-    id,
-    ...info,
-    ...cache[id],
-  }));
+  const tasks = Object.keys(group.datasets || []).map(async (id) => {
+    const dataset = await datasetCollection.findOne(
+      { _id: new ObjectID(id) },
+      {
+        projection: {
+          _id: 0,
+          datasets: 0,
+          annotations: 0,
+          histogram: 0,
+          path: 0,
+          labels: 0,
+          range: 0,
+        },
+      }
+    );
+    return {
+      id,
+      ...dataset,
+    };
+  });
+  const datasets = await Promise.all(tasks);
+
   const labels = (group.labels || []).map((item) => ({
     ...item,
     id: item.id.toHexString(),
