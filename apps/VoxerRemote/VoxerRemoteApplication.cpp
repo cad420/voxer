@@ -1,6 +1,8 @@
 #include "VoxerRemoteApplication.hpp"
 #include "Server.hpp"
+#ifdef ENABLE_ANNOTATION_SERVICE
 #include "Service/AnnotationService.hpp"
+#endif
 #include "Service/DatasetService.hpp"
 #include "Service/SliceService.hpp"
 #include "Service/VolumeRenderingService.hpp"
@@ -118,12 +120,13 @@ int VoxerRemoteApplication::main(const std::vector<std::string> &args) {
     service->m_datasets = &datasets;
     return service;
   });
+#ifdef ENABLE_ANNOTATION_SERVICE
   routes->register_service("/annotations", [&datasets]() {
     auto service = new AnnotationService();
     service->m_datasets = &datasets;
     return service;
   });
-
+#endif
   ServerSocket svs(m_port);
   HTTPServer srv(routes, svs, Poco::makeAuto<HTTPServerParams>());
   srv.start();

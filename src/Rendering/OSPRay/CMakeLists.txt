@@ -4,6 +4,7 @@ list(
     APPEND
     VOXER_BACKEND_OSPRAY_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/OSPRayRenderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/VolumeCache.cpp
 )
 
 add_library(voxer_backend_ospray SHARED ${VOXER_BACKEND_OSPRAY_SRCS})

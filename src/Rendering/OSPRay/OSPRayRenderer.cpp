@@ -24,6 +24,8 @@ float camera_to_target(const voxer::Camera &camera) {
 namespace voxer {
 
 OSPRayRenderer::OSPRayRenderer() {
+  m_cache = VolumeCache::create();
+
   ospLoadModule("ispc");
   osp_device = ospNewDevice("cpu");
   if (osp_device == nullptr) {
@@ -97,7 +99,7 @@ void OSPRayRenderer::render() {
     ospSetVec2f(osp_tfcn, "valueRange", 0.0f, 255.0f);
     ospCommit(osp_tfcn);
 
-    auto &osp_volume = this->get_osp_volume(volume->dataset.get());
+    auto osp_volume = m_cache->get(volume->dataset.get());
     ospSetVec3f(osp_volume, "gridSpacing", volume->spacing[0],
                 volume->spacing[1], volume->spacing[2]);
     ospCommit(osp_volume);
@@ -132,7 +134,7 @@ void OSPRayRenderer::render() {
     ospRelease(tmp);
     ospCommit(osp_opacity_data);
 
-    auto &osp_volume = this->get_osp_volume(isosurface->dataset.get());
+    auto osp_volume = m_cache->get(isosurface->dataset.get());
 
     auto osp_isosurface = ospNewGeometry("isosurface");
     ospSetFloat(osp_isosurface, "isovalue", isosurface->value);
@@ -249,38 +251,6 @@ void OSPRayRenderer::render() {
 }
 
 auto OSPRayRenderer::get_colors() -> const Image & { return m_image; }
-
-OSPVolume &OSPRayRenderer::create_osp_volume(StructuredGrid *dataset) {
-  auto &info = dataset->info;
-  auto &dimensions = info.dimensions;
-
-  // TODO: handle datasets created by differing
-  auto osp_volume_data =
-      ospNewSharedData(dataset->buffer.data(), OSP_UCHAR, dimensions[0], 0,
-                       dimensions[1], 0, dimensions[2], 0);
-  ospCommit(osp_volume_data);
-
-  auto osp_volume = ospNewVolume("structuredRegular");
-  ospSetObject(osp_volume, "data", osp_volume_data);
-  ospSetVec3f(osp_volume, "gridOrigin",
-              -static_cast<float>(dimensions[0]) / 2.0f,
-              -static_cast<float>(dimensions[1]) / 2.0f,
-              -static_cast<float>(dimensions[2]) / 2.0f);
-  // TODO: handle customized spacing
-  ospSetVec3f(osp_volume, "gridSpacing", 1.0f, 1.0f, 1.0f);
-  ospCommit(osp_volume);
-
-  auto res = m_osp_volume_cache.emplace(dataset, osp_volume);
-  return res.first->second;
-}
-
-OSPVolume &OSPRayRenderer::get_osp_volume(StructuredGrid *dataset) {
-  auto it = this->m_osp_volume_cache.find(dataset);
-  if (it == this->m_osp_volume_cache.end()) {
-    return this->create_osp_volume(dataset);
-  }
-  return it->second;
-}
 
 void OSPRayRenderer::set_background(float r, float g, float b) noexcept {
   m_background[0] = r;

@@ -9,6 +9,7 @@ project(
 option(VOXER_INSTALL "create target to install voxer library and headers" ON)
 option(VOXER_BUILD_BACKEND_OPENGL "whether to build OpenGL rendering backend " ON)
 option(VOXER_BUILD_BACKEND_OSPRAY "whether to build OSPRay rendering backend" ON)
+option(VOXER_BUILD_ANNOTATION_MODULE "build annotation related module" ON)
 option(VOXER_BUILD_SERVER "whether to build voxer server" ON)
 option(VOXER_BUILD_PYBIND "whether to build python binding" OFF)
 option(VOXER_BUILD_TESTS "whether to build tests" OFF)

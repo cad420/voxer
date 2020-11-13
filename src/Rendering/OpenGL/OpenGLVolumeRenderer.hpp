@@ -1,9 +1,13 @@
 #pragma once
+#define MESA_EGL_NO_X11_HEADERS
+#define EGL_NO_X11
+#define EGL_EGLEXT_PROTOTYPES
 #include "Rendering/IRenderer.hpp"
 #include "Rendering/OpenGL/ShaderProgram.hpp"
 #include <EGL/egl.h>
 #include <unordered_map>
 #include <voxer/Data/Image.hpp>
+#include "Rendering/OpenGL/VolumeCache.hpp"
 
 namespace voxer {
 
@@ -21,12 +25,12 @@ public:
   void clear_scene() override;
 
 private:
+  VolumeCache* m_cache;
   Image m_image;
   Camera m_camera;
   std::array<float, 3> m_background{};
   std::vector<std::shared_ptr<Volume>> m_volumes;
   std::vector<std::shared_ptr<Isosurface>> m_isosurfaces;
-  std::unordered_map<StructuredGrid *, GLuint> m_dataset_cache;
 
   std::unique_ptr<ShaderProgram> m_position_program;
   std::unique_ptr<ShaderProgram> m_raycast_program;

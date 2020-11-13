@@ -1,7 +1,5 @@
 find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
-find_package(ospray 2.0.0 REQUIRED)
-find_package(OpenCV 4.0.0 REQUIRED COMPONENTS core imgproc cudaimgproc)
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
 
 list(
@@ -18,13 +16,21 @@ list(
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/EqualizeFilter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/ContrastFilter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/GradientFilter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/AnnotationLevelSetFilter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/seg_levelset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/IO/MRC/MRCReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/IO/Raw/RawReader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/VolumeRenderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SliceRenderer.cpp
 )
+
+if (VOXER_BUILD_ANNOTATION_MODULE)
+  find_package(OpenCV 4.0.0 REQUIRED COMPONENTS core imgproc cudaimgproc)
+  list(
+    APPEND
+    VOXER_CORE_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/AnnotationLevelSetFilter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/seg_levelset.cpp
+  )
+endif()
 
 add_library(voxer_core STATIC ${VOXER_CORE_SRCS})
 add_library(voxer::voxer_core ALIAS voxer_core)
@@ -45,10 +51,17 @@ target_link_libraries(
     fmt::fmt
     OpenMP::OpenMP_CXX
     ${CMAKE_DL_LIBS}
-    ospray::ospray
-    ${OpenCV_LIBS}
     PRIVATE -static-libstdc++
 )
+
+if (VOXER_BUILD_ANNOTATION_MODULE)
+  target_link_libraries(
+      voxer_core
+      PUBLIC
+      ${OpenCV_LIBS}
+  )
+endif()
+
 target_compile_options(voxer_core PRIVATE -Wall -Wextra)
 target_compile_features(voxer_core PRIVATE cxx_std_14)
 if (UNIX)
