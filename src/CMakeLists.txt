@@ -1,6 +1,5 @@
 find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
-find_package(ospray 2.0.0 REQUIRED)
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
 
 list(
@@ -52,7 +51,6 @@ target_link_libraries(
     fmt::fmt
     OpenMP::OpenMP_CXX
     ${CMAKE_DL_LIBS}
-    ospray::ospray
     PRIVATE -static-libstdc++
 )
 

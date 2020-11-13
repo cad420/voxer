@@ -9,7 +9,6 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
-#include <voxer/Filters/GradientFilter.hpp>
 
 using namespace std;
 
@@ -69,29 +68,6 @@ GLuint create_tfcn_texture(voxer::TransferFunction &tfcn) {
   return tfcn_texture;
 }
 
-GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
-  auto &info = dataset.info;
-  auto &dimension = info.dimensions;
-  auto &buffer = dataset.buffer;
-
-  voxer::GradientFilter filter{};
-  auto filtered = filter.process(dataset);
-
-  GLuint volume_texture = 0;
-  glGenTextures(1, &volume_texture);
-  glActiveTexture(GL_TEXTURE0 + 2);
-  glBindTexture(GL_TEXTURE_3D, volume_texture);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, dimension[0], dimension[1],
-               dimension[2], 0, GL_RGBA, GL_UNSIGNED_BYTE, filtered.data());
-
-  return volume_texture;
-}
-
 float cube_vertices[] = {
     0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
     0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
@@ -110,17 +86,14 @@ float screen_quad_vertices[] = {
 namespace voxer {
 
 OpenGLVolumeRenderer::OpenGLVolumeRenderer() {
+  m_cache = VolumeCache::create();
+
   setup_context();
   setup_resources();
   setup_proxy_cude();
 }
 
 OpenGLVolumeRenderer::~OpenGLVolumeRenderer() noexcept {
-  for (auto &item : m_dataset_cache) {
-    auto id = item.second;
-    glDeleteTextures(1, &id);
-  }
-
   glDeleteBuffers(1, &m_VBO);
   glDeleteBuffers(1, &m_EBO);
   glDeleteVertexArrays(1, &m_VAO);
@@ -174,8 +147,8 @@ void OpenGLVolumeRenderer::setup_context() {
                                   EGL_CONTEXT_OPENGL_PROFILE_MASK,
                                   EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
                                   EGL_NONE};
-  EGLContext egl_context = eglCreateContext(m_egl_display, egl_config,
-                                            EGL_NO_CONTEXT, context_attri);
+  EGLContext egl_context = eglCreateContext(
+      m_egl_display, egl_config, m_cache->get_context(), context_attri);
   EGLCheck("eglCreateContext");
 
   eglMakeCurrent(m_egl_display, egl_surface, egl_surface, egl_context);
@@ -245,10 +218,7 @@ void OpenGLVolumeRenderer::set_camera(const Camera &camera) {
 void OpenGLVolumeRenderer::add_volume(const std::shared_ptr<Volume> &volume) {
   auto dataset = volume->dataset.get();
 
-  if (m_dataset_cache.count(dataset) == 0) {
-    auto texture = create_dataset_texture(*dataset);
-    m_dataset_cache.emplace(dataset, texture);
-  }
+  m_cache->load(dataset);
 
   m_volumes.emplace_back(volume);
 }
@@ -257,10 +227,7 @@ void OpenGLVolumeRenderer::add_isosurface(
     const std::shared_ptr<voxer::Isosurface> &isosurface) {
   auto dataset = isosurface->dataset.get();
 
-  if (m_dataset_cache.count(dataset) == 0) {
-    auto texture = create_dataset_texture(*dataset);
-    m_dataset_cache.emplace(dataset, texture);
-  }
+  m_cache->load(dataset);
 
   m_isosurfaces.emplace_back(isosurface);
 }
@@ -341,7 +308,7 @@ void OpenGLVolumeRenderer::render() {
       model = glm::translate(model, glm::vec3(-0.5f, -0.5f, -0.5f));
       auto mvp_matrix = projection * view * model;
 
-      auto dataset_texture = m_dataset_cache.at(dataset);
+      auto dataset_texture = m_cache->get(dataset);
       glActiveTexture(GL_TEXTURE0 + 2);
       glBindTexture(GL_TEXTURE_3D, dataset_texture);
 
@@ -391,7 +358,7 @@ void OpenGLVolumeRenderer::render() {
     glActiveTexture(GL_TEXTURE0 + 0);
     glBindTexture(GL_TEXTURE_1D, tfcn_texture);
 
-    auto dataset_texture = m_dataset_cache.at(dataset);
+    auto dataset_texture = m_cache->get(dataset);
     glActiveTexture(GL_TEXTURE0 + 2);
     glBindTexture(GL_TEXTURE_3D, dataset_texture);
 
