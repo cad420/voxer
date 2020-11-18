@@ -70,4 +70,9 @@ Image Image::encode(const Image &image, Image::Format format,
                 format, quality);
 }
 
+auto Image::at(uint32_t row, uint32_t col) const -> uint8_t {
+  assert(row < height && col < width);
+  return data[row * width + col];
+}
+
 } // namespace voxer
