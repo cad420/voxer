@@ -61,8 +61,8 @@ router.post("/", upload.single("dataset"), async (req, res) => {
   collection.updateOne({ id: new ObjectID(id) }, {
     $set: {
       dimensions: info.dimensions,
-        histogram: info.histogram,
-        range: info.range
+      histogram: info.histogram,
+      range: info.range
     }
   })
 
@@ -147,7 +147,7 @@ async function createPipelineAndSave(filename: string, database: mongodb.Db) {
   };
   const res = await collection.insertOne(pipeline);
   console.log(`Refined data's pipeline created: ${res.insertedId}`);
-  
+
   return info;
 }
 
@@ -159,6 +159,7 @@ const RefinedData: Record<string, {
 function pollingRefineResult(watchDir: string, name: string, database: mongodb.Db) {
   const tmpResultReg = new RegExp(name + "_it(\\S*)_half1_class001.mrc");
   const finalFilename = `${name}_class001.mrc`;
+  const targetSize = 360 * 360 * 360 * 4 + 1024;
 
   let lastIteration = 0;
   const intervalId = setInterval(async () => {
@@ -166,16 +167,22 @@ function pollingRefineResult(watchDir: string, name: string, database: mongodb.D
       const files = await fs.readdir(watchDir);
       const target = files.find(file => file === finalFilename);
       if (target) {
-        console.log('Find refined data');
         const filepath = `${watchDir}/${finalFilename}`;
+        const stat = await fs.stat(filepath);
+        if (stat.size !== targetSize) {
+          console.log('Find refined data but size is not correct: ', stat.size);
+          return;
+        }
+
+        console.log('Find refined data');
         const destFilepath = `${UPLOAD_PATH}/${finalFilename}`;
-        
+
         if (RefinedData[name]) {
           RefinedData[name].finished = true;
         }
 
         clearInterval(intervalId);
-        
+
         await fs.copyFile(filepath, destFilepath);
         const info = await createPipelineAndSave(finalFilename, database);
         console.log('Refined data Processed: ' + info.id);
@@ -193,8 +200,14 @@ function pollingRefineResult(watchDir: string, name: string, database: mongodb.D
         });
 
         if (filename) {
-          console.log('Find refined data');
           const filepath = `${watchDir}/${filename}`;
+          const stat = await fs.stat(filepath);
+          if (stat.size !== targetSize) {
+            console.log('Find refined data but size is not correct: ', stat.size);
+            return;
+          }
+
+          console.log('Find refined data');
           const destFilepath = `${UPLOAD_PATH}/${filename}`;
           await fs.copyFile(filepath, destFilepath);
           const info = await createPipelineAndSave(filename, database);
