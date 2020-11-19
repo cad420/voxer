@@ -45,6 +45,9 @@ router.post("/", upload.single("dataset"), async (req, res) => {
   const result = await collection.insertOne({
     path: filename, // TODO
     name: filename,
+    dimensions: [1, 1, 1],
+    histogram: [],
+    range: [1, 1],
   });
   const id = result.insertedId;
 
@@ -53,13 +56,25 @@ router.post("/", upload.single("dataset"), async (req, res) => {
     name: filename,
     path: resolve(UPLOAD_PATH, filename),
   });
-  collection.updateOne({ id: new ObjectID(id) }, {
-    $set: {
-      dimensions: info.dimensions,
+
+  if (info.error) {
+    await collection.deleteOne({ _id: new ObjectID(id) });
+    res.send({
+      code: 400,
+      data: info.error,
+    });
+  }
+
+  await collection.updateOne(
+    { _id: new ObjectID(id) },
+    {
+      $set: {
+        dimensions: info.dimensions,
         histogram: info.histogram,
-        range: info.range
+        range: info.range,
+      },
     }
-  })
+  );
 
   res.send({
     code: 200,
@@ -88,7 +103,7 @@ router.get("/:id", async (req, res) => {
     code: 200,
     data: {
       id: dataset._id.toHexString(),
-      ...dataset
+      ...dataset,
     },
   });
 });

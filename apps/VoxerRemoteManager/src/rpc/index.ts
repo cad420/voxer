@@ -3,12 +3,11 @@ import fetch from "node-fetch";
 
 function request(server: string, uri: string, options: any = {}) {
   return fetch(`http://${server}${uri}`, {
-      ...options,
-      headers: {
-        ...(options.headers || {}),
-      },
-    })
-    .then((res) => res.json())
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+    },
+  }).then((res) => res.json());
 }
 
 export function get(server: string, uri: string, params?: any) {
@@ -66,6 +65,7 @@ export function getDatasetInfo(
   dimensions: [number, number, number];
   histogram: number[];
   range: [number, number];
+  error?: string;
 }> {
   return post(server, "/datasets", {
     function: "query_dataset",
