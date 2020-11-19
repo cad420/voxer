@@ -58,13 +58,26 @@ router.post("/", upload.single("dataset"), async (req, res) => {
     name: filename,
     path: resolve(UPLOAD_PATH, filename),
   });
-  collection.updateOne({ id: new ObjectID(id) }, {
-    $set: {
-      dimensions: info.dimensions,
-      histogram: info.histogram,
-      range: info.range
+
+  if (info.error) {
+    console.log(`Error: ${info.error}`);
+    res.send({
+      code: 400,
+      data: info.error,
+    });
+    return;
+  }
+
+  collection.updateOne(
+    { id: new ObjectID(id) },
+    {
+      $set: {
+        dimensions: info.dimensions,
+        histogram: info.histogram,
+        range: info.range,
+      },
     }
-  })
+  );
 
   res.send({
     code: 200,
@@ -93,7 +106,7 @@ router.get("/:id", async (req, res) => {
     code: 200,
     data: {
       id: dataset._id.toHexString(),
-      ...dataset
+      ...dataset,
     },
   });
 });
@@ -102,7 +115,7 @@ async function createPipelineAndSave(filename: string, database: mongodb.Db) {
   let collection = database.collection("datasets");
   const dataset: Dataset = await collection.findOne({ path: filename });
 
-  let id = '';
+  let id = "";
   if (dataset) {
     id = dataset._id.toHexString();
     console.log(`Refined data already exist: ${id}`);
@@ -122,16 +135,20 @@ async function createPipelineAndSave(filename: string, database: mongodb.Db) {
   });
 
   collection = database.collection("pipelines");
-  const exist: Pipeline = await collection.findOne({ "isosurfaces.0.dataset": id });
+  const exist: Pipeline = await collection.findOne({
+    "isosurfaces.0.dataset": id,
+  });
 
   if (exist) {
-    console.log(`Refined data's pipeline already exist: ${exist._id.toHexString()}`);
+    console.log(
+      `Refined data's pipeline already exist: ${exist._id.toHexString()}`
+    );
     return info;
   }
 
   const maxSide = Math.max(info.dimensions[0], info.dimensions[1]);
   const pipeline: any = {
-    type: 'single',
+    type: "single",
     comment: filename,
     tfcns: [],
     volumes: [],
@@ -151,12 +168,20 @@ async function createPipelineAndSave(filename: string, database: mongodb.Db) {
   return info;
 }
 
-const RefinedData: Record<string, {
-  finished: boolean;
-  data: string[];
-}> = {};
+const RefinedData: Record<
+  string,
+  {
+    id: number;
+    finished: boolean;
+    data: string[];
+  }
+> = {};
 
-function pollingRefineResult(watchDir: string, name: string, database: mongodb.Db) {
+function pollingRefineResult(
+  watchDir: string,
+  name: string,
+  database: mongodb.Db
+) {
   const tmpResultReg = new RegExp(name + "_it(\\S*)_half1_class001.mrc");
   const finalFilename = `${name}_class001.mrc`;
   const targetSize = 360 * 360 * 360 * 4 + 1024;
@@ -165,17 +190,19 @@ function pollingRefineResult(watchDir: string, name: string, database: mongodb.D
   const intervalId = setInterval(async () => {
     try {
       const files = await fs.readdir(watchDir);
-      const target = files.find(file => file === finalFilename);
+      const target = files.find((file) => file === finalFilename);
       if (target) {
-        const filepath = `${watchDir}/${finalFilename}`;
+        const filepath = resolve(watchDir, finalFilename);
         const stat = await fs.stat(filepath);
         if (stat.size !== targetSize) {
-          console.log('Find refined data but size is not correct: ', stat.size);
+          console.log(
+            `Find refined data: ${filepath}, but size is not correct: ${stat.size}`
+          );
           return;
         }
 
-        console.log('Find refined data');
-        const destFilepath = `${UPLOAD_PATH}/${finalFilename}`;
+        console.log("Find refined data");
+        const destFilepath = resolve(UPLOAD_PATH, finalFilename);
 
         if (RefinedData[name]) {
           RefinedData[name].finished = true;
@@ -185,9 +212,9 @@ function pollingRefineResult(watchDir: string, name: string, database: mongodb.D
 
         await fs.copyFile(filepath, destFilepath);
         const info = await createPipelineAndSave(finalFilename, database);
-        console.log('Refined data Processed: ' + info.id);
+        console.log("Refined data Processed: " + info.id);
       } else {
-        let filename = '';
+        let filename = "";
         files.forEach((file) => {
           const res = file.match(tmpResultReg);
           if (res) {
@@ -200,15 +227,17 @@ function pollingRefineResult(watchDir: string, name: string, database: mongodb.D
         });
 
         if (filename) {
-          const filepath = `${watchDir}/${filename}`;
+          const filepath = resolve(watchDir, filename);
           const stat = await fs.stat(filepath);
           if (stat.size !== targetSize) {
-            console.log('Find refined data but size is not correct: ', stat.size);
+            console.log(
+              `Find refined data: ${filepath}, but size is not correct: ${stat.size}`
+            );
             return;
           }
 
-          console.log('Find refined data');
-          const destFilepath = `${UPLOAD_PATH}/${filename}`;
+          console.log("Find refined data");
+          const destFilepath = resolve(UPLOAD_PATH, filename);
           await fs.copyFile(filepath, destFilepath);
           const info = await createPipelineAndSave(filename, database);
 
@@ -216,7 +245,7 @@ function pollingRefineResult(watchDir: string, name: string, database: mongodb.D
             RefinedData[name].data.push(filename);
           }
 
-          console.log('Refined data Processed: ' + info.id);
+          console.log("Refined data Processed: " + info.id);
         }
       }
     } catch (err) {
@@ -227,17 +256,18 @@ function pollingRefineResult(watchDir: string, name: string, database: mongodb.D
 }
 
 const script = `${process.cwd()}/refine.sh`;
-console.log(`Refine Script: ${script}`)
+console.log(`Refine Script: ${script}`);
 
 router.get("/refine/info", async (req, res) => {
   res.send({
     code: 200,
     data: Object.entries(RefinedData).map(([name, info]) => {
       return {
-        name, ...info
-      }
-    })
-  })
+        name,
+        ...info,
+      };
+    }),
+  });
 });
 
 router.post("/refine/:name", async (req, res) => {
@@ -249,11 +279,6 @@ router.post("/refine/:name", async (req, res) => {
     });
     return;
   }
-
-  RefinedData[name] = {
-    finished: false,
-    data: []
-  };
 
   exec(`sh ${script}`, (err, stdout, stderr) => {
     if (err) {
@@ -268,7 +293,23 @@ router.post("/refine/:name", async (req, res) => {
       });
     }
 
-    console.log(`Task submited: ` + stdout.substring(0, 100));
+    const jobIdRegExp = new RegExp(/Submitted batch job (\d+)/);
+    const matched = stdout.match(jobIdRegExp);
+    if (!matched || !matched[1]) {
+      return res.send({
+        code: 400,
+        data: stdout.substring(0, 100),
+      });
+    }
+
+    const id = parseInt(matched[1]);
+    RefinedData[name] = {
+      id,
+      finished: false,
+      data: [],
+    };
+    console.log(`Task submited: ${id}`);
+
     const database: mongodb.Db = req.app.get("database");
     console.log(`Refine watch directory: ${REFINE_WATCH_DIR}`);
     pollingRefineResult(REFINE_WATCH_DIR, name, database);

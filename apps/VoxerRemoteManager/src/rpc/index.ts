@@ -66,6 +66,7 @@ export function getDatasetInfo(
   dimensions: [number, number, number];
   histogram: number[];
   range: [number, number];
+  error?: string;
 }> {
   return post(server, "/datasets", {
     function: "query_dataset",
