@@ -16,6 +16,7 @@ list(
     VoxerRemoteApplication.cpp
     Server.cpp
     Service/AbstractService.cpp
+    Service/JSONRPCService.cpp
     Service/DatasetService.cpp
     Service/SliceService.cpp
     Service/VolumeRenderingService.cpp
@@ -25,11 +26,11 @@ list(
 
 if (VOXER_BUILD_ANNOTATION_MODULE)
   list(
-    APPEND
-    VoxerRemote_SRCS
-    Service/AnnotationService.cpp
+      APPEND
+      VoxerRemote_SRCS
+      Service/AnnotationService.cpp
   )
-endif()
+endif ()
 
 add_executable(VoxerRemote ${VoxerRemote_SRCS})
 target_include_directories(
@@ -51,7 +52,7 @@ target_link_libraries(
 target_compile_features(VoxerRemote PRIVATE cxx_std_17)
 if (VOXER_BUILD_ANNOTATION_MODULE)
   target_compile_definitions(VoxerRemote PRIVATE ENABLE_ANNOTATION_SERVICE)
-endif()
+endif ()
 
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 install(

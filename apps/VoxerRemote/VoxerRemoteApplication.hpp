@@ -1,4 +1,6 @@
 #pragma once
+#include "Server.hpp"
+#include "Store/DatasetStore.hpp"
 #include <Poco/Util/Option.h>
 #include <Poco/Util/OptionCallback.h>
 #include <Poco/Util/OptionSet.h>
@@ -21,6 +23,11 @@ private:
   std::string m_manager_address;
   std::string m_storage_path = ".";
   uint32_t m_port = 3040;
+  std::unique_ptr<DatasetStore> m_datasets;
+
+  auto resgiter_services() -> Poco::SharedPtr<MyHTTPRequestHandlerFactory>;
+
+  static void register_rpc_methods();
 };
 
 } // namespace voxer::remote

@@ -4,6 +4,7 @@
 #include <Poco/Net/HTTPRequestHandlerFactory.h>
 #include <Poco/Net/HTTPServerRequest.h>
 #include <Poco/Net/HTTPServerResponse.h>
+#include <Store/DatasetStore.hpp>
 #include <vector>
 
 namespace voxer::remote {
@@ -40,9 +41,13 @@ public:
   Poco::Net::HTTPRequestHandler *
   createRequestHandler(const Poco::Net::HTTPServerRequest &request) override;
 
-  void register_service(
-      const char *path,
-      const std::function<AbstractService *()> &constructor) noexcept;
+  template <class Service> void register_service(const char *path, DatasetStore *datasets) noexcept {
+    services.emplace(path, [datasets]() {
+      auto service = new Service();
+      service->datasets = datasets;
+      return service;
+    });
+  }
 
 private:
   std::unordered_map<std::string, std::function<AbstractService *()>> services;

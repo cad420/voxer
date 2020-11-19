@@ -4,6 +4,7 @@
 #include "Service/AnnotationService.hpp"
 #endif
 #include "Service/DatasetService.hpp"
+#include "Service/JSONRPCService.hpp"
 #include "Service/SliceService.hpp"
 #include "Service/VolumeRenderingService.hpp"
 #include "Store/DatasetStore.hpp"
@@ -102,31 +103,11 @@ int VoxerRemoteApplication::main(const std::vector<std::string> &args) {
   using HTTPServer = Poco::Net::HTTPServer;
   using HTTPServerParams = Poco::Net::HTTPServerParams;
 
-  auto routes = Poco::makeShared<MyHTTPRequestHandlerFactory>();
-  DatasetStore datasets{m_manager_address, m_storage_path};
+  register_rpc_methods();
+  auto routes = resgiter_services();
+  m_datasets =
+      std::make_unique<DatasetStore>(m_manager_address, m_storage_path);
 
-  routes->register_service("/datasets", [&datasets]() {
-    auto service = new DatasetService();
-    service->m_datasets = &datasets;
-    return service;
-  });
-  routes->register_service("/render", [&datasets]() {
-    auto service = new VolumeRenderingService();
-    service->m_datasets = &datasets;
-    return service;
-  });
-  routes->register_service("/slice", [&datasets]() {
-    auto service = new SliceService();
-    service->m_datasets = &datasets;
-    return service;
-  });
-#ifdef ENABLE_ANNOTATION_SERVICE
-  routes->register_service("/annotations", [&datasets]() {
-    auto service = new AnnotationService();
-    service->m_datasets = &datasets;
-    return service;
-  });
-#endif
   ServerSocket svs(m_port);
   HTTPServer srv(routes, svs, Poco::makeAuto<HTTPServerParams>());
   srv.start();
@@ -135,6 +116,30 @@ int VoxerRemoteApplication::main(const std::vector<std::string> &args) {
   waitForTerminationRequest();
   srv.stop();
   return Application::EXIT_OK;
+}
+
+void VoxerRemoteApplication::register_rpc_methods() {
+  auto rpc_methods = RPCMethodsStore::get_instance();
+
+  std::function<int(int, int)> fn = [](int i, int j) -> int { return i; };
+  rpc_methods->resgister_method(
+      "apply_level_set", GetHandler(fn),
+      {"annotations", "slice", "axis"});
+}
+
+auto VoxerRemoteApplication::resgiter_services()
+    -> Poco::SharedPtr<MyHTTPRequestHandlerFactory> {
+  auto routes = Poco::makeShared<MyHTTPRequestHandlerFactory>();
+
+  auto datasets = m_datasets.get();
+  routes->register_service<DatasetService>("/datasets", datasets);
+  routes->register_service<VolumeRenderingService>("/render", datasets);
+  routes->register_service<SliceService>("/slice", datasets);
+#ifdef ENABLE_ANNOTATION_SERVICE
+  routes->register_service<AnnotationService>("/annotations", datasets);
+#endif
+
+  return routes;
 }
 
 } // namespace voxer::remote
