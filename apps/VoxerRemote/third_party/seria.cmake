@@ -2,7 +2,7 @@ include(FetchContent)
 FetchContent_Declare(
     seria
     GIT_REPOSITORY https://github.com/ukabuer/seria.git
-    GIT_TAG 644a85083733518d15e653f6629cc11f587d5df6
+    GIT_TAG 78452629b800088cd1e434529afdc00a704dd6c7
     GIT_SHALLOW true
     GIT_PROGRESS TRUE
 )

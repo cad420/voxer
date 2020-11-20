@@ -25,13 +25,11 @@ namespace seria {
 template <> inline auto register_object<voxer::remote::Scene>() {
   using Scene = voxer::remote::Scene;
 
-  auto default_background = std::make_unique<std::array<float, 3>>();
-  *default_background = {1.0f, 1.0f, 1.0f};
   return std::make_tuple(
       member("volumes", &Scene::volumes), member("tfcns", &Scene::tfcns),
       member("isosurfaces", &Scene::isosurfaces),
       member("camera", &Scene::camera),
-      member("background", &Scene::background, std::move(default_background)));
+      member("background", &Scene::background, {1.0f, 1.0f, 1.0f}));
 }
 
 } // namespace seria
