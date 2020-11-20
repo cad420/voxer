@@ -2,8 +2,7 @@ import express from "express";
 import mongodb, { ObjectId } from "mongodb";
 import DatasetGroup, { Label } from "../models/DatasetGroup";
 import Annotation from "../models/Annotation";
-import { RENDER_SERVICE } from "../config";
-import { applyLevelSet } from "../rpc";
+import { applyGrabCut, applyLevelSet } from "../worker_api/jsonrpc";
 
 type Axis = "x" | "y" | "z";
 
@@ -200,24 +199,41 @@ router.post("/action", async (req, res) => {
   }
 
   if (operation === "levelset") {
-    applyLevelSet(
-      RENDER_SERVICE,
-      params.dataset,
-      params.axis,
-      params.index,
-      params.annotations
-    ).then((annotations) => {
+    applyLevelSet(params.dataset, params.axis, params.index, params.annotations)
+      .then((annotations) => {
+        res.send({
+          code: 200,
+          data: annotations,
+        });
+      })
+      .catch((err) => {
+        res.send({
+          code: 400,
+          data: err.message,
+        });
+      });
+    return;
+  }
+
+  if (operation === "grabcut") {
+    try {
+      const annotations = await applyGrabCut(
+        params.dataset,
+        params.axis,
+        params.index,
+        params.annotations
+      );
       res.send({
         code: 200,
         data: annotations,
       });
-    }).catch(err => {
+    } catch (err) {
       res.send({
         code: 400,
-        data: err.message
+        data: err.message,
       });
-    });
-    return;
+      return;
+    }
   }
 
   res.send({

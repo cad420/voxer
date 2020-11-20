@@ -8,9 +8,9 @@ namespace voxer {
 struct AnnotationGrabCutFilter {
   int iteration = 2;
   float threshold = 100.0f;
-  auto process(const Image &image,
-               const std::vector<Annotation> &annotations) const
-      -> std::vector<Annotation>;
+
+  [[nodiscard]] std::vector<Annotation>
+  process(const Image &image, const std::vector<Annotation> &annotations) const;
 };
 
 } // namespace voxer

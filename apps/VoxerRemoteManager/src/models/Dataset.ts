@@ -1,8 +1,5 @@
 import mongodb, { ObjectID } from "mongodb";
-import { resolve } from "path";
-import { UPLOAD_PATH } from "../config";
-import { RENDER_SERVICE } from "../config";
-import { getDatasetInfo } from "../rpc";
+import { getDatasetInfo } from "../worker_api/jsonrpc";
 
 type Dataset = {
   _id: ObjectID;
@@ -10,7 +7,7 @@ type Dataset = {
   path: string;
   dimensions: [number, number, number];
   histogram: number[];
-  range: [number,number];
+  range: [number, number];
 };
 
 export async function getExistDatasetInfo(database: mongodb.Db) {
@@ -23,18 +20,17 @@ export async function getExistDatasetInfo(database: mongodb.Db) {
     }
 
     const id = item._id.toHexString();
-    const res = await getDatasetInfo(RENDER_SERVICE, {
-      id,
-      name: item.name,
-      path: resolve(UPLOAD_PATH, item.path),
-    });
-    await collection.updateOne({ _id: item._id }, {
-      $set: {
-        dimensions: res.dimensions,
-        histogram: res.histogram,
-        range: res.range
+    const res = await getDatasetInfo(id);
+    await collection.updateOne(
+      { _id: item._id },
+      {
+        $set: {
+          dimensions: res.dimensions,
+          histogram: res.histogram,
+          range: res.range,
+        },
       }
-    });
+    );
   });
 
   return Promise.all(tasks);

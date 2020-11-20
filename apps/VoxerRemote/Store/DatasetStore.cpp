@@ -1,6 +1,6 @@
 #include "Store/DatasetStore.hpp"
 #include "DataModel/DatasetCollection.hpp"
-#include "RPC/dataset.hpp"
+#include "ManagerAPI/dataset.hpp"
 #include "utils.hpp"
 #include <fmt/core.h>
 #include <iostream>

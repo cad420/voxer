@@ -44,7 +44,7 @@ public:
   template <class Service> void register_service(const char *path, DatasetStore *datasets) noexcept {
     services.emplace(path, [datasets]() {
       auto service = new Service();
-      service->datasets = datasets;
+      service->m_datasets = datasets;
       return service;
     });
   }

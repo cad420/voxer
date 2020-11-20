@@ -3,7 +3,7 @@
 #ifdef ENABLE_ANNOTATION_SERVICE
 #include "Service/AnnotationService.hpp"
 #endif
-#include "Service/DatasetService.hpp"
+#include "DataModel/DatasetInfo.hpp"
 #include "Service/JSONRPCService.hpp"
 #include "Service/SliceService.hpp"
 #include "Service/VolumeRenderingService.hpp"
@@ -17,6 +17,9 @@
 #include <Poco/Util/IntValidator.h>
 #include <exception>
 #include <iostream>
+#include <voxer/Filters/AnnotationGrabCutFilter.hpp>
+#include <voxer/Filters/AnnotationLevelset.hpp>
+#include <voxer/Filters/histogram.hpp>
 
 namespace voxer::remote {
 
@@ -61,7 +64,7 @@ void VoxerRemoteApplication::hanldle_option(const std::string &name,
   if (name == "manager") {
     try {
       Poco::URI uri{value};
-      m_manager_address = value;
+      m_manager = value;
     } catch (std::exception &exp) {
       std::cerr << "invalid manager address" << std::endl;
       stopOptionsProcessing();
@@ -69,7 +72,7 @@ void VoxerRemoteApplication::hanldle_option(const std::string &name,
   }
 
   if (name == "storage") {
-    m_storage_path = value;
+    m_storage = value;
   }
 
   if (name == "help") {
@@ -95,7 +98,7 @@ int VoxerRemoteApplication::main(const std::vector<std::string> &args) {
     return Application::EXIT_OK;
   }
 
-  if (m_manager_address.empty()) {
+  if (m_manager.empty()) {
     return Application::EXIT_DATAERR;
   }
 
@@ -103,10 +106,9 @@ int VoxerRemoteApplication::main(const std::vector<std::string> &args) {
   using HTTPServer = Poco::Net::HTTPServer;
   using HTTPServerParams = Poco::Net::HTTPServerParams;
 
+  m_datasets = std::make_unique<DatasetStore>(m_manager, m_storage);
   register_rpc_methods();
   auto routes = resgiter_services();
-  m_datasets =
-      std::make_unique<DatasetStore>(m_manager_address, m_storage_path);
 
   ServerSocket svs(m_port);
   HTTPServer srv(routes, svs, Poco::makeAuto<HTTPServerParams>());
@@ -121,10 +123,70 @@ int VoxerRemoteApplication::main(const std::vector<std::string> &args) {
 void VoxerRemoteApplication::register_rpc_methods() {
   auto rpc_methods = RPCMethodsStore::get_instance();
 
-  std::function<int(int, int)> fn = [](int i, int j) -> int { return i; };
-  rpc_methods->resgister_method(
-      "apply_level_set", GetHandler(fn),
-      {"annotations", "slice", "axis"});
+  std::function<int(int, int)> add = [](int i, int j) -> int { return i + j; };
+  rpc_methods->resgister_method("add", RPCMethodsStore::GetHandler(add));
+
+  std::function<std::vector<voxer::Annotation>(
+      const std::vector<voxer::Annotation> &, const std::string &,
+      StructuredGrid::Axis, uint32_t)>
+      apply_levelset = [datasets = m_datasets.get()](
+                           const std::vector<voxer::Annotation> &annotations,
+                           const std::string &dataset_id,
+                           StructuredGrid::Axis axis,
+                           uint32_t index) -> std::vector<voxer::Annotation> {
+    auto dataset = datasets->get(dataset_id);
+    if (!dataset) {
+      throw std::runtime_error("cannot find dataset " + dataset_id);
+    }
+    auto slice = dataset->get_slice(axis, index + 1);
+
+    std::vector<Annotation> result{};
+    result.reserve(annotations.size());
+
+    AnnotationLevelSetFilter filter{};
+    for (auto &input : annotations) {
+      result.emplace_back(filter.process(input, slice));
+    }
+
+    return result;
+  };
+  rpc_methods->resgister_method("apply_levelset",
+                                RPCMethodsStore::GetHandler(apply_levelset),
+                                {"annotations", "dataset", "axis", "index"});
+
+  std::function<std::vector<Annotation>(const std::vector<voxer::Annotation> &,
+                                        const std::string &,
+                                        StructuredGrid::Axis, uint32_t)>
+      apply_grabcut = [datasets = m_datasets.get()](
+                          const std::vector<voxer::Annotation> &annotations,
+                          const std::string &dataset_id,
+                          StructuredGrid::Axis axis, uint32_t index) {
+        auto dataset = datasets->get(dataset_id);
+        if (!dataset) {
+          throw std::runtime_error("cannot find dataset " + dataset_id);
+        }
+        auto slice = dataset->get_slice(axis, index + 1);
+        AnnotationGrabCutFilter filter{};
+        return filter.process(slice, annotations);
+      };
+  rpc_methods->resgister_method("apply_grabcut",
+                                RPCMethodsStore::GetHandler(apply_grabcut),
+                                {"annotations", "dataset", "axis", "index"});
+
+  std::function<DatasetInfo(const std::string &)> get_dataset_info =
+      [datasets = m_datasets.get()](const std::string &id) {
+        auto dataset = datasets->get(id);
+
+        DatasetInfo result;
+        result.id = id;
+        result.histogram = voxer::calculate_histogram(*dataset);
+        result.dimensions = dataset->info.dimensions;
+        result.range = dataset->original_range;
+
+        return result;
+      };
+  rpc_methods->resgister_method("get_dataset_info",
+                                RPCMethodsStore::GetHandler(get_dataset_info));
 }
 
 auto VoxerRemoteApplication::resgiter_services()
@@ -132,9 +194,9 @@ auto VoxerRemoteApplication::resgiter_services()
   auto routes = Poco::makeShared<MyHTTPRequestHandlerFactory>();
 
   auto datasets = m_datasets.get();
-  routes->register_service<DatasetService>("/datasets", datasets);
   routes->register_service<VolumeRenderingService>("/render", datasets);
   routes->register_service<SliceService>("/slice", datasets);
+  routes->register_service<JSONRPCService>("/jsonrpc", datasets);
 #ifdef ENABLE_ANNOTATION_SERVICE
   routes->register_service<AnnotationService>("/annotations", datasets);
 #endif

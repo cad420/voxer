@@ -21,7 +21,8 @@ list(
     Service/SliceService.cpp
     Service/VolumeRenderingService.cpp
     Store/DatasetStore.cpp
-    RPC/dataset.cpp
+    ManagerAPI/dataset.cpp
+    JSONRPC/RPCMethodsStore.cpp
 )
 
 if (VOXER_BUILD_ANNOTATION_MODULE)

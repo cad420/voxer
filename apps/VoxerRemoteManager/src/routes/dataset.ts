@@ -1,10 +1,9 @@
 import express from "express";
 import multer from "multer";
 import mongodb, { ObjectID } from "mongodb";
-import { resolve } from "path";
 import Dataset from "../models/Dataset";
-import { RENDER_SERVICE, UPLOAD_PATH } from "../config";
-import { getDatasetInfo } from "../rpc";
+import { UPLOAD_PATH } from "../config";
+import { getDatasetInfo } from "../worker_api/jsonrpc";
 
 const router = express.Router();
 
@@ -51,35 +50,30 @@ router.post("/", upload.single("dataset"), async (req, res) => {
   });
   const id = result.insertedId;
 
-  const info = await getDatasetInfo(RENDER_SERVICE, {
-    id,
-    name: filename,
-    path: resolve(UPLOAD_PATH, filename),
-  });
+  try {
+    const info = await getDatasetInfo(id);
+    await collection.updateOne(
+      { _id: new ObjectID(id) },
+      {
+        $set: {
+          dimensions: info.dimensions,
+          histogram: info.histogram,
+          range: info.range,
+        },
+      }
+    );
 
-  if (info.error) {
+    res.send({
+      code: 200,
+      data: id,
+    });
+  } catch (err) {
     await collection.deleteOne({ _id: new ObjectID(id) });
     res.send({
       code: 400,
-      data: info.error,
+      data: err.message,
     });
   }
-
-  await collection.updateOne(
-    { _id: new ObjectID(id) },
-    {
-      $set: {
-        dimensions: info.dimensions,
-        histogram: info.histogram,
-        range: info.range,
-      },
-    }
-  );
-
-  res.send({
-    code: 200,
-    data: id,
-  });
 });
 
 router.get("/:id", async (req, res) => {

@@ -73,7 +73,7 @@ void WebSocketRequestHandler::handleRequest(
 
     WebSocket ws(request, response);
     auto one_hour = Poco::Timespan(0, 1, 0, 0, 0);
-    ws.setReceiveTimeout(std::move(one_hour));
+    ws.setReceiveTimeout(one_hour);
     do {
       len = ws.receiveFrame(buffer, sizeof(buffer), flags);
       m_service->on_message(
@@ -121,12 +121,6 @@ MyHTTPRequestHandlerFactory::createRequestHandler(
   }
 
   return new DefaultRequestHandler();
-}
-
-void MyHTTPRequestHandlerFactory::register_service(
-    const char *path,
-    const std::function<AbstractService *()> &constructor) noexcept {
-  services.emplace(path, constructor);
 }
 
 } // namespace voxer::remote
