@@ -38,17 +38,30 @@ router.get("/", async (req, res) => {
 router.post("/", upload.single("dataset"), async (req, res) => {
   const filename = req.file.filename;
 
-  // TODO: make sure previous timestep is uploaded
   const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("datasets");
-  const result = await collection.insertOne({
-    path: filename, // TODO
-    name: filename,
-    dimensions: [1, 1, 1],
-    histogram: [],
-    range: [1, 1],
-  });
-  const id = result.insertedId;
+
+  const exist = await collection.findOne({ path: filename });
+  let id = "";
+  if (exist) {
+    id = exist._id.toHexString();
+    if (exist.histogram && exist.histogram.length > 0) {
+      res.send({
+        code: 200,
+        data: id,
+      });
+      return;
+    }
+  } else {
+    const result = await collection.insertOne({
+      path: filename, // TODO
+      name: filename,
+      dimensions: [1, 1, 1],
+      histogram: [],
+      range: [1, 1],
+    });
+    id = result.insertedId;
+  }
 
   try {
     const info = await getDatasetInfo(id);
