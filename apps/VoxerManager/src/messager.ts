@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import mongodb from "mongodb";
 import { resolve } from "path";
-import { RENDER_SERVICE, UPLOAD_PATH } from "./config";
+import { WORKER, UPLOAD_PATH } from "./config";
 import Dataset from "./models/Dataset";
 
 class Messager {
@@ -38,7 +38,7 @@ class Messager {
   connect(database: mongodb.Db) {
     this.close();
 
-    this.ws = new WebSocket(`${RENDER_SERVICE}/datasets`);
+    this.ws = new WebSocket(`${WORKER}/datasets`);
     this.ws.on("open", async () => {
       console.log("DatasetMessager: connected");
 

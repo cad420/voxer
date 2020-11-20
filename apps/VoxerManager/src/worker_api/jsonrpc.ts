@@ -1,6 +1,6 @@
 import jayson from "jayson";
 import Annotation from "../models/Annotation";
-import { RENDER_SERVICE } from "../config";
+import { WORKER } from "../config";
 
 function parseWorkerAddress(address: string): { host: string; port: number } {
   let host = address;
@@ -8,7 +8,7 @@ function parseWorkerAddress(address: string): { host: string; port: number } {
 
   const commaIdx = address.lastIndexOf(":");
   if (commaIdx != -1) {
-    const value = parseInt(address.substring(commaIdx));
+    const value = parseInt(address.substring(commaIdx + 1));
     if (!isNaN(value) && value > 0 && value < 65536) {
       port = value;
     }
@@ -19,7 +19,7 @@ function parseWorkerAddress(address: string): { host: string; port: number } {
   return { host, port };
 }
 
-const worker = parseWorkerAddress(RENDER_SERVICE);
+const worker = parseWorkerAddress(WORKER);
 
 const client = jayson.Client.http({
   host: worker.host,

@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import routes from "./routes";
-import { PUBLIC_PATH, RENDER_SERVICE } from "./config";
+import { PUBLIC_PATH, WORKER } from "./config";
 import connect from "./models";
 import { getExistDatasetInfo } from "./models/Dataset";
 
@@ -11,7 +11,7 @@ const app = express();
 const services: string[] = ["/render", "/slice"];
 services.forEach((service) => {
   const serviceProxy = createProxyMiddleware(service, {
-    target: `ws://${RENDER_SERVICE}`,
+    target: `ws://${WORKER}`,
     ws: true,
   });
   app.use(serviceProxy);
