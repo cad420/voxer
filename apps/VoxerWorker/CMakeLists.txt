@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(VoxerRemote LANGUAGES CXX C VERSION 0.1.0)
+project(VoxerWorker LANGUAGES CXX C VERSION 0.1.0)
 
 option(VOXER_BUILD_ANNOTATION_MODULE "build annotation related module" ON)
 
@@ -11,9 +11,9 @@ find_package(ZLIB REQUIRED)
 
 list(
     APPEND
-    VoxerRemote_SRCS
+    VoxerWorker_SRCS
     main.cpp
-    VoxerRemoteApplication.cpp
+    VoxerWorkerApplication.cpp
     Server.cpp
     Service/AbstractService.cpp
     Service/JSONRPCService.cpp
@@ -28,19 +28,19 @@ list(
 if (VOXER_BUILD_ANNOTATION_MODULE)
   list(
       APPEND
-      VoxerRemote_SRCS
+      VoxerWorker_SRCS
       Service/AnnotationService.cpp
   )
 endif ()
 
-add_executable(VoxerRemote ${VoxerRemote_SRCS})
+add_executable(VoxerWorker ${VoxerWorker_SRCS})
 target_include_directories(
-    VoxerRemote
+    VoxerWorker
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_link_libraries(
-    VoxerRemote
+    VoxerWorker
     PRIVATE
     voxer::voxer_core
     seria::seria
@@ -50,13 +50,13 @@ target_link_libraries(
     Poco::Net
     Poco::Util
 )
-target_compile_features(VoxerRemote PRIVATE cxx_std_17)
+target_compile_features(VoxerWorker PRIVATE cxx_std_17)
 if (VOXER_BUILD_ANNOTATION_MODULE)
-  target_compile_definitions(VoxerRemote PRIVATE ENABLE_ANNOTATION_SERVICE)
+  target_compile_definitions(VoxerWorker PRIVATE ENABLE_ANNOTATION_SERVICE)
 endif ()
 
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 install(
-    TARGETS VoxerRemote
+    TARGETS VoxerWorker
     DESTINATION bin
 )

@@ -23,7 +23,7 @@ SET(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../lib")
 add_subdirectory(src)
 
 if (VOXER_BUILD_SERVER)
-  add_subdirectory(apps/VoxerRemote)
+  add_subdirectory(apps/VoxerWorker)
 endif ()
 
 if (VOXER_BUILD_PYBIND)

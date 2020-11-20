@@ -1,4 +1,4 @@
-#include "VoxerRemoteApplication.hpp"
+#include "VoxerWorkerApplication.hpp"
 #include "Server.hpp"
 #ifdef ENABLE_ANNOTATION_SERVICE
 #include "Service/AnnotationService.hpp"
@@ -23,18 +23,18 @@
 
 namespace voxer::remote {
 
-void VoxerRemoteApplication::initialize(Application &self) {}
+void VoxerWorkerApplication::initialize(Application &self) {}
 
-void VoxerRemoteApplication::defineOptions(Poco::Util::OptionSet &options) {
+void VoxerWorkerApplication::defineOptions(Poco::Util::OptionSet &options) {
   ServerApplication::defineOptions(options);
 
   using Option = Poco::Util::Option;
-  using OptionCallback = Poco::Util::OptionCallback<VoxerRemoteApplication>;
+  using OptionCallback = Poco::Util::OptionCallback<VoxerWorkerApplication>;
   options.addOption(Option("help", "h", "display argument help information")
                         .required(false)
                         .repeatable(false)
                         .callback(OptionCallback(
-                            this, &VoxerRemoteApplication::hanldle_option)));
+                            this, &VoxerWorkerApplication::hanldle_option)));
 
   options.addOption(Option("port", "p", "port listening")
                         .required(false)
@@ -42,24 +42,24 @@ void VoxerRemoteApplication::defineOptions(Poco::Util::OptionSet &options) {
                         .repeatable(false)
                         .validator(new Poco::Util::IntValidator(0, 65536))
                         .callback(OptionCallback(
-                            this, &VoxerRemoteApplication::hanldle_option)));
+                            this, &VoxerWorkerApplication::hanldle_option)));
 
   options.addOption(Option("manager", "m", "manager address")
                         .required(true)
                         .argument("manager")
                         .repeatable(false)
                         .callback(OptionCallback(
-                            this, &VoxerRemoteApplication::hanldle_option)));
+                            this, &VoxerWorkerApplication::hanldle_option)));
 
   options.addOption(Option("storage", "s", "storage path")
                         .required(false)
                         .argument("storage")
                         .repeatable(false)
                         .callback(OptionCallback(
-                            this, &VoxerRemoteApplication::hanldle_option)));
+                            this, &VoxerWorkerApplication::hanldle_option)));
 }
 
-void VoxerRemoteApplication::hanldle_option(const std::string &name,
+void VoxerWorkerApplication::hanldle_option(const std::string &name,
                                             const std::string &value) {
   if (name == "manager") {
     try {
@@ -93,7 +93,7 @@ void VoxerRemoteApplication::hanldle_option(const std::string &name,
   }
 }
 
-int VoxerRemoteApplication::main(const std::vector<std::string> &args) {
+int VoxerWorkerApplication::main(const std::vector<std::string> &args) {
   if (m_show_help) {
     return Application::EXIT_OK;
   }
@@ -120,7 +120,7 @@ int VoxerRemoteApplication::main(const std::vector<std::string> &args) {
   return Application::EXIT_OK;
 }
 
-void VoxerRemoteApplication::register_rpc_methods() {
+void VoxerWorkerApplication::register_rpc_methods() {
   auto rpc_methods = RPCMethodsStore::get_instance();
 
   std::function<int(int, int)> add = [](int i, int j) -> int { return i + j; };
@@ -189,7 +189,7 @@ void VoxerRemoteApplication::register_rpc_methods() {
                                 RPCMethodsStore::GetHandler(get_dataset_info));
 }
 
-auto VoxerRemoteApplication::resgiter_services()
+auto VoxerWorkerApplication::resgiter_services()
     -> Poco::SharedPtr<MyHTTPRequestHandlerFactory> {
   auto routes = Poco::makeShared<MyHTTPRequestHandlerFactory>();
 
