@@ -96,12 +96,6 @@ void VolumeRenderingService::traverse_scene(
       continue;
     }
 
-    if (!m_datasets->has(volume_desc.dataset)) {
-      std::string error = R"({"error": "need to load"})";
-      callback(reinterpret_cast<const uint8_t *>(error.c_str()), error.size(),
-               false);
-    }
-
     auto dataset = m_datasets->get(volume_desc.dataset);
 
     if (!m_renderer->has_cache(dataset.get())) {
@@ -134,12 +128,6 @@ void VolumeRenderingService::traverse_scene(
   for (auto &isosurface_desc : scene.isosurfaces) {
     if (!isosurface_desc.render) {
       continue;
-    }
-
-    if (!m_datasets->has(isosurface_desc.dataset)) {
-      std::string error = R"({"error": "need to load"})";
-      callback(reinterpret_cast<const uint8_t *>(error.c_str()), error.size(),
-               false);
     }
 
     auto dataset = m_datasets->get(isosurface_desc.dataset);

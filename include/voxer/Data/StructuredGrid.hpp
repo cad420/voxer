@@ -58,7 +58,7 @@ struct VolumeInfo {
   bool operator!=(const VolumeInfo &another) { return !(*this == another); }
 };
 
-struct StructuredGrid {
+struct StructuredGrid : public std::enable_shared_from_this<StructuredGrid> {
   std::string name;
   VolumeInfo info{};
   std::array<float, 2> original_range;
@@ -73,7 +73,7 @@ struct StructuredGrid {
   [[nodiscard]] static auto Load(const char *path)
       -> std::shared_ptr<StructuredGrid>;
 
-  static Axis get_axis(const char* str);
+  static Axis get_axis(const char *str);
 };
 
 } // namespace voxer

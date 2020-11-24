@@ -25,6 +25,7 @@ OSPVolume create_osp_volume(voxer::StructuredGrid *dataset) {
 
   return osp_volume;
 }
+
 } // namespace
 
 namespace voxer {
@@ -38,16 +39,16 @@ auto OSPRayVolumeCache::get_instance() noexcept -> OSPRayVolumeCache * {
 auto OSPRayVolumeCache::get(StructuredGrid *data) -> OSPVolume {
   std::unique_lock<std::mutex> lock(m_mutex);
 
-  auto it = m_cache.find(data);
-  if (it != m_cache.end()) {
-    return it->second;
+  if (m_cache.has(data)) {
+    return m_cache.get(data)->value();
   }
 
   lock.unlock();
   auto volume = create_osp_volume(data);
 
   lock.lock();
-  m_cache.emplace(data, volume);
+  m_cache.emplace(data,
+                  OSPRayManagedResource(volume, data->shared_from_this()));
 
   return volume;
 }
@@ -55,21 +56,19 @@ auto OSPRayVolumeCache::get(StructuredGrid *data) -> OSPVolume {
 void OSPRayVolumeCache::load(StructuredGrid *data) {
   std::unique_lock<std::mutex> lock(m_mutex);
 
-  auto it = m_cache.find(data);
-  if (it != m_cache.end()) {
+  if (m_cache.has(data)) {
     return;
   }
 
-  lock.unlock();
   auto volume = create_osp_volume(data);
 
-  lock.lock();
-  m_cache.emplace(data, volume);
+  m_cache.emplace(data,
+                  OSPRayManagedResource(volume, data->shared_from_this()));
 }
 
-bool OSPRayVolumeCache::has(StructuredGrid *data) {
+bool OSPRayVolumeCache::has(StructuredGrid *data) noexcept {
   std::lock_guard<std::mutex> lock(m_mutex);
-  return m_cache.count(data);
+  return m_cache.has(data);
 }
 
 } // namespace voxer

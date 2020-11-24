@@ -100,7 +100,8 @@ OpenGLVolumeCache::OpenGLVolumeCache() noexcept {
     std::terminate();
   }
 
-  fmt::print(stdout, "OpenGLVolumeCache: Detected {} devices, using first one, OpenGL "
+  fmt::print(stdout,
+             "OpenGLVolumeCache: Detected {} devices, using first one, OpenGL "
              "version {}.{}",
              num_devices, GLVersion.major, GLVersion.minor);
 }
@@ -118,18 +119,17 @@ auto OpenGLVolumeCache::get_instance() -> OpenGLVolumeCache * {
 auto OpenGLVolumeCache::get_context() -> EGLContext { return m_egl_context; }
 
 auto OpenGLVolumeCache::get(StructuredGrid *data) -> GLuint {
-  std::unique_lock<std::mutex> lock(m_mutex);
+  std::lock_guard<std::mutex> lock(m_mutex);
 
-  auto it = m_textures.find(data);
-  if (it != m_textures.end()) {
-    return it->second;
+  if (m_textures.has(data)) {
+    auto item = m_textures.get(data);
+    return item->value();
   }
 
-  lock.unlock();
   auto texture = create_dataset_texture(*data);
 
-  lock.lock();
-  m_textures.emplace(data, texture);
+  m_textures.emplace(data,
+                     OpenGLManagedResource(texture, data->shared_from_this()));
 
   return texture;
 }
@@ -137,21 +137,19 @@ auto OpenGLVolumeCache::get(StructuredGrid *data) -> GLuint {
 void OpenGLVolumeCache::load(StructuredGrid *data) {
   std::unique_lock<std::mutex> lock(m_mutex);
 
-  auto it = m_textures.find(data);
-  if (it != m_textures.end()) {
+  if (m_textures.has(data)) {
     return;
   }
 
-  lock.unlock();
   auto texture = create_dataset_texture(*data);
 
-  lock.lock();
-  m_textures.emplace(data, texture);
+  m_textures.emplace(data,
+                     OpenGLManagedResource(texture, data->shared_from_this()));
 }
 
-bool OpenGLVolumeCache::has(StructuredGrid *data) {
+bool OpenGLVolumeCache::has(StructuredGrid *data) noexcept {
   std::lock_guard<std::mutex> lock(m_mutex);
-  return m_textures.count(data);
+  return m_textures.has(data);
 }
 
 } // namespace voxer
