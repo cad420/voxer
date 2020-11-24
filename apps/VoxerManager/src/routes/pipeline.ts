@@ -8,14 +8,14 @@ router.get("/", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("pipelines");
 
-  const pipelines: Pipeline[] = await collection.find().project({ comment: true, type: true }).toArray();
+  const pipelines = await collection
+    .find()
+    .project({ id: { $toString: "$_id" }, comment: true, type: true })
+    .toArray();
+
   res.send({
     code: 200,
-    data: pipelines.map(pipeline => ({
-      id: pipeline._id.toHexString(),
-      comment: pipeline.comment,
-      type: pipeline.type
-    })),
+    data: pipelines,
   });
 });
 
@@ -43,9 +43,25 @@ router.get("/:id", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("pipelines");
 
-  const pipeline = await collection.findOne({
-    _id: new ObjectID(id),
-  });
+  const pipeline = await collection.findOne(
+    {
+      _id: new ObjectID(id),
+    },
+    {
+      projection: {
+        _id: false,
+        id: {
+          $toString: "$_id",
+        },
+        comment: true,
+        type: true,
+        tfcns: true,
+        volumes: true,
+        isosurfaces: true,
+        camera: true,
+      },
+    }
+  );
 
   if (!pipeline) {
     res.send({
@@ -55,8 +71,6 @@ router.get("/:id", async (req, res) => {
     return;
   }
 
-  pipeline.id = pipeline._id;
-  
   res.send({
     code: 200,
     data: pipeline,
@@ -71,9 +85,10 @@ router.put("/:id", async (req, res) => {
 
   // TODO: validate scene params
 
-  const pipeline = await collection.findOne({ _id: new ObjectID(id) });
+  const objectId = new ObjectID(id);
+  const num = await collection.countDocuments({ _id: objectId });
 
-  if (!pipeline) {
+  if (num === 0) {
     res.send({
       code: 404,
       data: "Pipeline not found.",
@@ -85,7 +100,7 @@ router.put("/:id", async (req, res) => {
   delete params._id;
   await collection.updateOne(
     {
-      _id: new ObjectID(id),
+      _id: objectId,
     },
     {
       $set: params,
@@ -102,7 +117,7 @@ router.delete("/:id", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("pipelines");
 
-  await collection.deleteOne({ id });
+  await collection.deleteOne({ _id: new ObjectID(id) });
 
   res.send({
     code: 200,

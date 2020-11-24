@@ -1,6 +1,6 @@
 type Histogram = Array<number>;
 
-export type Dataset = {
+export interface Dataset {
   name: string;
   dimensions?: [number, number, number];
   variables: Array<{
@@ -8,7 +8,7 @@ export type Dataset = {
     timesteps: number;
     path: string;
   }>;
-};
+}
 
 export type Volume = {
   dataset: number;

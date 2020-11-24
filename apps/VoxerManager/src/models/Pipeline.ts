@@ -1,18 +1,16 @@
-import { ObjectID } from "mongodb";
-
 interface Pipeline {
-  _id: ObjectID;
+  id: string;
   comment: string;
   tfcns: Array<Array<{ x: number; y: number; color: string }>>;
   type?: string;
   volumes: Array<{
-    dataset: ObjectID;
+    dataset: string;
     tfcn: number;
     spacing: [number, number, number];
     render: boolean;
   }>;
   isosurfaces: Array<{
-    dataset: ObjectID;
+    dataset: string;
     value: number;
     color: string;
     render: boolean;

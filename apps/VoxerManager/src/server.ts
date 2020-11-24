@@ -4,35 +4,30 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 import routes from "./routes";
 import { PUBLIC_PATH, WORKER } from "./config";
 import connect from "./models";
-import { getExistDatasetInfo } from "./models/Dataset";
 
-const app = express();
+async function run(port: number) {
+  const app = express();
 
-const services: string[] = ["/render", "/slice"];
-services.forEach((service) => {
-  const serviceProxy = createProxyMiddleware(service, {
-    target: `ws://${WORKER}`,
-    ws: true,
+  const services: string[] = ["/render", "/slice"];
+  services.forEach((service) => {
+    const serviceProxy = createProxyMiddleware(service, {
+      target: `ws://${WORKER}`,
+      ws: true,
+    });
+    app.use(serviceProxy);
   });
-  app.use(serviceProxy);
-});
 
-app.use(express.static(PUBLIC_PATH));
-app.use(cors());
-app.use(express.json());
-app.use(routes);
+  app.use(express.static(PUBLIC_PATH));
+  app.use(cors());
+  app.use(express.json());
+  app.use(routes);
 
-app.use((req, res) => {
-  res.status(404);
-  res.end("Not found.");
-});
-
-const port = process.env.PORT || 3001;
-
-export default async function run() {
+  app.use((req, res) => {
+    res.status(404);
+    res.end("Not found.");
+  });
   try {
     const database = await connect();
-    getExistDatasetInfo(database);
 
     app.set("database", database);
     app.listen(port, () => {
@@ -43,4 +38,4 @@ export default async function run() {
   }
 }
 
-run();
+export default run;

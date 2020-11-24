@@ -11,7 +11,7 @@ export type Label = {
 };
 
 type DatasetGroup = {
-  _id: ObjectID;
+  id: string;
   name: string;
   labels: Array<Label>;
   datasets: Record<

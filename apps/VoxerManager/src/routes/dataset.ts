@@ -21,17 +21,28 @@ router.get("/", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
 
   const collection = database.collection("datasets");
-  const datasets = await collection.find().toArray();
+  const datasets = await collection
+    .find(
+      {},
+      {
+        projection: {
+          _id: false,
+          id: {
+            $toString: "$_id",
+          },
+          name: true,
+          path: true,
+          dimensions: true,
+          histogram: true,
+          range: true,
+        },
+      }
+    )
+    .toArray();
 
   res.send({
     code: 200,
-    data: datasets.map((dataset: Dataset) => {
-      return {
-        id: dataset._id,
-        name: dataset.name,
-        dimensions: dataset.dimensions || [1, 1, 1],
-      };
-    }),
+    data: datasets,
   });
 });
 
@@ -41,10 +52,20 @@ router.post("/", upload.single("dataset"), async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("datasets");
 
-  const exist = await collection.findOne({ path: filename });
+  const exist = (await collection.findOne(
+    { path: filename },
+    {
+      projection: {
+        id: {
+          $toString: "$_id",
+        },
+        histogram: true,
+      },
+    }
+  )) as Dataset;
   let id = "";
   if (exist) {
-    id = exist._id.toHexString();
+    id = exist.id;
     if (exist.histogram && exist.histogram.length > 0) {
       res.send({
         code: 200,
@@ -96,7 +117,44 @@ router.get("/:id", async (req, res) => {
 
   const collection = database.collection("datasets");
 
-  const dataset: Dataset = await collection.findOne({ _id: new ObjectID(id) });
+  const dataset = (await collection.findOne(
+    { _id: new ObjectID(id) },
+    {
+      projection: {
+        _id: false,
+        id: {
+          $toString: "$_id",
+        },
+        name: true,
+        path: true,
+        dimensions: true,
+        histogram: true,
+        range: true,
+      },
+    }
+  )) as Dataset;
+
+  if (dataset.histogram.length === 0) {
+    try {
+      const info = await getDatasetInfo(dataset.id);
+      await collection.updateOne(
+        { _id: new Object(dataset.id) },
+        {
+          $set: {
+            dimensions: info.dimensions,
+            histogram: info.histogram,
+            range: info.range,
+          },
+        }
+      );
+    } catch (err) {
+      res.send({
+        code: 500,
+        data: err.message,
+      });
+      return;
+    }
+  }
 
   if (!dataset) {
     res.send({
@@ -108,10 +166,7 @@ router.get("/:id", async (req, res) => {
 
   return res.send({
     code: 200,
-    data: {
-      id: dataset._id.toHexString(),
-      ...dataset,
-    },
+    data: dataset,
   });
 });
 

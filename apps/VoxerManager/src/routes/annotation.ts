@@ -37,11 +37,24 @@ router.get("/:groupId/:datasetId/:axis/:index", async (req, res) => {
   }
 
   const database: mongodb.Db = req.app.get("database");
-  const collection = database.collection("groups");
+  const collection = database.collection<DatasetGroup>("groups");
 
-  const group: DatasetGroup = await collection.findOne({
-    _id: new ObjectId(groupId),
-  });
+  const group = (await collection.findOne(
+    {
+      _id: new ObjectId(groupId),
+    },
+    {
+      projection: {
+        _id: false,
+        id: {
+          $toString: "$_id",
+        },
+        name: true,
+        labels: true,
+        datasets: true,
+      },
+    }
+  )) as DatasetGroup;
 
   if (!group) {
     res.send({

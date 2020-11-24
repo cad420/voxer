@@ -13,14 +13,24 @@ router.get("/", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("groups");
 
-  const groups: DatasetGroup[] = await collection.find().toArray();
+  const groups = await collection
+    .find(
+      {},
+      {
+        projection: {
+          _id: false,
+          id: {
+            $toString: "$_id",
+          },
+          name: true,
+        },
+      }
+    )
+    .toArray();
 
   res.send({
     code: 200,
-    data: groups.map((item) => ({
-      id: item._id.toHexString(),
-      name: item.name,
-    })),
+    data: groups,
   });
 });
 
@@ -58,6 +68,10 @@ router.get("/:id", async (req, res) => {
       { $match: { _id: new ObjectId(id) } },
       {
         $project: {
+          _id: false,
+          id: {
+            $toString: "$_id",
+          },
           name: 1,
           labels: 1,
           datasets: { $objectToArray: "$datasets" },
@@ -89,20 +103,15 @@ router.get("/:id", async (req, res) => {
       { _id: new ObjectID(id) },
       {
         projection: {
-          _id: 0,
-          datasets: 0,
-          annotations: 0,
-          histogram: 0,
-          path: 0,
-          labels: 0,
-          range: 0,
+          _id: false,
+          id: {
+            $toString: "$_id",
+          },
+          name: true,
         },
       }
     );
-    return {
-      id,
-      ...dataset,
-    };
+    return dataset;
   });
   const datasets = await Promise.all(tasks);
 
@@ -114,7 +123,7 @@ router.get("/:id", async (req, res) => {
   res.send({
     code: 200,
     data: {
-      id: group._id.toHexString(),
+      id: group.id,
       name: group.name,
       labels: labels,
       datasets: datasets,
@@ -172,9 +181,17 @@ router.delete("/:groupId/labels/:labelId", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("groups");
 
-  const group: DatasetGroup = await collection.findOne({
-    _id: new ObjectId(groupId),
-  });
+  const group = await collection.findOne(
+    {
+      _id: new ObjectId(groupId),
+    },
+    {
+      projection: {
+        labels: true,
+        datasets: true,
+      },
+    }
+  );
 
   if (!group) {
     res.send({
@@ -233,7 +250,11 @@ router.put("/:groupId/labels/:labelId", async (req, res) => {
     { _id: new ObjectId(groupId) },
     {
       projection: {
-        datasets: 0,
+        _id: false,
+        id: {
+          $toString: "$_id",
+        },
+        labels: true,
       },
     }
   );
@@ -246,7 +267,7 @@ router.put("/:groupId/labels/:labelId", async (req, res) => {
     return;
   }
 
-  const labels = (group as DatasetGroup).labels;
+  const labels = group.labels as DatasetGroup["labels"];
   let idx = -1;
   let id = new ObjectID();
   for (let i = 0; i < labels.length; ++i) {
@@ -300,9 +321,14 @@ router.post("/:id/datasets", async (req, res) => {
 
   const database: mongodb.Db = req.app.get("database");
 
-  const dataset: Dataset = await database.collection("datasets").findOne({
-    _id: new ObjectId(datasetId),
-  });
+  const dataset: Dataset = await database.collection("datasets").findOne(
+    {
+      _id: new ObjectId(datasetId),
+    },
+    {
+      projection: {},
+    }
+  );
 
   if (!dataset) {
     res.send({
@@ -314,9 +340,17 @@ router.post("/:id/datasets", async (req, res) => {
 
   const collection = database.collection("groups");
 
-  const group: DatasetGroup = await collection.findOne({
-    _id: new ObjectID(groupId),
-  });
+  const group = await collection.findOne(
+    {
+      _id: new ObjectID(groupId),
+    },
+    {
+      projection: {
+        datasets: true,
+        labels: true,
+      },
+    }
+  );
 
   if (!group) {
     res.send({
@@ -326,7 +360,7 @@ router.post("/:id/datasets", async (req, res) => {
     return;
   }
 
-  if (group.datasets[datasetId]) {
+  if ((group.datasets as DatasetGroup["datasets"])[datasetId]) {
     res.send({
       code: 200,
     });
@@ -334,7 +368,7 @@ router.post("/:id/datasets", async (req, res) => {
   }
 
   const labels: Record<string, DatasetAnnotations> = {};
-  group.labels.forEach((label) => {
+  (group.labels as DatasetGroup["labels"]).forEach((label) => {
     labels[label.id.toHexString()] = { z: {}, y: {}, x: {} };
   });
 
