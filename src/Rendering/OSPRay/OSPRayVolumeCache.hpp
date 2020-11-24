@@ -6,15 +6,15 @@
 
 namespace voxer {
 
-class VolumeCache {
+class OSPRayVolumeCache {
 public:
-  static auto create() noexcept -> VolumeCache *;
-
+  static auto get_instance() noexcept -> OSPRayVolumeCache *;
+  bool has(StructuredGrid *data);
   auto get(StructuredGrid *data) -> OSPVolume;
   void load(StructuredGrid *data);
 
 private:
-  VolumeCache() noexcept = default;
+  OSPRayVolumeCache() noexcept = default;
 
   std::mutex m_mutex;
   std::unordered_map<StructuredGrid *, OSPVolume> m_cache{};

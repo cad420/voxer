@@ -14,6 +14,7 @@ public:
   virtual void render() = 0;
   virtual auto get_colors() -> const voxer::Image & = 0;
   virtual void clear_scene() = 0;
+  virtual bool has_cache(voxer::StructuredGrid *data) const noexcept = 0;
 
   virtual ~VoxerIRenderer() = default;
 };

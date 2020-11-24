@@ -1,7 +1,7 @@
 #pragma once
-#include "utils.hpp"
-#include <rapidjson/document.h>
+#include "Common/utils.hpp"
 #include <mutex>
+#include <rapidjson/document.h>
 
 namespace voxer::remote {
 
@@ -18,8 +18,6 @@ public:
 
   [[nodiscard]] virtual auto extract(const char *message, uint32_t size)
       -> std::pair<std::string, rapidjson::Value>;
-
-  [[nodiscard]] virtual auto get_path() const noexcept -> std::string = 0;
 
   [[nodiscard]] virtual auto get_protocol() const noexcept -> Protocol = 0;
 

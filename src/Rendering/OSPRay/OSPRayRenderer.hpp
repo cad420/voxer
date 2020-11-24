@@ -1,6 +1,6 @@
 #pragma once
 #include "Rendering/IRenderer.hpp"
-#include "Rendering/OSPRay/VolumeCache.hpp"
+#include "Rendering/OSPRay/OSPRayVolumeCache.hpp"
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
 #include <unordered_map>
@@ -20,9 +20,10 @@ public:
   void render() final;
   auto get_colors() -> const Image & final;
   void clear_scene() noexcept override;
+  bool has_cache(voxer::StructuredGrid *data) const noexcept override;
 
 private:
-  VolumeCache *m_cache;
+  OSPRayVolumeCache *m_cache;
   Image m_image{};
   std::array<float, 3> m_background{};
   std::vector<std::shared_ptr<Volume>> m_volumes;

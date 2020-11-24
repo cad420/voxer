@@ -1,5 +1,5 @@
 #pragma once
-#include "DataModel/StructuredGrid.hpp"
+#include "DataModel/DatasetInfo.hpp"
 #include <seria/deserialize.hpp>
 #include <seria/object.hpp>
 #include <seria/serialize.hpp>

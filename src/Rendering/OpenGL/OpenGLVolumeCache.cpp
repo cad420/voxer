@@ -1,6 +1,7 @@
-#include "VolumeCache.hpp"
+#include "Rendering/OpenGL/OpenGLVolumeCache.hpp"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
+#include <fmt/core.h>
 #include <iostream>
 #include <stdexcept>
 #include <voxer/Filters/GradientFilter.hpp>
@@ -29,8 +30,8 @@ GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
   auto &info = dataset.info;
   auto &dimension = info.dimensions;
 
-  voxer::GradientFilter filter{};
-  auto filtered = filter.process(dataset);
+  //  voxer::GradientFilter filter{};
+  //  auto filtered = filter.process(dataset);
 
   GLuint volume_texture = 0;
   glGenTextures(1, &volume_texture);
@@ -41,8 +42,9 @@ GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, dimension[0], dimension[1],
-               dimension[2], 0, GL_RGBA, GL_UNSIGNED_BYTE, filtered.data());
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, dimension[0], dimension[1],
+               dimension[2], 0, GL_RED, GL_UNSIGNED_BYTE,
+               dataset.buffer.data());
 
   return volume_texture;
 }
@@ -51,7 +53,7 @@ GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
 
 namespace voxer {
 
-VolumeCache::VolumeCache() noexcept {
+OpenGLVolumeCache::OpenGLVolumeCache() noexcept {
   static const int MAX_DEVICES = 4;
   EGLDeviceEXT egl_devices[MAX_DEVICES];
   EGLint num_devices;
@@ -94,26 +96,28 @@ VolumeCache::VolumeCache() noexcept {
   eglMakeCurrent(m_egl_display, egl_surface, egl_surface, m_egl_context);
 
   if (!gladLoadGLLoader((void *(*)(const char *))(&eglGetProcAddress))) {
-    std::cerr << "Failed to load gl\n";
+    std::cerr << "Failed to load OpenGL\n";
     std::terminate();
   }
 
-  std::cout << "Detected " << num_devices << " devices, using first one: "
-            << "OpenGL version " << GLVersion.major << "." << GLVersion.minor
-            << std::endl;
+  fmt::print(stdout, "OpenGLVolumeCache: Detected {} devices, using first one, OpenGL "
+             "version {}.{}",
+             num_devices, GLVersion.major, GLVersion.minor);
 }
 
-VolumeCache::~VolumeCache() noexcept { eglTerminate(m_egl_display); }
+OpenGLVolumeCache::~OpenGLVolumeCache() noexcept {
+  eglTerminate(m_egl_display);
+}
 
-auto VolumeCache::create() -> VolumeCache * {
-  static VolumeCache instance{};
+auto OpenGLVolumeCache::get_instance() -> OpenGLVolumeCache * {
+  static OpenGLVolumeCache instance{};
 
   return &instance;
 }
 
-auto VolumeCache::get_context() -> EGLContext { return m_egl_context; }
+auto OpenGLVolumeCache::get_context() -> EGLContext { return m_egl_context; }
 
-auto VolumeCache::get(StructuredGrid *data) -> GLuint {
+auto OpenGLVolumeCache::get(StructuredGrid *data) -> GLuint {
   std::unique_lock<std::mutex> lock(m_mutex);
 
   auto it = m_textures.find(data);
@@ -130,7 +134,7 @@ auto VolumeCache::get(StructuredGrid *data) -> GLuint {
   return texture;
 }
 
-void VolumeCache::load(StructuredGrid *data) {
+void OpenGLVolumeCache::load(StructuredGrid *data) {
   std::unique_lock<std::mutex> lock(m_mutex);
 
   auto it = m_textures.find(data);
@@ -143,6 +147,11 @@ void VolumeCache::load(StructuredGrid *data) {
 
   lock.lock();
   m_textures.emplace(data, texture);
+}
+
+bool OpenGLVolumeCache::has(StructuredGrid *data) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_textures.count(data);
 }
 
 } // namespace voxer

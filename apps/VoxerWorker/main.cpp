@@ -1,4 +1,3 @@
-#include "Server.hpp"
 #include "VoxerWorkerApplication.hpp"
 
 using namespace std;

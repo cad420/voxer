@@ -1,5 +1,6 @@
 #pragma once
-#include "Server.hpp"
+#include "ManagerAPI/ManagerAPIClient.hpp"
+#include "Server/RequestHandlerFactory.hpp"
 #include "Store/DatasetStore.hpp"
 #include <Poco/Util/Option.h>
 #include <Poco/Util/OptionCallback.h>
@@ -20,12 +21,12 @@ protected:
 
 private:
   bool m_show_help = false;
-  std::string m_manager;
+  ManagerAPIClient m_manager;
   std::string m_storage = ".";
   uint32_t m_port = 3040;
   std::unique_ptr<DatasetStore> m_datasets;
 
-  auto resgiter_services() -> Poco::SharedPtr<MyHTTPRequestHandlerFactory>;
+  auto resgiter_services() -> Poco::SharedPtr<RequestHandlerFactory>;
 
   void register_rpc_methods();
 };

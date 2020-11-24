@@ -1,6 +1,5 @@
 #pragma once
 #include "DataModel/Annotation.hpp"
-#include "DataModel/StructuredGrid.hpp"
 #include "Service/AbstractService.hpp"
 #include "Store/DatasetStore.hpp"
 #include <voxer/Data/Slice.hpp>
@@ -11,10 +10,6 @@ class SliceService final : public AbstractService {
 public:
   void on_message(const char *message, uint32_t size,
                   const MessageCallback &callback) noexcept override;
-
-  [[nodiscard]] auto get_path() const noexcept -> std::string override {
-    return "/slice";
-  }
 
   [[nodiscard]] auto get_protocol() const noexcept -> Protocol override {
     return Protocol::WebSocket;

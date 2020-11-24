@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.11)
 
 project(VoxerWorker LANGUAGES CXX C VERSION 0.1.0)
 
-option(VOXER_BUILD_ANNOTATION_MODULE "build annotation related module" ON)
-
 include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/poco.cmake)
 find_package(Threads REQUIRED)
@@ -14,24 +12,17 @@ list(
     VoxerWorker_SRCS
     main.cpp
     VoxerWorkerApplication.cpp
-    Server.cpp
+    Server/RequestHandlerFactory.cpp
+    Server/HTTPJSONRequestHandler.cpp
+    Server/WebSockeRequestHandler.cpp
     Service/AbstractService.cpp
     Service/JSONRPCService.cpp
-    Service/DatasetService.cpp
     Service/SliceService.cpp
     Service/VolumeRenderingService.cpp
     Store/DatasetStore.cpp
-    ManagerAPI/dataset.cpp
+    ManagerAPI/ManagerAPIClient.cpp
     JSONRPC/RPCMethodsStore.cpp
 )
-
-if (VOXER_BUILD_ANNOTATION_MODULE)
-  list(
-      APPEND
-      VoxerWorker_SRCS
-      Service/AnnotationService.cpp
-  )
-endif ()
 
 add_executable(VoxerWorker ${VoxerWorker_SRCS})
 target_include_directories(

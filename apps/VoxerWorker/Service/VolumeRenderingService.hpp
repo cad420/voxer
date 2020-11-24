@@ -2,7 +2,6 @@
 #include "DataModel/Scene.hpp"
 #include "Service/AbstractService.hpp"
 #include "Store/DatasetStore.hpp"
-#include "utils.hpp"
 #include <future>
 #include <memory>
 #include <voxer/Rendering/VolumeRenderer.hpp>
@@ -16,10 +15,6 @@ public:
   void on_message(const char *message, uint32_t size,
                   const MessageCallback &callback) noexcept override;
 
-  [[nodiscard]] auto get_path() const noexcept -> std::string override {
-    return "/render";
-  }
-
   [[nodiscard]] auto get_protocol() const noexcept -> Protocol override {
     return Protocol::WebSocket;
   };
@@ -29,7 +24,8 @@ public:
 private:
   std::unique_ptr<voxer::VolumeRenderer> m_renderer;
 
-  void traverse_scene(VolumeRenderer &renderer, const Scene &scene) const;
+  void traverse_scene(VolumeRenderer &renderer, const Scene &scene,
+                      const MessageCallback &callback) const;
 
   auto parse(const char *message, uint32_t size)
       -> std::pair<std::string, Scene>;

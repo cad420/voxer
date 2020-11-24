@@ -1,12 +1,12 @@
-#include "OpenGLVolumeRenderer.hpp"
+#include "Rendering/OpenGL/OpenGLVolumeRenderer.hpp"
 #include "Rendering/OpenGL/ShaderProgram.hpp"
 #include "Rendering/OpenGL/shaders.hpp"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
+#include <fmt/core.h>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <iostream>
 #include <stdexcept>
 #include <vector>
 
@@ -86,7 +86,7 @@ float screen_quad_vertices[] = {
 namespace voxer {
 
 OpenGLVolumeRenderer::OpenGLVolumeRenderer() {
-  m_cache = VolumeCache::create();
+  m_cache = OpenGLVolumeCache::get_instance();
 
   setup_context();
   setup_resources();
@@ -158,9 +158,10 @@ void OpenGLVolumeRenderer::setup_context() {
     throw runtime_error("Failed to load gl");
   }
 
-  cout << "Detected " << num_devices << " devices, using first one: "
-       << "OpenGL version " << GLVersion.major << "." << GLVersion.minor
-       << endl;
+  fmt::print(
+      "OpenGLVolumeRenderer: Detected {} devices, using first one, OpenGL "
+      "version {}.{}",
+      num_devices, GLVersion.major, GLVersion.minor);
 }
 
 void OpenGLVolumeRenderer::set_camera(const Camera &camera) {
@@ -275,7 +276,7 @@ void OpenGLVolumeRenderer::render() {
   m_raycast_program->setBool("usePreIntTF", false);
   m_raycast_program->setBool("isPerspective",
                              m_camera.type == Camera::Type::PERSPECTIVE);
-  m_raycast_program->setBool("gradPreCal", true);
+  m_raycast_program->setBool("gradPreCal", false);
   m_raycast_program->setBool("isMipMap", false);
   m_raycast_program->setInt("width", m_camera.width);
   m_raycast_program->setInt("height", m_camera.height);
@@ -466,6 +467,10 @@ void OpenGLVolumeRenderer::set_background(float r, float g, float b) noexcept {
   m_background[0] = r;
   m_background[1] = g;
   m_background[2] = b;
+}
+
+bool OpenGLVolumeRenderer::has_cache(StructuredGrid *data) const noexcept {
+  return m_cache->has(data);
 }
 
 } // namespace voxer

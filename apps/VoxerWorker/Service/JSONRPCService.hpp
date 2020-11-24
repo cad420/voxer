@@ -13,10 +13,6 @@ class JSONRPCService : public AbstractService {
 public:
   JSONRPCService();
 
-  [[nodiscard]] std::string get_path() const noexcept override {
-    return "/jsonrpc";
-  }
-
   [[nodiscard]] Protocol get_protocol() const noexcept override {
     return AbstractService::Protocol::RPC;
   }

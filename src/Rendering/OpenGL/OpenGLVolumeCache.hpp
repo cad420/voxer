@@ -4,25 +4,25 @@
 #define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
 #include <glad/glad.h>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <voxer/Data/StructuredGrid.hpp>
-#include <mutex>
 
 namespace voxer {
 
-class VolumeCache {
+class OpenGLVolumeCache {
 public:
   auto get(StructuredGrid *data) -> GLuint;
-  void load(StructuredGrid *data) ;
-
+  void load(StructuredGrid *data);
+  bool has(StructuredGrid *data);
   auto get_context() -> EGLContext;
 
-  static auto create() -> VolumeCache *;
+  static auto get_instance() -> OpenGLVolumeCache *;
 
 private:
-  VolumeCache() noexcept;
-  ~VolumeCache() noexcept;
+  OpenGLVolumeCache() noexcept;
+  ~OpenGLVolumeCache() noexcept;
 
   std::mutex m_mutex;
   std::unordered_map<StructuredGrid *, GLuint> m_textures;

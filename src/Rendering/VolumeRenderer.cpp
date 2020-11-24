@@ -45,17 +45,17 @@ VolumeRenderer::VolumeRenderer(const char *backend) {
   }
 
   auto context = get_backend();
-  impl.reset(context);
+  m_impl.reset(context);
 }
 
 void VolumeRenderer::render() const {
-  if (this->impl == nullptr) {
+  if (m_impl == nullptr) {
     return;
   }
 
   auto start = chrono::steady_clock::now();
 
-  this->impl->render();
+  m_impl->render();
 
   const auto delta = chrono::duration_cast<chrono::milliseconds>(
       chrono::steady_clock::now() - start);
@@ -63,30 +63,34 @@ void VolumeRenderer::render() const {
 }
 
 auto VolumeRenderer::get_colors() -> const Image & {
-  return this->impl->get_colors();
+  return m_impl->get_colors();
 }
 
 void VolumeRenderer::set_camera(const Camera &camera) noexcept {
-  this->impl->set_camera(camera);
+  m_impl->set_camera(camera);
 }
 
 void VolumeRenderer::add_volume(const std::shared_ptr<Volume> &volume) {
-  return this->impl->add_volume(volume);
+  return m_impl->add_volume(volume);
 }
 
 void VolumeRenderer::add_isosurface(
     const std::shared_ptr<Isosurface> &isosurface) {
-  return this->impl->add_isosurface(isosurface);
+  return m_impl->add_isosurface(isosurface);
 }
 
-void VolumeRenderer::clear_scene() { this->impl->clear_scene(); }
+void VolumeRenderer::clear_scene() { m_impl->clear_scene(); }
 
 void VolumeRenderer::set_background(float r, float g, float b) noexcept {
-  this->impl->set_background(r, g, b);
+  m_impl->set_background(r, g, b);
 }
 
 auto VolumeRenderer::get_backend() const noexcept -> const char * {
   return m_backend.c_str();
+}
+
+bool VolumeRenderer::has_cache(StructuredGrid *data) const noexcept {
+  return m_impl->has_cache(data);
 }
 
 } // namespace voxer

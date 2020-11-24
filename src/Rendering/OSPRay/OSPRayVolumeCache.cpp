@@ -1,4 +1,4 @@
-#include "VolumeCache.hpp"
+#include "OSPRayVolumeCache.hpp"
 #include <ospray/ospray_util.h>
 
 namespace {
@@ -29,13 +29,13 @@ OSPVolume create_osp_volume(voxer::StructuredGrid *dataset) {
 
 namespace voxer {
 
-auto VolumeCache::create() noexcept -> VolumeCache * {
-  static VolumeCache instance{};
+auto OSPRayVolumeCache::get_instance() noexcept -> OSPRayVolumeCache * {
+  static OSPRayVolumeCache instance{};
 
   return &instance;
 }
 
-auto VolumeCache::get(StructuredGrid *data) -> OSPVolume {
+auto OSPRayVolumeCache::get(StructuredGrid *data) -> OSPVolume {
   std::unique_lock<std::mutex> lock(m_mutex);
 
   auto it = m_cache.find(data);
@@ -52,7 +52,7 @@ auto VolumeCache::get(StructuredGrid *data) -> OSPVolume {
   return volume;
 }
 
-void VolumeCache::load(StructuredGrid *data) {
+void OSPRayVolumeCache::load(StructuredGrid *data) {
   std::unique_lock<std::mutex> lock(m_mutex);
 
   auto it = m_cache.find(data);
@@ -65,6 +65,11 @@ void VolumeCache::load(StructuredGrid *data) {
 
   lock.lock();
   m_cache.emplace(data, volume);
+}
+
+bool OSPRayVolumeCache::has(StructuredGrid *data) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_cache.count(data);
 }
 
 } // namespace voxer

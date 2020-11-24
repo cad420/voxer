@@ -3,11 +3,11 @@
 #define EGL_NO_X11
 #define EGL_EGLEXT_PROTOTYPES
 #include "Rendering/IRenderer.hpp"
+#include "Rendering/OpenGL/OpenGLVolumeCache.hpp"
 #include "Rendering/OpenGL/ShaderProgram.hpp"
 #include <EGL/egl.h>
 #include <unordered_map>
 #include <voxer/Data/Image.hpp>
-#include "Rendering/OpenGL/VolumeCache.hpp"
 
 namespace voxer {
 
@@ -20,12 +20,13 @@ public:
   void set_background(float r, float g, float b) noexcept override;
   void add_volume(const std::shared_ptr<Volume> &) override;
   void add_isosurface(const std::shared_ptr<voxer::Isosurface> &) override;
-  void render() final;
-  auto get_colors() -> const Image & final;
+  void render() override;
+  auto get_colors() -> const Image & override;
   void clear_scene() override;
+  bool has_cache(StructuredGrid *data) const noexcept override;
 
 private:
-  VolumeCache* m_cache;
+  OpenGLVolumeCache *m_cache;
   Image m_image;
   Camera m_camera;
   std::array<float, 3> m_background{};

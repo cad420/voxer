@@ -26,7 +26,7 @@ void VolumeRenderingService::on_message(
       m_renderer = make_unique<VolumeRenderer>(engine.c_str());
     }
 
-    traverse_scene(*m_renderer, command.second);
+    traverse_scene(*m_renderer, command.second, callback);
 
     m_renderer->render();
     auto &image = m_renderer->get_colors();
@@ -82,8 +82,9 @@ auto VolumeRenderingService::parse(const char *message, uint32_t size)
   return make_pair(engine, scene);
 }
 
-void VolumeRenderingService::traverse_scene(VolumeRenderer &renderer,
-                                            const Scene &scene) const {
+void VolumeRenderingService::traverse_scene(
+    VolumeRenderer &renderer, const Scene &scene,
+    const MessageCallback &callback) const {
   renderer.set_camera(scene.camera);
   renderer.set_background(scene.background[0], scene.background[1],
                           scene.background[2]);
@@ -95,10 +96,22 @@ void VolumeRenderingService::traverse_scene(VolumeRenderer &renderer,
       continue;
     }
 
-    auto &dataset = m_datasets->get(volume_desc.dataset);
+    if (!m_datasets->has(volume_desc.dataset)) {
+      std::string error = R"({"error": "need to load"})";
+      callback(reinterpret_cast<const uint8_t *>(error.c_str()), error.size(),
+               false);
+    }
+
+    auto dataset = m_datasets->get(volume_desc.dataset);
+
+    if (!m_renderer->has_cache(dataset.get())) {
+      std::string error = R"({"error": "need to load"})";
+      callback(reinterpret_cast<const uint8_t *>(error.c_str()), error.size(),
+               false);
+    }
 
     auto volume = make_shared<voxer::Volume>();
-    volume->dataset = dataset;
+    volume->dataset = std::move(dataset);
     volume->spacing = volume_desc.spacing;
 
     if (tfcns_map.find(volume_desc.tfcn_idx) == tfcns_map.end()) {
@@ -123,10 +136,22 @@ void VolumeRenderingService::traverse_scene(VolumeRenderer &renderer,
       continue;
     }
 
-    auto &dataset = m_datasets->get(isosurface_desc.dataset);
+    if (!m_datasets->has(isosurface_desc.dataset)) {
+      std::string error = R"({"error": "need to load"})";
+      callback(reinterpret_cast<const uint8_t *>(error.c_str()), error.size(),
+               false);
+    }
+
+    auto dataset = m_datasets->get(isosurface_desc.dataset);
+
+    if (!m_renderer->has_cache(dataset.get())) {
+      std::string error = R"({"error": "need to load"})";
+      callback(reinterpret_cast<const uint8_t *>(error.c_str()), error.size(),
+               false);
+    }
 
     auto isosurface = make_shared<voxer::Isosurface>();
-    isosurface->dataset = dataset;
+    isosurface->dataset = std::move(dataset);
     isosurface->color.from_hex(isosurface_desc.color.c_str());
     isosurface->value = isosurface_desc.value;
     renderer.add_isosurface(isosurface);

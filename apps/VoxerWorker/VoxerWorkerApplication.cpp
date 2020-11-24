@@ -1,8 +1,4 @@
 #include "VoxerWorkerApplication.hpp"
-#include "Server.hpp"
-#ifdef ENABLE_ANNOTATION_SERVICE
-#include "Service/AnnotationService.hpp"
-#endif
 #include "DataModel/DatasetInfo.hpp"
 #include "Service/JSONRPCService.hpp"
 #include "Service/SliceService.hpp"
@@ -64,7 +60,7 @@ void VoxerWorkerApplication::hanldle_option(const std::string &name,
   if (name == "manager") {
     try {
       Poco::URI uri{value};
-      m_manager = value;
+      m_manager = ManagerAPIClient(value);
     } catch (std::exception &exp) {
       std::cerr << "invalid manager address" << std::endl;
       stopOptionsProcessing();
@@ -98,15 +94,11 @@ int VoxerWorkerApplication::main(const std::vector<std::string> &args) {
     return Application::EXIT_OK;
   }
 
-  if (m_manager.empty()) {
-    return Application::EXIT_DATAERR;
-  }
-
   using ServerSocket = Poco::Net::ServerSocket;
   using HTTPServer = Poco::Net::HTTPServer;
   using HTTPServerParams = Poco::Net::HTTPServerParams;
 
-  m_datasets = std::make_unique<DatasetStore>(m_manager, m_storage);
+  m_datasets = std::make_unique<DatasetStore>(&m_manager, m_storage);
   register_rpc_methods();
   auto routes = resgiter_services();
 
@@ -190,16 +182,13 @@ void VoxerWorkerApplication::register_rpc_methods() {
 }
 
 auto VoxerWorkerApplication::resgiter_services()
-    -> Poco::SharedPtr<MyHTTPRequestHandlerFactory> {
-  auto routes = Poco::makeShared<MyHTTPRequestHandlerFactory>();
+    -> Poco::SharedPtr<RequestHandlerFactory> {
+  auto routes = Poco::makeShared<RequestHandlerFactory>();
 
   auto datasets = m_datasets.get();
   routes->register_service<VolumeRenderingService>("/render", datasets);
   routes->register_service<SliceService>("/slice", datasets);
   routes->register_service<JSONRPCService>("/jsonrpc", datasets);
-#ifdef ENABLE_ANNOTATION_SERVICE
-  routes->register_service<AnnotationService>("/annotations", datasets);
-#endif
 
   return routes;
 }
