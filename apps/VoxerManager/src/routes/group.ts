@@ -72,17 +72,18 @@ router.get("/:id", async (req, res) => {
           id: {
             $toString: "$_id",
           },
-          name: 1,
-          labels: 1,
+          name: true,
+          labels: true,
           datasets: { $objectToArray: "$datasets" },
         },
       },
       { $project: { "datasets.v.labels": 0 } },
       {
         $project: {
+          id: true,
           datasets: { $arrayToObject: "$datasets" },
-          name: 1,
-          labels: 1,
+          name: true,
+          labels: true,
         },
       },
     ])
@@ -108,6 +109,7 @@ router.get("/:id", async (req, res) => {
             $toString: "$_id",
           },
           name: true,
+          dimensions: true,
         },
       }
     );
