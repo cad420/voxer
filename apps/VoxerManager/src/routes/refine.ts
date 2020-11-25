@@ -2,11 +2,10 @@ import express from "express";
 import mongodb, { ObjectID } from "mongodb";
 import { resolve } from "path";
 import Dataset from "../models/Dataset";
-import { RENDER_SERVICE, UPLOAD_PATH, REFINE_WATCH_DIR } from "../config";
-import { getDatasetInfo } from "../rpc";
+import { UPLOAD_PATH, REFINE_WATCH_DIR } from "../config";
+import { getDatasetInfo } from "../worker_api/jsonrpc";
 import childProcess from "child_process";
 import fs from "fs-extra";
-import Pipeline from "../models/Pipeline";
 
 const router = express.Router();
 
@@ -17,12 +16,27 @@ async function createPipelineAndSave(
   database: mongodb.Db
 ): Promise<string> {
   let collection = database.collection("datasets");
-  const dataset: Dataset = await collection.findOne({ path: filename });
+  const dataset = (await collection.findOne(
+    { path: filename },
+    {
+      projection: {
+        _id: false,
+        id: {
+          $toString: "$_id",
+        },
+        name: true,
+        path: true,
+        dimensions: true,
+        histogram: true,
+        range: true,
+      },
+    }
+  )) as Dataset;
 
   let id = "";
   let maxDim = 300;
   if (dataset) {
-    id = dataset._id.toHexString();
+    id = dataset.id;
     maxDim = Math.max(dataset.dimensions[0], dataset.dimensions[1]);
     console.log(`Refined data already exist: ${id}`);
   } else {
@@ -35,40 +49,40 @@ async function createPipelineAndSave(
     });
     id = result.insertedId;
 
-    const info = await getDatasetInfo(RENDER_SERVICE, {
-      id,
-      name: filename,
-      path: resolve(UPLOAD_PATH, filename),
-    });
-
-    if (info.error) {
+    try {
+      const info = await getDatasetInfo(id);
+      await collection.updateOne(
+        { _id: new ObjectID(id) },
+        {
+          $set: {
+            dimensions: info.dimensions,
+            histogram: info.histogram,
+            range: info.range,
+          },
+        }
+      );
+      maxDim = Math.max(info.dimensions[0], info.dimensions[1]);
+      console.log(`Refined data uploaded: ${id}`);
+    } catch (err) {
       await collection.deleteOne({ _id: new ObjectID(id) });
-      throw new Error(info.error);
+      throw new Error(err.message);
     }
-
-    await collection.updateOne(
-      { _id: new ObjectID(id) },
-      {
-        $set: {
-          dimensions: info.dimensions,
-          histogram: info.histogram,
-          range: info.range,
-        },
-      }
-    );
-    maxDim = Math.max(info.dimensions[0], info.dimensions[1]);
-    console.log(`Refined data uploaded: ${id}`);
   }
 
   collection = database.collection("pipelines");
-  const exist: Pipeline = await collection.findOne({
-    "isosurfaces.0.dataset": id,
-  });
+  const exist = await collection.findOne(
+    {
+      "isosurfaces.0.dataset": id,
+    },
+    {
+      projection: {
+        _id: true,
+      },
+    }
+  );
 
   if (exist) {
-    console.log(
-      `Refined data's pipeline already exist: ${exist._id.toHexString()}`
-    );
+    console.log(`Refined data's pipeline already exist: ${exist._id}`);
     return id;
   }
 
