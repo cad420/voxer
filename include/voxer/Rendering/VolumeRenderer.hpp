@@ -16,12 +16,13 @@ public:
   explicit VolumeRenderer(const char *backend);
   ~VolumeRenderer();
 
-  auto get_backend() const noexcept -> const char*;
+  auto get_backend() const noexcept -> const char *;
   void set_background(float r, float g, float b) noexcept;
   void set_camera(const Camera &) noexcept;
   void add_volume(const std::shared_ptr<Volume> &volume);
   void add_isosurface(const std::shared_ptr<Isosurface> &isosurface);
   void clear_scene();
+  bool has_cache(StructuredGrid *data) const noexcept;
 
   void render() const;
 
@@ -29,7 +30,7 @@ public:
 
 private:
   std::string m_backend;
-  std::unique_ptr<VoxerIRenderer> impl;
+  std::unique_ptr<VoxerIRenderer> m_impl;
   std::unordered_map<std::string, GetRenderingBackend> symbols;
 };
 

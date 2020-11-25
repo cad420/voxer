@@ -1,6 +1,6 @@
 #include "Rendering/OSPRay/OSPRayRenderer.hpp"
 #include <cmath>
-#include <iostream>
+#include <fmt/core.h>
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
 #include <stdexcept>
@@ -24,7 +24,7 @@ float camera_to_target(const voxer::Camera &camera) {
 namespace voxer {
 
 OSPRayRenderer::OSPRayRenderer() {
-  m_cache = VolumeCache::create();
+  m_cache = OSPRayVolumeCache::get_instance();
 
   ospLoadModule("ispc");
   osp_device = ospNewDevice("cpu");
@@ -44,8 +44,8 @@ OSPRayRenderer::OSPRayRenderer() {
       ospDeviceGetProperty(osp_device, OSP_DEVICE_VERSION_MAJOR);
   auto minor_version =
       ospDeviceGetProperty(osp_device, OSP_DEVICE_VERSION_MINOR);
-  std::cout << "OSPRay initialized: version " << to_string(major_version) << "."
-            << to_string(minor_version) << std::endl;
+
+  fmt::print("OSPRay initialized: version {}.{}", major_version, minor_version);
 }
 
 OSPRayRenderer::~OSPRayRenderer() {
@@ -256,6 +256,10 @@ void OSPRayRenderer::set_background(float r, float g, float b) noexcept {
   m_background[0] = r;
   m_background[1] = g;
   m_background[2] = b;
+}
+
+bool OSPRayRenderer::has_cache(voxer::StructuredGrid *data) const noexcept {
+  return m_cache->has(data);
 }
 
 } // namespace voxer

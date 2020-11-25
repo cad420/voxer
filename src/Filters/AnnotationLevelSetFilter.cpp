@@ -20,9 +20,7 @@ Annotation AnnotationLevelSetFilter::process(const Annotation &annotation,
   memcpy(original_img.data, image.data.data(),
          image.data.size() * sizeof(uint8_t));
 
-  auto bbox = annotation.bbox;
-  bbox[1] = image.height - annotation.bbox[3];
-  bbox[3] = image.height - annotation.bbox[1];
+  auto &bbox = annotation.bbox;
   cv::Range rows(int((3 * bbox[1] - bbox[3]) / 2),
                  int((3 * bbox[3] - bbox[1]) / 2));
   cv::Range cols(int((3 * bbox[0] - bbox[2]) / 2),
@@ -33,7 +31,7 @@ Annotation AnnotationLevelSetFilter::process(const Annotation &annotation,
   for (auto &item : annotation.coordinates[0]) {
     contour.emplace_back(
         cv::Point{static_cast<int>(item[0] - cols.start),
-                  static_cast<int>((image.height - item[1]) - rows.start)});
+                  static_cast<int>(item[1] - rows.start)});
   }
 
   auto candidate_img = cv::Mat(sub_image.size(), CV_64FC1);
@@ -71,9 +69,9 @@ Annotation AnnotationLevelSetFilter::process(const Annotation &annotation,
   result.label = annotation.label;
   result.coordinates.emplace_back();
   for (auto &item : max_contour) {
-    result.coordinates[0].emplace_back(Annotation::Point{
-        static_cast<uint32_t>(item.x + cols.start),
-        static_cast<uint32_t>(image.height - (item.y + rows.start))});
+    result.coordinates[0].emplace_back(
+        Annotation::Point{static_cast<uint32_t>(item.x + cols.start),
+                          static_cast<uint32_t>(item.y + rows.start)});
   }
 
   return result;

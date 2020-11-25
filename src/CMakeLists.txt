@@ -27,7 +27,8 @@ if (VOXER_BUILD_ANNOTATION_MODULE)
   list(
     APPEND
     VOXER_CORE_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/AnnotationLevelSetFilter.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/Filters/AnnotationLevelSetFilter.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/Filters/AnnotationGrabCutFilter.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters/seg_levelset.cpp
   )
 endif()

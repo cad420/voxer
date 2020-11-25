@@ -1,71 +1,27 @@
 find_package(Threads REQUIRED)
+find_package(OpenCV 4.0.0 REQUIRED COMPONENTS highgui)
 
-add_executable(TestDataStore DatasetStore.test.cpp)
-target_include_directories(
-    TestDataStore
-    PRIVATE
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}
-)
+add_executable(TestAnnotationGrabCut Annotation/grabcut.cpp)
 target_link_libraries(
-    TestDataStore
-    PRIVATE
-    voxer
-    Threads::Threads
-)
-target_compile_features(TestDataStore PRIVATE cxx_std_17)
-
-add_executable(TestUtils utils.test.cpp)
-target_include_directories(
-    TestUtils
-    PRIVATE
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}
-)
-target_link_libraries(
-    TestUtils
+    TestAnnotationGrabCut
     PRIVATE
     Threads::Threads
-    voxer
+    voxer_core
+    ${OpenCV_LIBS}
 )
-target_compile_features(TestUtils PRIVATE cxx_std_17)
+target_compile_features(TestAnnotationGrabCut PRIVATE cxx_std_14)
 
-add_executable(
-    TestCommandParser
-    ${CMAKE_CURRENT_SOURCE_DIR}/CommandParser.test.cpp
-    ${PROJECT_SOURCE_DIR}/apps/VoxerRemote/CommandParser.cpp
-)
-target_include_directories(
-    TestCommandParser
-    PRIVATE
-    ${PROJECT_SOURCE_DIR}/apps/VoxerRemote
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}
-)
+add_executable(TestAnnotationLevelSet Annotation/levelset.cpp)
 target_link_libraries(
-    TestCommandParser
-    PRIVATE
-    voxer
-)
-target_compile_features(TestCommandParser PRIVATE cxx_std_17)
-
-add_executable(TestServerUtils ServerUtils.test.cpp)
-target_include_directories(
-    TestServerUtils
-    PRIVATE
-    ${PROJECT_SOURCE_DIR}/apps/VoxerRemote
-    ${PROJECT_SOURCE_DIR}
-)
-target_link_libraries(
-    TestServerUtils
+    TestAnnotationLevelSet
     PRIVATE
     Threads::Threads
+    voxer_core
+    ${OpenCV_LIBS}
 )
-target_compile_features(TestServerUtils PRIVATE cxx_std_14)
+target_compile_features(TestAnnotationLevelSet PRIVATE cxx_std_14)
 
 enable_testing()
-add_test(NAME TestDataStore COMMAND TestDataStore)
-add_test(NAME TestUtils COMMAND TestUtils)
-add_test(NAME TestCommandParser COMMAND TestCommandParser)
-add_test(NAME TestServerUtils COMMAND TestServerUtils)
+add_test(NAME TestAnnotationGrabCut COMMAND TestAnnotationGrabCut)
+add_test(NAME TestAnnotationLevelSet COMMAND TestAnnotationLevelSet)
 
