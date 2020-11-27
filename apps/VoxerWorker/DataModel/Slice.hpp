@@ -19,7 +19,7 @@ struct Slice {
 namespace seria {
 
 template <>
-rapidjson::Document serialize(const voxer::StructuredGrid::Axis &axis) {
+inline rapidjson::Document serialize(const voxer::StructuredGrid::Axis &axis) {
   std::string c;
   c += static_cast<char>('x' + static_cast<int>(axis));
   rapidjson::Document json(rapidjson::kStringType);
@@ -28,8 +28,8 @@ rapidjson::Document serialize(const voxer::StructuredGrid::Axis &axis) {
 }
 
 template <>
-void deserialize(voxer::StructuredGrid::Axis &axis,
-                 const rapidjson::Value &json) {
+inline void deserialize(voxer::StructuredGrid::Axis &axis,
+                        const rapidjson::Value &json) {
   if (!json.IsString()) {
     throw std::runtime_error("invalid type, should be string");
   }

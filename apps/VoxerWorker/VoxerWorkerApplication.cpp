@@ -62,7 +62,7 @@ void VoxerWorkerApplication::hanldle_option(const std::string &name,
       Poco::URI uri{value};
       m_manager = ManagerAPIClient(value);
     } catch (std::exception &exp) {
-      std::cerr << "invalid manager address" << std::endl;
+      spdlog::critical("invalid manager address");
       stopOptionsProcessing();
     }
   }
@@ -105,8 +105,9 @@ int VoxerWorkerApplication::main(const std::vector<std::string> &args) {
   ServerSocket svs(m_port);
   HTTPServer srv(routes, svs, Poco::makeAuto<HTTPServerParams>());
   srv.start();
-  this->logger().information("server starts at port: " +
-                             std::to_string(m_port));
+
+  spdlog::info("server starts at port: {}", m_port);
+
   waitForTerminationRequest();
   srv.stop();
   return Application::EXIT_OK;
@@ -165,9 +166,12 @@ void VoxerWorkerApplication::register_rpc_methods() {
                                 RPCMethodsStore::GetHandler(apply_grabcut),
                                 {"annotations", "dataset", "axis", "index"});
 
-  std::function<DatasetInfo(const std::string &)> get_dataset_info =
-      [datasets = m_datasets.get()](const std::string &id) {
-        auto dataset = datasets->get(id);
+  std::function<DatasetInfo(const std::string &, const std::string &,
+                            const std::string &)>
+      get_dataset_info = [datasets = m_datasets.get()](
+                             const std::string &id, const std::string &name,
+                             const std::string &path) {
+        auto dataset = datasets->get(id, name, path);
 
         DatasetInfo result;
         result.id = id;

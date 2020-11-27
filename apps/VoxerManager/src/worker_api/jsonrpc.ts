@@ -57,14 +57,16 @@ export async function add(a: number, b: number): Promise<number> {
 }
 
 export async function getDatasetInfo(
-  id: string
+  id: string,
+  name: string,
+  path: string
 ): Promise<{
   id: string;
   dimensions: [number, number, number];
   histogram: number[];
   range: [number, number];
 }> {
-  return RPCCall("get_dataset_info", [id]);
+  return RPCCall("get_dataset_info", [id, name, path]);
 }
 
 export async function applyLevelSet(

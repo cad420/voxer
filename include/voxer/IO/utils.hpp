@@ -6,6 +6,41 @@
 
 namespace voxer {
 
+inline auto convert_int16_to_uint8(const int16_t *source, size_t size,
+                                   float max, float min)
+    -> std::vector<uint8_t> {
+  std::vector<uint8_t> data;
+  data.reserve(size);
+
+  double max_range = static_cast<double>(max) - static_cast<double>(min);
+  uint8_t max_value = 255;
+  for (size_t i = 0; i < size; i++) {
+    double range = static_cast<double>(source[i]) - static_cast<double>(min);
+    auto value = round(range / max_range * max_value);
+    data.push_back(value);
+  }
+
+  return data;
+}
+
+inline auto convert_int16_to_uint8(const int16_t *source, size_t size,
+                                   std::array<float, 2> &range)
+    -> std::vector<uint8_t> {
+  auto min = source[0];
+  auto max = source[0];
+  for (size_t i = 0; i < size; i++) {
+    auto value = source[i];
+    if (value > max) {
+      max = value;
+    } else if (value < min) {
+      min = value;
+    }
+  }
+  range[0] = min;
+  range[1] = max;
+  return convert_int16_to_uint8(source, size, max, min);
+}
+
 inline auto convert_float_to_uint8(const float *source, size_t size, float max,
                                    float min) -> std::vector<uint8_t> {
   std::vector<uint8_t> data;
@@ -22,7 +57,8 @@ inline auto convert_float_to_uint8(const float *source, size_t size, float max,
   return data;
 }
 
-inline auto convert_float_to_uint8(const float *source, size_t size, std::array<float, 2> &range)
+inline auto convert_float_to_uint8(const float *source, size_t size,
+                                   std::array<float, 2> &range)
     -> std::vector<uint8_t> {
   auto min = source[0];
   auto max = source[0];

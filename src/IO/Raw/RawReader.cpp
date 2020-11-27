@@ -48,6 +48,10 @@ RawReader::RawReader(const char *filepath) {
   auto &type = splited[splited.size() - 1];
   if (type == "uint8") {
     value_type = ValueType::UINT8;
+  } else if (type == "uint16") {
+    value_type = ValueType::UINT16;
+  } else if (type == "int16") {
+    value_type = ValueType::INT16;
   } else if (type == "float") {
     value_type = ValueType::FLOAT;
   } else {
@@ -64,13 +68,22 @@ auto RawReader::load() -> unique_ptr<StructuredGrid> {
     dataset->buffer.insert(dataset->buffer.begin(),
                            istream_iterator<uint8_t>(fs),
                            istream_iterator<uint8_t>());
-  } else {
+  } else if (value_type == ValueType::INT16) {
+    uint64_t total = dimensions[0] * dimensions[1] * dimensions[2];
+    vector<int16_t> buffer;
+    buffer.resize(total);
+    fs.read(reinterpret_cast<char *>(buffer.data()), total * sizeof(int16_t));
+    dataset->buffer =
+        convert_int16_to_uint8(buffer.data(), total, dataset->original_range);
+  } else if (value_type == ValueType::FLOAT) {
     uint64_t total = dimensions[0] * dimensions[1] * dimensions[2];
     vector<float> buffer;
-    buffer.reserve(total);
-    buffer.insert(buffer.begin(), istream_iterator<float>(fs),
-                  istream_iterator<float>{});
-    dataset->buffer = convert_float_to_uint8(buffer.data(), total, dataset->original_range);
+    buffer.resize(total);
+    fs.read(reinterpret_cast<char *>(buffer.data()), total * sizeof(float));
+    dataset->buffer =
+        convert_float_to_uint8(buffer.data(), total, dataset->original_range);
+  } else {
+    throw runtime_error(string("unsupported value type"));
   }
   dataset->info.value_type = ValueType::UINT8;
   return dataset;

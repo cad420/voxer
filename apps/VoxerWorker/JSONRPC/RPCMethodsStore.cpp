@@ -1,8 +1,5 @@
-//
-// Created by ukabuer on 2020/11/19.
-//
-
 #include "RPCMethodsStore.hpp"
+#include <spdlog/spdlog.h>
 
 namespace voxer::remote {
 
@@ -14,9 +11,8 @@ void RPCMethodsStore::resgister_method(std::string name, RPCHandler handler,
   }
 }
 
-auto RPCMethodsStore::invoke(const std::string &name,
-                             rapidjson::Value &json_params)
-    -> rapidjson::Document {
+rapidjson::Document RPCMethodsStore::invoke(const std::string &name,
+                                            rapidjson::Value &json_params) {
   auto it = m_methods.find(name);
   if (it == m_methods.end()) {
     throw JSONRPCMethodNotFoundError();
@@ -48,6 +44,7 @@ auto RPCMethodsStore::invoke(const std::string &name,
     throw JSONRPCInvalidParamsError();
   }
 
+  spdlog::info("invoke RPC method {}", name.c_str());
   return handler(params);
 }
 

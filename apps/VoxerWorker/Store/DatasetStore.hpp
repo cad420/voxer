@@ -20,6 +20,9 @@ public:
   get(const DatasetLoadInfo &desc);
   [[nodiscard]] std::shared_ptr<StructuredGrid> get(const DatasetId &id);
 
+  [[nodiscard]] std::shared_ptr<StructuredGrid>
+  get(const DatasetId &id, const std::string &name, const std::string &path);
+
 private:
   ManagerAPIClient *m_manager;
   std::string m_storage_path;
@@ -29,8 +32,8 @@ private:
 
   using Iterator = decltype(m_datasets)::iterator;
 
-  std::shared_ptr<StructuredGrid> load(const std::string &id, const std::string &name,
-               const std::string &path);
+  std::shared_ptr<StructuredGrid>
+  load(const std::string &id, const std::string &name, const std::string &path);
 
   std::shared_ptr<StructuredGrid> load_from_json(const rapidjson::Value &json);
 };

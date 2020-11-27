@@ -3,6 +3,7 @@
 #include <vector>
 #include <voxer/Data/Annotation.hpp>
 #include <voxer/Data/Image.hpp>
+#include <voxer/Data/StructuredGrid.hpp>
 
 namespace voxer {
 
