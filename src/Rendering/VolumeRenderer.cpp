@@ -4,6 +4,7 @@
 #include <dlfcn.h>
 #include <functional>
 #include <memory>
+#include <spdlog/spdlog.h>
 #include <voxer/Rendering/VolumeRenderer.hpp>
 
 using namespace std;
@@ -42,6 +43,7 @@ VolumeRenderer::VolumeRenderer(const char *backend) {
     get_backend = reinterpret_cast<GetRenderingBackend>(symbol);
     symbols.emplace(string(backend),
                     reinterpret_cast<GetRenderingBackend>(symbol));
+    spdlog::info("rendering backend loaded: {}", lib_name);
   }
 
   auto context = get_backend();

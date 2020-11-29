@@ -119,6 +119,7 @@ void VoxerWorkerApplication::register_rpc_methods() {
   std::function<int(int, int)> add = [](int i, int j) -> int { return i + j; };
   rpc_methods->resgister_method("add", RPCMethodsStore::GetHandler(add));
 
+#ifdef ENABLE_ANNOTATION_SERVICE
   std::function<std::vector<voxer::Annotation>(
       const std::vector<voxer::Annotation> &, const std::string &,
       StructuredGrid::Axis, uint32_t)>
@@ -165,6 +166,7 @@ void VoxerWorkerApplication::register_rpc_methods() {
   rpc_methods->resgister_method("apply_grabcut",
                                 RPCMethodsStore::GetHandler(apply_grabcut),
                                 {"annotations", "dataset", "axis", "index"});
+#endif
 
   std::function<DatasetInfo(const std::string &, const std::string &,
                             const std::string &)>
