@@ -6,7 +6,6 @@
 #include <stdexcept>
 #include <string>
 #include <voxer/Data/StructuredGrid.hpp>
-#include <voxer/Filters/differ.hpp>
 #include <voxer/IO/MRCReader.hpp>
 #include <voxer/IO/RawReader.hpp>
 #include <voxer/IO/utils.hpp>

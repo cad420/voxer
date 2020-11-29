@@ -77,6 +77,8 @@ struct StructuredGrid : public std::enable_shared_from_this<StructuredGrid> {
   [[nodiscard]] static auto Load(const char *path)
       -> std::shared_ptr<StructuredGrid>;
 
+  StructuredGrid operator-(const StructuredGrid &rhs) const;
+  
   static Axis get_axis(const char *str);
 };
 

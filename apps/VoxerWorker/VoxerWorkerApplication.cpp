@@ -14,8 +14,8 @@
 #include <exception>
 #include <iostream>
 #include <voxer/Filters/AnnotationGrabCutFilter.hpp>
-#include <voxer/Filters/AnnotationLevelset.hpp>
-#include <voxer/Filters/histogram.hpp>
+#include <voxer/Filters/AnnotationLevelSetFilter.hpp>
+#include <voxer/Mappers/StructuredGridHistogramMapper.hpp>
 
 namespace voxer::remote {
 
@@ -177,7 +177,7 @@ void VoxerWorkerApplication::register_rpc_methods() {
 
         DatasetInfo result;
         result.id = id;
-        result.histogram = voxer::calculate_histogram(*dataset);
+        result.histogram = dataset->get_histogram();
         result.dimensions = dataset->info.dimensions;
         result.range = dataset->original_range;
 

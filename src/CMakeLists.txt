@@ -7,21 +7,20 @@ include(${PROJECT_SOURCE_DIR}/third_party/CImg.cmake)
 list(
     APPEND
     VOXER_CORE_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Data/Annotation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Data/Color.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Data/Image.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Data/StructuredGrid.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Data/TransferFunction.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/differ.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/histogram.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/BlurFilter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/EqualizeFilter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/ContrastFilter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/GradientFilter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/IO/MRC/MRCReader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/IO/Raw/RawReader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/VolumeRenderer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SliceRenderer.cpp
+    Data/Annotation.cpp
+    Data/Color.cpp
+    Data/Image.cpp
+    Data/StructuredGrid.cpp
+    Data/TransferFunction.cpp
+    Mappers/StructuredGridHistogramMapper.cpp
+    Filters/BlurFilter.cpp
+    Filters/EqualizeFilter.cpp
+    Filters/ContrastFilter.cpp
+    Filters/GradientFilter.cpp
+    Rendering/VolumeRenderer.cpp
+    Rendering/SliceRenderer.cpp
+    IO/MRC/MRCReader.cpp
+    IO/Raw/RawReader.cpp
 )
 
 if (VOXER_BUILD_ANNOTATION_MODULE)
