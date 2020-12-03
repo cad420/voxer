@@ -25,21 +25,25 @@ void WebSocketRequestHandler::handleRequest(
     char buffer[4096];
     int flags = 0;
     int len;
+    auto should_close = false;
 
     WebSocket ws(request, response);
     auto one_hour = Poco::Timespan(0, 1, 0, 0, 0);
     ws.setReceiveTimeout(one_hour);
     do {
       len = ws.receiveFrame(buffer, sizeof(buffer), flags);
-      m_service->on_message(
-          buffer, len,
-          [&ws](const uint8_t *message, uint32_t size, bool is_binary) {
-            ws.sendFrame(message, size,
-                         is_binary ? WebSocket::FRAME_BINARY
-                                   : WebSocket::FRAME_TEXT);
-          });
-    } while (len > 0 && (flags & WebSocket::FRAME_OP_BITMASK) !=
-                            WebSocket::FRAME_OP_CLOSE);
+      should_close =
+          (flags & WebSocket::FRAME_OP_BITMASK) == WebSocket::FRAME_OP_CLOSE;
+      if (!should_close) {
+        m_service->on_message(
+            buffer, len,
+            [&ws](const uint8_t *message, uint32_t size, bool is_binary) {
+              ws.sendFrame(message, size,
+                           is_binary ? WebSocket::FRAME_BINARY
+                                     : WebSocket::FRAME_TEXT);
+            });
+      }
+    } while (len > 0 && !should_close);
   } catch (Poco::Net::WebSocketException &exc) {
     app.logger().log(exc);
     switch (exc.code()) {
