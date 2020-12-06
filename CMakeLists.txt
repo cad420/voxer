@@ -12,6 +12,7 @@ option(VOXER_BUILD_BACKEND_OSPRAY "whether to build OSPRay rendering backend" ON
 option(VOXER_BUILD_ANNOTATION_MODULE "build annotation related module" ON)
 option(VOXER_BUILD_SERVER "whether to build voxer server" ON)
 option(VOXER_BUILD_PYBIND "whether to build python binding" OFF)
+option(VOXER_BUILD_VOLUME_TO_VIDEO "build volume to video application" OFF)
 option(VOXER_BUILD_TESTS "whether to build tests" OFF)
 
 # global settings
@@ -24,6 +25,10 @@ add_subdirectory(src)
 
 if (VOXER_BUILD_SERVER)
   add_subdirectory(apps/VoxerWorker)
+endif ()
+
+if (VOXER_BUILD_VOLUME_TO_VIDEO)
+  add_subdirectory(apps/VolumeToVideo)
 endif ()
 
 if (VOXER_BUILD_PYBIND)
