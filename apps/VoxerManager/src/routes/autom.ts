@@ -44,10 +44,10 @@ async function createPipelineAndSave(
       histogram: [],
       range: [1, 1],
     });
-    id = result.insertedId;
+    id = result.insertedId.toHexString();
 
     try {
-      const info = await getDatasetInfo(id);
+      const info = await getDatasetInfo(id, filename, filename);
       await collection.updateOne(
         { _id: new ObjectID(id) },
         {
@@ -80,7 +80,7 @@ async function createPipelineAndSave(
 
   if (exist) {
     console.log(`Autom data's pipeline already exist: ${exist._id}`);
-    return id;
+    return (exist._id as ObjectID).toHexString();
   }
 
   const pipeline: any = {
@@ -106,7 +106,7 @@ async function createPipelineAndSave(
   const res = await collection.insertOne(pipeline);
   console.log(`Autom data's pipeline created: ${res.insertedId}`);
 
-  return id;
+  return res.insertedId;
 }
 
 router.post("/", async (req, res) => {

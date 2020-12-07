@@ -47,10 +47,10 @@ async function createPipelineAndSave(
       histogram: [],
       range: [1, 1],
     });
-    id = result.insertedId;
+    id = result.insertedId.toHexString();
 
     try {
-      const info = await getDatasetInfo(id);
+      const info = await getDatasetInfo(id, filename, filename);
       await collection.updateOne(
         { _id: new ObjectID(id) },
         {
