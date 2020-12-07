@@ -54,6 +54,7 @@ target_link_libraries(
     PUBLIC
     Threads::Threads
     fmt::fmt
+    spdlog
     OpenMP::OpenMP_CXX
     ${CMAKE_DL_LIBS}
     PRIVATE -static-libstdc++

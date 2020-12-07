@@ -55,7 +55,7 @@ DatasetStore::load(const std::string &id, const std::string &name,
     throw runtime_error(msg);
   }
 
-  spdlog::info("Load dataset: ", name);
+  spdlog::info("Load dataset: {}", name);
 
   return dataset;
 }
