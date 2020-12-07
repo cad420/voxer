@@ -1,8 +1,7 @@
 #include "Rendering/OpenGL/OpenGLVolumeCache.hpp"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include <fmt/core.h>
-#include <iostream>
+#include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <voxer/Filters/GradientFilter.hpp>
 
@@ -96,14 +95,13 @@ OpenGLVolumeCache::OpenGLVolumeCache() noexcept {
   eglMakeCurrent(m_egl_display, egl_surface, egl_surface, m_egl_context);
 
   if (!gladLoadGLLoader((void *(*)(const char *))(&eglGetProcAddress))) {
-    std::cerr << "Failed to load OpenGL\n";
+    spdlog::critical("Failed to load OpenGL");
     std::terminate();
   }
 
-  fmt::print(stdout,
-             "OpenGLVolumeCache: Detected {} devices, using first one, OpenGL "
-             "version {}.{}",
-             num_devices, GLVersion.major, GLVersion.minor);
+  spdlog::info("OpenGLVolumeCache: Detected {} devices, using first one, "
+               "OpenGL version {}.{}",
+               num_devices, GLVersion.major, GLVersion.minor);
 }
 
 OpenGLVolumeCache::~OpenGLVolumeCache() noexcept {

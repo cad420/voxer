@@ -1,6 +1,5 @@
 import express from "express";
 import mongodb, { ObjectID } from "mongodb";
-import Pipeline from "../models/Pipeline";
 
 const router = express.Router();
 
@@ -10,7 +9,12 @@ router.get("/", async (req, res) => {
 
   const pipelines = await collection
     .find()
-    .project({ id: { $toString: "$_id" }, comment: true, type: true })
+    .project({
+      _id: false,
+      id: { $toString: "$_id" },
+      comment: true,
+      type: true,
+    })
     .toArray();
 
   res.send({
