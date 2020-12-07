@@ -14,8 +14,8 @@
 #include <exception>
 #include <iostream>
 #include <voxer/Filters/AnnotationGrabCutFilter.hpp>
-#include <voxer/Filters/AnnotationLevelset.hpp>
-#include <voxer/Filters/histogram.hpp>
+#include <voxer/Filters/AnnotationLevelSetFilter.hpp>
+#include <voxer/Mappers/StructuredGridHistogramMapper.hpp>
 
 namespace voxer::remote {
 
@@ -62,7 +62,7 @@ void VoxerWorkerApplication::hanldle_option(const std::string &name,
       Poco::URI uri{value};
       m_manager = ManagerAPIClient(value);
     } catch (std::exception &exp) {
-      std::cerr << "invalid manager address" << std::endl;
+      spdlog::critical("invalid manager address");
       stopOptionsProcessing();
     }
   }
@@ -105,8 +105,9 @@ int VoxerWorkerApplication::main(const std::vector<std::string> &args) {
   ServerSocket svs(m_port);
   HTTPServer srv(routes, svs, Poco::makeAuto<HTTPServerParams>());
   srv.start();
-  this->logger().information("server starts at port: " +
-                             std::to_string(m_port));
+
+  spdlog::info("server starts at port: {}", m_port);
+
   waitForTerminationRequest();
   srv.stop();
   return Application::EXIT_OK;
@@ -118,6 +119,7 @@ void VoxerWorkerApplication::register_rpc_methods() {
   std::function<int(int, int)> add = [](int i, int j) -> int { return i + j; };
   rpc_methods->resgister_method("add", RPCMethodsStore::GetHandler(add));
 
+#ifdef ENABLE_ANNOTATION_SERVICE
   std::function<std::vector<voxer::Annotation>(
       const std::vector<voxer::Annotation> &, const std::string &,
       StructuredGrid::Axis, uint32_t)>
@@ -164,14 +166,18 @@ void VoxerWorkerApplication::register_rpc_methods() {
   rpc_methods->resgister_method("apply_grabcut",
                                 RPCMethodsStore::GetHandler(apply_grabcut),
                                 {"annotations", "dataset", "axis", "index"});
+#endif
 
-  std::function<DatasetInfo(const std::string &)> get_dataset_info =
-      [datasets = m_datasets.get()](const std::string &id) {
-        auto dataset = datasets->get(id);
+  std::function<DatasetInfo(const std::string &, const std::string &,
+                            const std::string &)>
+      get_dataset_info = [datasets = m_datasets.get()](
+                             const std::string &id, const std::string &name,
+                             const std::string &path) {
+        auto dataset = datasets->get(id, name, path);
 
         DatasetInfo result;
         result.id = id;
-        result.histogram = voxer::calculate_histogram(*dataset);
+        result.histogram = dataset->get_histogram();
         result.dimensions = dataset->info.dimensions;
         result.range = dataset->original_range;
 

@@ -16,12 +16,16 @@ enum class VolumeType : uint8_t {
 };
 
 enum class ValueType : uint8_t {
-  FLOAT = 4,
-  DOUBLE = 8,
-  UINT8 = 1,
-  UINT16 = 2,
+  FLOAT = 0,
+  DOUBLE = 1,
+  UINT8 = 2,
+  UINT16 = 3,
   UINT32 = 4,
-  UINT64 = 8
+  UINT64 = 5,
+  INT8 = 6,
+  INT16 = 7,
+  INT32 = 8,
+  INT64 = 9,
 };
 
 struct VolumeInfo {
@@ -73,6 +77,8 @@ struct StructuredGrid : public std::enable_shared_from_this<StructuredGrid> {
   [[nodiscard]] static auto Load(const char *path)
       -> std::shared_ptr<StructuredGrid>;
 
+  StructuredGrid operator-(const StructuredGrid &rhs) const;
+  
   static Axis get_axis(const char *str);
 };
 

@@ -85,7 +85,7 @@ router.post("/", upload.single("dataset"), async (req, res) => {
   }
 
   try {
-    const info = await getDatasetInfo(id);
+    const info = await getDatasetInfo(id, filename, filename);
     await collection.updateOne(
       { _id: new ObjectID(id) },
       {
@@ -136,9 +136,9 @@ router.get("/:id", async (req, res) => {
 
   if (dataset.histogram.length === 0) {
     try {
-      const info = await getDatasetInfo(dataset.id);
+      const info = await getDatasetInfo(dataset.id, dataset.name, dataset.path);
       await collection.updateOne(
-        { _id: new Object(dataset.id) },
+        { _id: new ObjectID(dataset.id) },
         {
           $set: {
             dimensions: info.dimensions,

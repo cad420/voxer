@@ -1,12 +1,11 @@
 #include "Store/DatasetStore.hpp"
 #include "DataModel/DatasetLoadInfo.hpp"
 #include "ManagerAPI/ManagerAPIClient.hpp"
-#include <fmt/core.h>
 #include <seria/deserialize.hpp>
+#include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <string>
 #include <voxer/Data/StructuredGrid.hpp>
-#include <voxer/Filters/differ.hpp>
 #include <voxer/IO/MRCReader.hpp>
 #include <voxer/IO/RawReader.hpp>
 #include <voxer/IO/utils.hpp>
@@ -51,10 +50,12 @@ DatasetStore::load(const std::string &id, const std::string &name,
     MRCReader reader(path);
     dataset = reader.load();
   } else {
-    throw runtime_error("unknown dataset format: " + ext);
+    std::string msg = "unknown dataset format: " + ext;
+    spdlog::error(msg);
+    throw runtime_error(msg);
   }
 
-  fmt::print("Load dataset: " + name);
+  spdlog::info("Load dataset: ", name);
 
   return dataset;
 }
@@ -78,6 +79,24 @@ auto DatasetStore::get(const DatasetId &id) -> shared_ptr<StructuredGrid> {
 
   auto load_info = m_manager->get_dataset_info(id);
   auto loaded = this->load(load_info.id, load_info.name, load_info.path);
+  handle = loaded;
+  return loaded;
+}
+
+auto DatasetStore::get(const DatasetId &id, const std::string &name,
+                       const std::string &path) -> shared_ptr<StructuredGrid> {
+  std::shared_ptr<StructuredGrid> dataset;
+
+  std::unique_lock lock(m_mutex);
+  auto &handle = m_datasets[id];
+  lock.unlock();
+
+  dataset = handle.lock();
+  if (dataset != nullptr) {
+    return dataset;
+  }
+
+  auto loaded = this->load(id, name, path);
   handle = loaded;
   return loaded;
 }

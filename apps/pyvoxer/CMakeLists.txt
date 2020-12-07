@@ -1,20 +1,3 @@
-cmake_minimum_required(VERSION 3.11)
-
-project(pyvoxer LANGUAGES CXX C VERSION 0.1.0)
-
-set(IS_MASTER_PROJECT OFF)
-if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  set(IS_MASTER_PROJECT ON)
-endif ()
-
-if (IS_MASTER_PROJECT)
-  find_package(seria REQUIRED)
-  find_package(voxer REQUIRED)
-  find_package(ospray 2.0.0 REQUIRED)
-  find_package(Threads REQUIRED)
-  find_package(OpenGL REQUIRED COMPONENTS OpenGL EGL)
-endif ()
-
 find_program(PYTHON python)
 set(PYTHON_EXECUTABLE ${PYTHON} CACHE STRING "Python path")
 

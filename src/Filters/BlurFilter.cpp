@@ -1,8 +1,6 @@
+#include "third_party/stb_image_write.h"
 #include <voxer/Filters/BlurFilter.hpp>
-#include "third_party/CImg.h"
 
 using namespace std;
 
-namespace voxer {
-
-}
+namespace voxer {}

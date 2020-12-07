@@ -1,9 +1,6 @@
-cmake_minimum_required(VERSION 3.11)
-
-project(VoxerWorker LANGUAGES CXX C VERSION 0.1.0)
-
 include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/poco.cmake)
+include(${PROJECT_SOURCE_DIR}/third_party/spdlog.cmake)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 
@@ -40,6 +37,7 @@ target_link_libraries(
     Threads::Threads
     Poco::Net
     Poco::Util
+    spdlog
 )
 target_compile_features(VoxerWorker PRIVATE cxx_std_17)
 if (VOXER_BUILD_ANNOTATION_MODULE)

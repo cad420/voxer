@@ -1,8 +1,8 @@
 #include <voxer/Data/StructuredGrid.hpp>
-#include <voxer/Filters/histogram.hpp>
 #include <voxer/IO/MRCReader.hpp>
 #include <voxer/IO/RawReader.hpp>
 #include <voxer/IO/utils.hpp>
+#include <voxer/Mappers/StructuredGridHistogramMapper.hpp>
 
 using namespace std;
 
@@ -83,11 +83,34 @@ auto StructuredGrid::Load(const char *path) -> std::shared_ptr<StructuredGrid> {
 }
 
 auto StructuredGrid::get_histogram() const -> std::vector<uint32_t> {
-  return calculate_histogram(*this);
+  StructuredGridHistogramMapper mapper{};
+  return mapper.map(*this);
 }
 
 StructuredGrid::Axis StructuredGrid::get_axis(const char *str) {
   return static_cast<Axis>(*str - 'x');
+}
+
+StructuredGrid StructuredGrid::operator-(const StructuredGrid &rhs) const {
+  auto &lhs = *this;
+
+  StructuredGrid dataset{};
+  uint32_t limit = 0;
+
+  if (lhs.buffer.size() > rhs.buffer.size()) {
+    limit = rhs.buffer.size();
+    dataset.info = rhs.info;
+  } else {
+    dataset.info = lhs.info;
+    limit = lhs.buffer.size();
+  }
+  dataset.buffer.resize(limit);
+
+  for (size_t i = 0; i < limit; i++) {
+    dataset.buffer[i] = (lhs.buffer[i] - rhs.buffer[i] + 255) / 2;
+  }
+
+  return dataset;
 }
 
 } // namespace voxer

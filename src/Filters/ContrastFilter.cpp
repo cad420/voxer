@@ -1,4 +1,4 @@
-#include "third_party/CImg.h"
+#include <CImg.h>
 #include <voxer/Filters/ContrastFilter.hpp>
 
 using namespace std;

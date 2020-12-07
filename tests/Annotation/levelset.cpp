@@ -1,5 +1,5 @@
 #include <opencv2/opencv.hpp>
-#include <voxer/Filters/AnnotationLevelset.hpp>
+#include <voxer/Filters/AnnotationLevelSetFilter.hpp>
 #include <voxer/IO/MRCReader.hpp>
 
 using namespace voxer;

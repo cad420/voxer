@@ -1,9 +1,9 @@
 #pragma once
 #include <unordered_map>
+#include <voxer/Data/Camera.hpp>
 #include <voxer/Data/Image.hpp>
-#include <voxer/Rendering/Camera.hpp>
-#include <voxer/Rendering/Isosurface.hpp>
-#include <voxer/Rendering/Volume.hpp>
+#include <voxer/Data/Isosurface.hpp>
+#include <voxer/Data/Volume.hpp>
 
 class VoxerIRenderer;
 

@@ -1,37 +1,38 @@
 find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
+include(${PROJECT_SOURCE_DIR}/third_party/spdlog.cmake)
+include(${PROJECT_SOURCE_DIR}/third_party/CImg.cmake)
 
 list(
     APPEND
     VOXER_CORE_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Data/Annotation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Data/Color.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Data/Image.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Data/StructuredGrid.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Data/TransferFunction.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/differ.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/histogram.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/BlurFilter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/EqualizeFilter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/ContrastFilter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/GradientFilter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/IO/MRC/MRCReader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/IO/Raw/RawReader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/VolumeRenderer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Rendering/SliceRenderer.cpp
+    Data/Annotation.cpp
+    Data/Color.cpp
+    Data/Image.cpp
+    Data/StructuredGrid.cpp
+    Data/TransferFunction.cpp
+    Mappers/StructuredGridHistogramMapper.cpp
+    Filters/BlurFilter.cpp
+    Filters/EqualizeFilter.cpp
+    Filters/ContrastFilter.cpp
+    Filters/GradientFilter.cpp
+    Rendering/VolumeRenderer.cpp
+    Rendering/SliceRenderer.cpp
+    IO/MRC/MRCReader.cpp
+    IO/Raw/RawReader.cpp
 )
 
 if (VOXER_BUILD_ANNOTATION_MODULE)
   find_package(OpenCV 4.0.0 REQUIRED COMPONENTS core imgproc cudaimgproc)
   list(
-    APPEND
-    VOXER_CORE_SRCS
+      APPEND
+      VOXER_CORE_SRCS
       ${CMAKE_CURRENT_SOURCE_DIR}/Filters/AnnotationLevelSetFilter.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/Filters/AnnotationGrabCutFilter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Filters/seg_levelset.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/Filters/seg_levelset.cpp
   )
-endif()
+endif ()
 
 add_library(voxer_core STATIC ${VOXER_CORE_SRCS})
 add_library(voxer::voxer_core ALIAS voxer_core)
@@ -47,6 +48,9 @@ target_include_directories(
 )
 target_link_libraries(
     voxer_core
+    PRIVATE
+    spdlog
+    CImg
     PUBLIC
     Threads::Threads
     fmt::fmt
@@ -61,7 +65,7 @@ if (VOXER_BUILD_ANNOTATION_MODULE)
       PUBLIC
       ${OpenCV_LIBS}
   )
-endif()
+endif ()
 
 target_compile_options(voxer_core PRIVATE -Wall -Wextra)
 target_compile_features(voxer_core PRIVATE cxx_std_14)
@@ -89,7 +93,7 @@ endif ()
 
 if (VOXER_INSTALL)
   install(
-      TARGETS voxer_core fmt
+      TARGETS voxer_core fmt spdlog CImg
       DESTINATION lib
       EXPORT voxer-targets
   )

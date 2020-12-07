@@ -1,7 +1,7 @@
 #include "seg_levelset.hpp"
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
-#include <voxer/Filters/AnnotationLevelset.hpp>
+#include <voxer/Filters/AnnotationLevelSetFilter.hpp>
 
 using namespace std;
 

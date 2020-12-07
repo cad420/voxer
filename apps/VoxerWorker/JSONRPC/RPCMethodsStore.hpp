@@ -1,9 +1,11 @@
 #pragma once
+#include "DataModel/Slice.hpp"
 #include "JSONRPC/Error.hpp"
 #include "Service/AbstractService.hpp"
 #include <Store/DatasetStore.hpp>
 #include <seria/deserialize.hpp>
 #include <seria/serialize.hpp>
+#include <spdlog/spdlog.h>
 #include <stdexcept>
 
 namespace voxer::remote {
@@ -49,8 +51,7 @@ private:
 
   template <typename Param>
   static Param
-  RPCParamsUnpackHelper(const std::vector<rapidjson::Value> &params,
-                           size_t i) {
+  RPCParamsUnpackHelper(const std::vector<rapidjson::Value> &params, size_t i) {
     Param param{};
     seria::deserialize(param, params[i]);
     return param;
@@ -59,7 +60,7 @@ private:
   template <typename ReturnType, typename... ParamTypes, std::size_t... index>
   static RPCHandler
   CreateRPCHandler(std::function<ReturnType(ParamTypes...)> method,
-                     std::index_sequence<index...>) {
+                   std::index_sequence<index...>) {
     RPCHandler handler = [method](const std::vector<rapidjson::Value> &params)
         -> rapidjson::Document {
       size_t input_params_size = params.size();
@@ -68,7 +69,8 @@ private:
         throw JSONRPCInvalidParamsError();
       }
 
-      auto result = method(RPCParamsUnpackHelper<typename std::decay<ParamTypes>::type>(
+      auto result =
+          method(RPCParamsUnpackHelper<typename std::decay<ParamTypes>::type>(
               params, index)...);
       auto json_result = seria::serialize(result);
       return json_result;

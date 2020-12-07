@@ -71,6 +71,7 @@ void JSONRPCService::on_error(const JSONRPCError &error,
 void JSONRPCService::send(const rapidjson::Document &response,
                           const MessageCallback &callback) {
   rapidjson::StringBuffer buffer;
+  buffer.Clear();
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   response.Accept(writer);
 

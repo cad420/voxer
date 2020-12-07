@@ -1,5 +1,5 @@
 import express from "express";
-import mongodb, { ObjectId } from "mongodb";
+import mongodb, { ObjectID } from "mongodb";
 import DatasetGroup, { Label } from "../models/DatasetGroup";
 import Annotation from "../models/Annotation";
 import { applyGrabCut, applyLevelSet } from "../worker_api/jsonrpc";
@@ -41,7 +41,7 @@ router.get("/:groupId/:datasetId/:axis/:index", async (req, res) => {
 
   const group = (await collection.findOne(
     {
-      _id: new ObjectId(groupId),
+      _id: new ObjectID(groupId),
     },
     {
       projection: {
@@ -86,7 +86,10 @@ router.get("/:groupId/:datasetId/:axis/:index", async (req, res) => {
   };
   const result: ResAnnotation[] = [];
   Object.entries(dataset.labels).forEach(([labelId, annotations]) => {
-    const annotationsOfSlice = annotations[axis as Axis][index.toString()];
+    const axisOfAnnotations = annotations[axis as Axis];
+    if (!axisOfAnnotations) return;
+
+    const annotationsOfSlice = axisOfAnnotations[index.toString()];
     if (!annotationsOfSlice) return;
 
     const label = labelMap[labelId];
@@ -110,7 +113,7 @@ router.get("/:groupId/:datasetId/:axis/:index", async (req, res) => {
 
 async function saveAnnotations(
   database: mongodb.Db,
-  group: string,
+  groupId: string,
   dataset: string,
   axis: string,
   index: number,
@@ -121,6 +124,33 @@ async function saveAnnotations(
   }>
 ) {
   const collection = database.collection("groups");
+  const group = await collection.findOne(
+    {
+      _id: new ObjectID(groupId),
+    },
+    {
+      projection: {
+        _id: true,
+        labels: true,
+      },
+    }
+  );
+
+  if (annotations.length === 0) {
+    const updateExp: Record<string, {}> = {};
+    (group.labels as DatasetGroup["labels"]).forEach((label) => {
+      updateExp[`datasets.${dataset}.labels.${label.id}.${axis}.${index}`] = [];
+    });
+    await collection.updateOne(
+      {
+        _id: group._id,
+      },
+      {
+        $set: updateExp,
+      }
+    );
+    return;
+  }
 
   const updateExp: Record<string, Array<Annotation>> = {};
   annotations.map((annotation) => {
@@ -136,20 +166,15 @@ async function saveAnnotations(
 
   await collection.updateOne(
     {
-      _id: new ObjectId(group),
+      _id: group._id,
     },
     {
-      $set:
-        annotations.length === 0
-          ? {
-              [`datasets.${dataset}.labels`]: {},
-            }
-          : updateExp,
+      $set: updateExp,
     }
   );
 }
 
-/**a
+/**
  * set annotations of a dataset slice in a group
  */
 router.post("/:group/:dataset/:axis/:index", async (req, res) => {
@@ -245,8 +270,8 @@ router.post("/action", async (req, res) => {
         code: 400,
         data: err.message,
       });
-      return;
     }
+    return;
   }
 
   res.send({

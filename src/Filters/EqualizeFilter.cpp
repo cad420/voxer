@@ -1,5 +1,5 @@
 #define cimg_use_openmp 1
-#include <third_party/CImg.h>
+#include <CImg.h>
 #include <voxer/Filters/EqualizeFilter.hpp>
 
 using namespace std;
