@@ -23,7 +23,8 @@ struct Image {
                       bool flip_vertically = false);
 
   static Image encode(const Image &image, Image::Format format,
-                      Image::Quality Quality = Image::Quality::MEDIUM);
+                      Image::Quality Quality = Image::Quality::MEDIUM,
+                      bool flip_vertically = false);
 };
 
 }; // namespace voxer

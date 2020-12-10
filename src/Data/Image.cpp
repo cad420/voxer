@@ -43,6 +43,8 @@ Image Image::encode(const uint8_t *data, uint32_t width, uint32_t height,
 
   if (flip_vertically) {
     stbi_flip_vertically_on_write(1);
+  } else {
+    stbi_flip_vertically_on_write(0);
   }
 
   auto res = stbi_write_jpg_to_func(
@@ -61,13 +63,13 @@ Image Image::encode(const uint8_t *data, uint32_t width, uint32_t height,
 }
 
 Image Image::encode(const Image &image, Image::Format format,
-                    Image::Quality quality) {
+                    Image::Quality quality, bool flip_vertically) {
   if (image.format == format) {
     return image;
   }
 
   return encode(image.data.data(), image.width, image.height, image.channels,
-                format, quality);
+                format, quality, flip_vertically);
 }
 
 auto Image::at(uint32_t row, uint32_t col) const -> uint8_t {

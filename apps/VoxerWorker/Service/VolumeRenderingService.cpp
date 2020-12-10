@@ -31,7 +31,7 @@ void VolumeRenderingService::on_message(
     m_renderer->render();
     auto &image = m_renderer->get_colors();
 
-    auto compressed = Image::encode(image, Image::Format::JPEG);
+    auto compressed = Image::encode(image, Image::Format::JPEG, Image::Quality::MEDIUM, true);
     callback(reinterpret_cast<const uint8_t *>(compressed.data.data()),
              compressed.data.size(), true);
     m_renderer->clear_scene();

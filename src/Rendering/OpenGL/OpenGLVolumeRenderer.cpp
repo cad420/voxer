@@ -3,10 +3,10 @@
 #include "Rendering/OpenGL/shaders.hpp"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include <fmt/core.h>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <vector>
 
@@ -158,10 +158,9 @@ void OpenGLVolumeRenderer::setup_context() {
     throw runtime_error("Failed to load gl");
   }
 
-  fmt::print(
-      "OpenGLVolumeRenderer: Detected {} devices, using first one, OpenGL "
-      "version {}.{}",
-      num_devices, GLVersion.major, GLVersion.minor);
+  spdlog::info("OpenGLVolumeRenderer: Detected {} devices, using first one, "
+               "OpenGL version {}.{}",
+               num_devices, GLVersion.major, GLVersion.minor);
 }
 
 void OpenGLVolumeRenderer::set_camera(const Camera &camera) {
