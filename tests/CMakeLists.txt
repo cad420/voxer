@@ -25,9 +25,12 @@ if (VOXER_BUILD_ANNOTATION_MODULE)
   target_compile_features(TestAnnotationLevelSet PRIVATE cxx_std_14)
 endif ()
 
+add_executable(MRCReaderTest IO/MRCReader.cpp)
+target_link_libraries(MRCReaderTest PRIVATE voxer_core Catch2WithMain)
+
 enable_testing()
 if (VOXER_BUILD_ANNOTATION_MODULE)
   add_test(NAME TestAnnotationGrabCut COMMAND TestAnnotationGrabCut)
   add_test(NAME TestAnnotationLevelSet COMMAND TestAnnotationLevelSet)
 endif ()
-
+add_test(TestMRCReader COMMAND MRCReaderTest)

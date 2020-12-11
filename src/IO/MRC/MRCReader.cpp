@@ -466,7 +466,18 @@ auto MRCReader::load() -> std::unique_ptr<StructuredGrid> {
   dataset->info.dimensions = {static_cast<uint32_t>(header.nx),
                               static_cast<uint32_t>(header.ny),
                               static_cast<uint32_t>(header.nz)};
-  if (header.mode == MRC_MODE_FLOAT) {
+  if (header.mode == MRC_MODE_BYTE) {
+    dataset->buffer = move(data_buffer);
+    dataset->original_range = {0.0f, 255.0f};
+  } else if (header.mode == MRC_MODE_SHORT) {
+    auto total = header.nx * header.ny * header.nz;
+    auto int16_buffer = convert_int16_to_uint8(
+        reinterpret_cast<const int16_t *>(data_buffer.data()), total,
+        header.dmax, header.dmin);
+    dataset->info.value_type = ValueType::INT16;
+    dataset->buffer = move(int16_buffer);
+    dataset->original_range = {header.dmin, header.dmax};
+  } else if (header.mode == MRC_MODE_FLOAT) {
     auto total = header.nx * header.ny * header.nz;
     auto uint8_buffer = convert_float_to_uint8(
         reinterpret_cast<const float *>(data_buffer.data()), total, header.dmax,
@@ -474,9 +485,6 @@ auto MRCReader::load() -> std::unique_ptr<StructuredGrid> {
     dataset->info.value_type = ValueType::UINT8;
     dataset->buffer = move(uint8_buffer);
     dataset->original_range = {header.dmin, header.dmax};
-  } else if (header.mode == MRC_MODE_BYTE) {
-    dataset->buffer = move(data_buffer);
-    dataset->original_range = {0.0f, 255.0f};
   } else {
     throw runtime_error("unsupported MRC data type");
   }

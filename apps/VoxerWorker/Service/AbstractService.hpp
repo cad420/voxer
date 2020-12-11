@@ -11,7 +11,7 @@ class AbstractService : public NoCopy {
 public:
   enum struct Protocol { WebSocket, RPC };
 
-  ~AbstractService() = default;
+  virtual ~AbstractService() = default;
 
   virtual void on_message(const char *message, uint32_t size,
                           const MessageCallback &callback) noexcept = 0;

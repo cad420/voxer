@@ -3,12 +3,8 @@
 #include "ManagerAPI/ManagerAPIClient.hpp"
 #include <seria/deserialize.hpp>
 #include <spdlog/spdlog.h>
-#include <stdexcept>
 #include <string>
 #include <voxer/Data/StructuredGrid.hpp>
-#include <voxer/IO/MRCReader.hpp>
-#include <voxer/IO/RawReader.hpp>
-#include <voxer/IO/utils.hpp>
 
 using namespace std;
 
@@ -42,17 +38,12 @@ DatasetStore::load(const std::string &id, const std::string &name,
   }
 
   auto path = m_storage_path + filename;
-  auto ext = get_file_extension(path);
-  if (ext == ".raw") {
-    RawReader reader(path.c_str());
-    dataset = reader.load();
-  } else if (ext == ".mrc") {
-    MRCReader reader(path);
-    dataset = reader.load();
-  } else {
-    std::string msg = "unknown dataset format: " + ext;
-    spdlog::error(msg);
-    throw runtime_error(msg);
+
+  try {
+    dataset = StructuredGrid::Load(path.c_str());
+  } catch (const std::exception &error) {
+    spdlog::error(error.what());
+    throw error;
   }
 
   spdlog::info("Load dataset: {}", name);
