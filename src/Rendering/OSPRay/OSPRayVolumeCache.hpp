@@ -51,7 +51,7 @@ public:
   void load(StructuredGrid *data);
 
 private:
-  OSPRayVolumeCache() noexcept = default;
+  OSPRayVolumeCache() = default;
 
   std::mutex m_mutex;
   LRUCache<StructuredGrid *, OSPRayManagedResource> m_cache{};

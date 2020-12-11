@@ -31,7 +31,7 @@ public:
 private:
   std::string m_backend;
   std::unique_ptr<VoxerIRenderer> m_impl;
-  std::unordered_map<std::string, GetRenderingBackend> symbols;
+  static std::unordered_map<std::string, GetRenderingBackend> symbols;
 };
 
 } // namespace voxer

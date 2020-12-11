@@ -11,7 +11,7 @@ using namespace std;
 
 namespace voxer {
 
-static Logger logger("renderer");
+std::unordered_map<std::string, GetRenderingBackend> VolumeRenderer::symbols{};
 
 VolumeRenderer::~VolumeRenderer() = default;
 
@@ -61,7 +61,7 @@ void VolumeRenderer::render() const {
 
   const auto delta = chrono::duration_cast<chrono::milliseconds>(
       chrono::steady_clock::now() - start);
-  logger.info(to_string(delta.count()) + " ms");
+  spdlog::debug(to_string(delta.count()) + " ms");
 }
 
 auto VolumeRenderer::get_colors() -> const Image & {
