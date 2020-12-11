@@ -39,7 +39,8 @@ private:
   std::unique_ptr<ShaderProgram> m_essposition_program;
   std::unique_ptr<ShaderProgram> m_essraycast_program;
 
-  EGLDisplay m_egl_display{};
+  EGLContext m_egl_context{};
+  EGLSurface m_egl_surface{};
 
   GLuint m_VBO = 0;
   GLuint m_EBO = 0;

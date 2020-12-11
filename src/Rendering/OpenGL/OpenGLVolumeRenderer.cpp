@@ -91,6 +91,8 @@ OpenGLVolumeRenderer::OpenGLVolumeRenderer() {
   setup_context();
   setup_resources();
   setup_proxy_cude();
+
+  spdlog::info("OpenGLVolumeRenderer initialized.");
 }
 
 OpenGLVolumeRenderer::~OpenGLVolumeRenderer() noexcept {
@@ -102,39 +104,25 @@ OpenGLVolumeRenderer::~OpenGLVolumeRenderer() noexcept {
   glDeleteRenderbuffers(1, &m_RBO);
   glDeleteFramebuffers(1, &m_FBO);
 
-  eglTerminate(m_egl_display);
+  auto display = m_cache->get_display();
+  eglDestroySurface(display, m_egl_surface);
+  eglDestroyContext(display, m_egl_context);
+  spdlog::info("OpenGLVolumeRenderer destoryed.");
 }
 
 void OpenGLVolumeRenderer::setup_context() {
-  static const int MAX_DEVICES = 4;
-  EGLDeviceEXT egl_devices[MAX_DEVICES];
-  EGLint num_devices;
-
-  auto eglQueryDevicesEXT =
-      (PFNEGLQUERYDEVICESEXTPROC)eglGetProcAddress("eglQueryDevicesEXT");
-  eglQueryDevicesEXT(4, egl_devices, &num_devices);
-
-  auto eglGetPlatformDisplayEXT =
-      (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress(
-          "eglGetPlatformDisplayEXT");
-
-  m_egl_display = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
-                                           egl_devices[0], nullptr);
-  EGLCheck("eglGetDisplay");
-
+  auto display = m_cache->get_display();
   EGLint major, minor;
-  eglInitialize(m_egl_display, &major, &minor);
+  eglInitialize(display, &major, &minor);
   EGLCheck("eglInitialize");
 
   EGLint num_configs;
   EGLConfig egl_config;
 
-  eglChooseConfig(m_egl_display, egl_config_attribs, &egl_config, 1,
-                  &num_configs);
+  eglChooseConfig(display, egl_config_attribs, &egl_config, 1, &num_configs);
   EGLCheck("eglChooseConfig");
 
-  EGLSurface egl_surface =
-      eglCreatePbufferSurface(m_egl_display, egl_config, pbuffer_attribs);
+  m_egl_surface = eglCreatePbufferSurface(display, egl_config, pbuffer_attribs);
   EGLCheck("eglCreatePbufferSurface");
 
   eglBindAPI(EGL_OPENGL_API);
@@ -147,20 +135,16 @@ void OpenGLVolumeRenderer::setup_context() {
                                   EGL_CONTEXT_OPENGL_PROFILE_MASK,
                                   EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
                                   EGL_NONE};
-  EGLContext egl_context = eglCreateContext(
-      m_egl_display, egl_config, m_cache->get_context(), context_attri);
+  m_egl_context = eglCreateContext(display, egl_config, m_cache->get_context(),
+                                   context_attri);
   EGLCheck("eglCreateContext");
 
-  eglMakeCurrent(m_egl_display, egl_surface, egl_surface, egl_context);
+  eglMakeCurrent(display, m_egl_surface, m_egl_surface, m_egl_context);
   EGLCheck("eglMakeCurrent");
 
   if (!gladLoadGLLoader((void *(*)(const char *))(&eglGetProcAddress))) {
     throw runtime_error("Failed to load gl");
   }
-
-  spdlog::info("OpenGLVolumeRenderer: Detected {} devices, using first one, "
-               "OpenGL version {}.{}",
-               num_devices, GLVersion.major, GLVersion.minor);
 }
 
 void OpenGLVolumeRenderer::set_camera(const Camera &camera) {

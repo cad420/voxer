@@ -74,7 +74,7 @@ auto StructuredGrid::Load(const char *path) -> std::shared_ptr<StructuredGrid> {
     return reader.load();
   }
 
-  if (ext == ".mrc") {
+  if (ext == ".mrc" || ext == ".st") {
     MRCReader reader(path);
     return reader.load();
   }

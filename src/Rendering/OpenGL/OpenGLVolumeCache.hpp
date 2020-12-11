@@ -56,6 +56,7 @@ public:
   void load(StructuredGrid *data);
   bool has(StructuredGrid *data) noexcept;
   auto get_context() -> EGLContext;
+  EGLDisplay get_display();
 
   static auto get_instance() -> OpenGLVolumeCache *;
 

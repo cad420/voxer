@@ -1,8 +1,8 @@
 #include "Rendering/OSPRay/OSPRayRenderer.hpp"
 #include <cmath>
-#include <fmt/core.h>
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
+#include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <string>
 
@@ -44,8 +44,8 @@ OSPRayRenderer::OSPRayRenderer() {
       ospDeviceGetProperty(osp_device, OSP_DEVICE_VERSION_MAJOR);
   auto minor_version =
       ospDeviceGetProperty(osp_device, OSP_DEVICE_VERSION_MINOR);
-
-  fmt::print("OSPRay initialized: version {}.{}", major_version, minor_version);
+  spdlog::info("OSPRayRenderer initialized, OSPRay version {}.{}.",
+               major_version, minor_version);
 }
 
 OSPRayRenderer::~OSPRayRenderer() {
@@ -53,6 +53,8 @@ OSPRayRenderer::~OSPRayRenderer() {
     return;
 
   ospDeviceRelease(osp_device);
+
+  spdlog::info("OSPRayRenderer destroyed.");
 }
 
 void OSPRayRenderer::set_camera(const Camera &camera) noexcept {

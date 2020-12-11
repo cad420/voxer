@@ -106,6 +106,8 @@ OpenGLVolumeCache::OpenGLVolumeCache() noexcept {
 
 OpenGLVolumeCache::~OpenGLVolumeCache() noexcept {
   eglTerminate(m_egl_display);
+
+  spdlog::info("OpenGLVolumeCache destroyed");
 }
 
 auto OpenGLVolumeCache::get_instance() -> OpenGLVolumeCache * {
@@ -149,5 +151,7 @@ bool OpenGLVolumeCache::has(StructuredGrid *data) noexcept {
   std::lock_guard<std::mutex> lock(m_mutex);
   return m_textures.has(data);
 }
+
+EGLDisplay OpenGLVolumeCache::get_display() { return m_egl_display; }
 
 } // namespace voxer
