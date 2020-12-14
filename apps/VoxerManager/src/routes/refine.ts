@@ -2,7 +2,7 @@ import express from "express";
 import mongodb, { ObjectID } from "mongodb";
 import { resolve } from "path";
 import Dataset from "../models/Dataset";
-import { UPLOAD_PATH, REFINE_WATCH_DIR } from "../config";
+import { UPLOAD_PATH, REFINE_BASE_DIR } from "../config";
 import { getDatasetInfo } from "../worker_api/jsonrpc";
 import childProcess from "child_process";
 import fs from "fs-extra";
@@ -108,15 +108,17 @@ async function createPipelineAndSave(
 }
 
 const RefinedData: Record<
-  string,
+  number,
   {
     id: number;
+    name: string;
     finished: boolean;
     data: string[];
   }
 > = {};
 
 function pollingRefineResult(
+  taskId: number,
   watchDir: string,
   name: string,
   database: mongodb.Db
@@ -143,8 +145,8 @@ function pollingRefineResult(
         console.log("Find refined data");
         const destFilepath = resolve(UPLOAD_PATH, finalFilename);
 
-        if (RefinedData[name]) {
-          RefinedData[name].finished = true;
+        if (RefinedData[taskId]) {
+          RefinedData[taskId].finished = true;
         }
 
         await fs.copyFile(filepath, destFilepath);
@@ -181,8 +183,8 @@ function pollingRefineResult(
           await fs.copyFile(filepath, destFilepath);
           const id = await createPipelineAndSave(filename, database);
 
-          if (RefinedData[name]) {
-            RefinedData[name].data.push(filename);
+          if (RefinedData[taskId]) {
+            RefinedData[taskId].data.push(filename);
           }
 
           lastIteration = maxIteration;
@@ -204,63 +206,66 @@ console.log(`Refine Script: ${script}`);
 router.get("/info", async (req, res) => {
   res.send({
     code: 200,
-    data: Object.entries(RefinedData).map(([name, info]) => {
-      return {
-        name,
-        ...info,
-      };
-    }),
+    data: Object.values(RefinedData),
   });
 });
 
-router.post("/:name", async (req, res) => {
-  const { name } = req.params;
-  if (!name) {
-    res.send({
-      code: 400,
-      data: "Should have refine name",
-    });
-    return;
-  }
+router.post("/", async (req, res) => {
+  const { nodes, process, path, output, input, init, size } = req.body;
 
-  exec(`sh ${script}`, (err, stdout, stderr) => {
-    if (err) {
+  exec(
+    `sh ${script} ${nodes} ${process} ${path} ${output} ${input} ${init} ${size}`,
+    (err, stdout, stderr) => {
+      if (err) {
+        return res.send({
+          code: 400,
+          data: err.message,
+        });
+      } else if (stderr) {
+        return res.send({
+          code: 400,
+          data: stderr,
+        });
+      }
+
+      const jobIdRegExp = new RegExp(/Submitted batch job (\d+)/);
+      const matched = stdout.match(jobIdRegExp);
+      if (!matched || !matched[1]) {
+        return res.send({
+          code: 400,
+          data: stdout.substring(0, 500),
+        });
+      }
+
+      const lastSlash = ((output as string) || "").lastIndexOf("/");
+      const prefix = ((output as string) || "").substring(0, lastSlash);
+      const name = ((output as string) || "").substring(lastSlash + 1);
+      if (!name) {
+        return res.send({
+          code: 400,
+          data: "Invalid output: " + output,
+        });
+      }
+
+      const taskId = parseInt(matched[1]);
+      RefinedData[taskId] = {
+        id: taskId,
+        name,
+        finished: false,
+        data: [],
+      };
+      console.log(`Task submited: ${taskId}`);
+
+      const database: mongodb.Db = req.app.get("database");
+      const watchDir = resolve(REFINE_BASE_DIR, path, prefix);
+      console.log(`Refine watch directory: ${watchDir}`);
+      pollingRefineResult(taskId, watchDir, name, database);
+
       return res.send({
-        code: 400,
-        data: err.message,
-      });
-    } else if (stderr) {
-      return res.send({
-        code: 400,
-        data: stderr,
+        code: 200,
       });
     }
-
-    const jobIdRegExp = new RegExp(/Submitted batch job (\d+)/);
-    const matched = stdout.match(jobIdRegExp);
-    if (!matched || !matched[1]) {
-      return res.send({
-        code: 400,
-        data: stdout.substring(0, 100),
-      });
-    }
-
-    const id = parseInt(matched[1]);
-    RefinedData[name] = {
-      id,
-      finished: false,
-      data: [],
-    };
-    console.log(`Task submited: ${id}`);
-
-    const database: mongodb.Db = req.app.get("database");
-    console.log(`Refine watch directory: ${REFINE_WATCH_DIR}`);
-    pollingRefineResult(REFINE_WATCH_DIR, name, database);
-
-    return res.send({
-      code: 200,
-    });
-  });
+  );
 });
 
 export default router;
