@@ -117,15 +117,56 @@ const RefinedData: Record<
   }
 > = {};
 
-function pollingRefineResult(
+async function deleteExsitDatasetAndPipeline(
+  tmpReg: RegExp,
+  finalName: string,
+  database: mongodb.Db
+) {
+  let collection = database.collection("datasets");
+  const datasets = await collection
+    .find(
+      {},
+      {
+        projection: {
+          id: {
+            $toString: "$_id",
+          },
+          name: true,
+        },
+      }
+    )
+    .toArray();
+
+  const targets = datasets
+    .filter((dataset: any) => {
+      return tmpReg.test(dataset.name) || dataset.name === finalName;
+    })
+    .map((dataset) => dataset.id);
+
+  const datasetsDeleted = await collection.deleteMany({
+    _id: { $in: targets.map((id) => new ObjectID(id as string)) },
+  });
+  console.log("Old refine data deleted: " + datasetsDeleted.deletedCount);
+
+  collection = database.collection("pipelines");
+  const pipelinesDeleted = await collection.deleteMany({
+    "isosurfaces.0.dataset": { $in: targets },
+  });
+  console.log("Old refine pipeline deleted: " + pipelinesDeleted.deletedCount);
+}
+
+async function pollingRefineResult(
   taskId: number,
   watchDir: string,
   name: string,
-  database: mongodb.Db
+  database: mongodb.Db,
+  size: number
 ) {
   const tmpResultReg = new RegExp(name + "_it(\\S*)_half1_class001.mrc");
   const finalFilename = `${name}_class001.mrc`;
-  const targetSize = 360 * 360 * 360 * 4 + 1024;
+  const targetSize = size * size * size * 4 + 1024;
+
+  await deleteExsitDatasetAndPipeline(tmpResultReg, finalFilename, database);
 
   let lastIteration = 0;
   const intervalId = setInterval(async () => {
@@ -215,7 +256,7 @@ router.post("/", async (req, res) => {
 
   exec(
     `sh ${script} ${nodes} ${process} ${path} ${output} ${input} ${init} ${size}`,
-    (err, stdout, stderr) => {
+    async (err, stdout, stderr) => {
       if (err) {
         return res.send({
           code: 400,
@@ -237,6 +278,14 @@ router.post("/", async (req, res) => {
         });
       }
 
+      const dataDim = parseInt(size);
+      if (isNaN(dataDim) || dataDim <= 0) {
+        return res.send({
+          code: 400,
+          data: "invalid size",
+        });
+      }
+
       const lastSlash = ((output as string) || "").lastIndexOf("/");
       const prefix = ((output as string) || "").substring(0, lastSlash);
       const name = ((output as string) || "").substring(lastSlash + 1);
@@ -248,22 +297,31 @@ router.post("/", async (req, res) => {
       }
 
       const taskId = parseInt(matched[1]);
-      RefinedData[taskId] = {
-        id: taskId,
-        name,
-        finished: false,
-        data: [],
-      };
       console.log(`Task submited: ${taskId}`);
 
-      const database: mongodb.Db = req.app.get("database");
-      const watchDir = resolve(REFINE_BASE_DIR, path, prefix);
-      console.log(`Refine watch directory: ${watchDir}`);
-      pollingRefineResult(taskId, watchDir, name, database);
+      try {
+        const database: mongodb.Db = req.app.get("database");
+        const watchDir = resolve(REFINE_BASE_DIR, path, prefix);
 
-      return res.send({
-        code: 200,
-      });
+        await pollingRefineResult(taskId, watchDir, name, database, dataDim);
+
+        console.log(`Refine watch directory: ${watchDir}`);
+        RefinedData[taskId] = {
+          id: taskId,
+          name,
+          finished: false,
+          data: [],
+        };
+
+        return res.send({
+          code: 200,
+        });
+      } catch (err) {
+        return res.send({
+          code: 400,
+          data: err.message,
+        });
+      }
     }
   );
 });
