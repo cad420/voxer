@@ -24,11 +24,7 @@ public:
 private:
   std::unique_ptr<voxer::VolumeRenderer> m_renderer;
 
-  void traverse_scene(VolumeRenderer &renderer, const Scene &scene,
-                      const MessageCallback &callback) const;
-
-  auto parse(const char *message, uint32_t size)
-      -> std::pair<std::string, Scene>;
+  void render(const Scene &scene,  const MessageCallback &callback);
 };
 
 } // namespace voxer::remote

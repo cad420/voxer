@@ -7,7 +7,6 @@
 
 using namespace std;
 using namespace voxer;
-using namespace fmt;
 
 namespace voxer::remote {
 
@@ -18,8 +17,9 @@ void VolumeRenderingService::on_message(
     const MessageCallback &callback) noexcept {
   assert(m_datasets != nullptr && callback != nullptr);
 
-  if (m_datasets == nullptr)
+  if (m_datasets == nullptr) {
     return;
+  }
 
   const char *env = getenv("LOG_LEVEL");
   auto log_time = env != nullptr && strlen(env) > 0;
@@ -27,28 +27,34 @@ void VolumeRenderingService::on_message(
   try {
     spdlog::stopwatch sw{};
 
-    auto command = parse(message, size);
-    auto &engine = command.first;
-    if (m_renderer == nullptr || m_renderer->get_backend() != engine) {
-      m_renderer = make_unique<VolumeRenderer>(engine.c_str());
+    m_document.Parse(message, size);
+    if (!m_document.IsObject()) {
+      throw JSON_error("root", "object");
+    }
+    auto json = m_document.GetObject();
+    auto it = json.FindMember("method");
+    if (it == json.end() || !(it->value.IsString())) {
+      throw JSON_error("method", "string");
     }
 
-    traverse_scene(*m_renderer, command.second, callback);
+    string method = it->value.GetString();
+    if (method == "render") {
+      it = json.FindMember("params");
+      if (it == json.end()) {
+        throw JSON_error("params", "required");
+      }
+      auto params = it->value.GetObject();
 
-    m_renderer->render();
-    auto &image = m_renderer->get_colors();
-
-    auto compressed =
-        Image::encode(image, Image::Format::JPEG, Image::Quality::MEDIUM, true);
+      Scene scene{};
+      seria::deserialize(scene, params);
+      render(scene, callback);
+    } else {
+      throw runtime_error(fmt::format("unknown method: {}", method));
+    }
 
     if (log_time) {
-      spdlog::info("Elapsed {}", sw);
+      spdlog::info("{} elapsed {}", method, sw);
     }
-    spdlog::stopwatch sw2;
-
-    callback(reinterpret_cast<const uint8_t *>(compressed.data.data()),
-             compressed.data.size(), true);
-    m_renderer->clear_scene();
   } catch (exception &e) {
     auto error_msg = fmt::format(R"({{"error": "{}"}})", e.what());
     callback(reinterpret_cast<const uint8_t *>(error_msg.data()),
@@ -56,52 +62,15 @@ void VolumeRenderingService::on_message(
   }
 }
 
-auto VolumeRenderingService::parse(const char *message, uint32_t size)
-    -> pair<string, Scene> {
-  m_document.Parse(message, size);
-
-  if (!m_document.IsObject()) {
-    throw JSON_error("root", "object");
+void VolumeRenderingService::render(const Scene &scene,
+                                    const MessageCallback &callback) {
+  if (m_renderer == nullptr || m_renderer->get_backend() != scene.renderer) {
+    m_renderer = make_unique<VolumeRenderer>(scene.renderer.c_str());
   }
 
-  auto json = m_document.GetObject();
-
-  auto it = json.FindMember("type");
-  if (it == json.end() || !(it->value.IsString())) {
-    throw JSON_error("type", "string");
-  }
-  string command_type = it->value.GetString();
-
-  string engine;
-  it = json.FindMember("engine");
-  if (it != json.end() && it->value.IsString()) {
-    auto type = it->value.GetString();
-    if (strcmp(type, "OpenGL") == 0) {
-      engine = "opengl";
-    } else if (strcmp(type, "OSPRay") == 0) {
-      engine = "ospray";
-    } else {
-      throw runtime_error("Unsupported rendering engine: " + string(type));
-    }
-  }
-
-  it = json.FindMember("params");
-  if (it == json.end()) {
-    throw JSON_error("params", "required");
-  }
-  auto params = it->value.GetObject();
-
-  voxer::remote::Scene scene{};
-  seria::deserialize(scene, params);
-  return make_pair(engine, scene);
-}
-
-void VolumeRenderingService::traverse_scene(
-    VolumeRenderer &renderer, const Scene &scene,
-    const MessageCallback &callback) const {
-  renderer.set_camera(scene.camera);
-  renderer.set_background(scene.background[0], scene.background[1],
-                          scene.background[2]);
+  m_renderer->set_camera(scene.camera);
+  m_renderer->set_background(scene.background[0], scene.background[1],
+                             scene.background[2]);
 
   unordered_map<uint32_t, shared_ptr<voxer::TransferFunction>> tfcns_map;
 
@@ -136,7 +105,7 @@ void VolumeRenderingService::traverse_scene(
       volume->tfcn = tfcns_map[volume_desc.tfcn_idx];
     }
 
-    renderer.add_volume(volume);
+    m_renderer->add_volume(volume);
   }
 
   for (auto &isosurface_desc : scene.isosurfaces) {
@@ -156,8 +125,18 @@ void VolumeRenderingService::traverse_scene(
     isosurface->dataset = std::move(dataset);
     isosurface->color.from_hex(isosurface_desc.color.c_str());
     isosurface->value = isosurface_desc.value;
-    renderer.add_isosurface(isosurface);
+    m_renderer->add_isosurface(isosurface);
   }
+
+  m_renderer->render();
+  auto &image = m_renderer->get_colors();
+  auto compressed =
+      Image::encode(image, Image::Format::JPEG, Image::Quality::MEDIUM, true);
+
+  callback(reinterpret_cast<const uint8_t *>(compressed.data.data()),
+           compressed.data.size(), true);
+
+  m_renderer->clear_scene();
 }
 
 } // namespace voxer::remote

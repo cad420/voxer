@@ -1,7 +1,7 @@
 #pragma once
 #include "DataModel/Camera.hpp"
-#include "DataModel/Isosurface.hpp"
 #include "DataModel/DatasetInfo.hpp"
+#include "DataModel/Isosurface.hpp"
 #include "DataModel/TransferFunction.hpp"
 #include "DataModel/Volume.hpp"
 #include <seria/object.hpp>
@@ -11,6 +11,7 @@
 namespace voxer::remote {
 
 struct Scene {
+  std::string renderer;
   std::vector<TransferFunction> tfcns;
   std::vector<Volume> volumes;
   std::vector<Isosurface> isosurfaces;
@@ -26,7 +27,8 @@ template <> inline auto register_object<voxer::remote::Scene>() {
   using Scene = voxer::remote::Scene;
 
   return std::make_tuple(
-      member("volumes", &Scene::volumes), member("tfcns", &Scene::tfcns),
+      member("renderer", &Scene::renderer), member("volumes", &Scene::volumes),
+      member("tfcns", &Scene::tfcns),
       member("isosurfaces", &Scene::isosurfaces),
       member("camera", &Scene::camera),
       member("background", &Scene::background, {1.0f, 1.0f, 1.0f}));

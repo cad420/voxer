@@ -1,5 +1,6 @@
 #pragma once
 #include "DataModel/DatasetLoadInfo.hpp"
+#include "JSONRPC/WebSocketClient.hpp"
 #include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPResponse.h>
@@ -26,6 +27,7 @@ public:
 private:
   std::string m_address;
   Poco::URI m_uri;
+  std::unique_ptr<WebSocketClient> m_ws = nullptr;
 
   template <typename ResultType> ResultType request(const std::string &path) {
     using Poco::Net::HTTPClientSession;

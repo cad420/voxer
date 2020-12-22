@@ -19,6 +19,7 @@ list(
     Store/DatasetStore.cpp
     ManagerAPI/ManagerAPIClient.cpp
     JSONRPC/RPCMethodsStore.cpp
+    JSONRPC/WebSocketClient.cpp
 )
 
 add_executable(VoxerWorker ${VoxerWorker_SRCS})
