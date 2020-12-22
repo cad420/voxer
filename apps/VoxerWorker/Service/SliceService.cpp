@@ -43,7 +43,7 @@ auto SliceService::get_dataset_slice(const DatasetId &dataset_id,
                                      uint32_t index) const -> Image {
   auto dataset = m_datasets->get(dataset_id);
   auto image = dataset->get_slice(axis, index);
-  auto jpeg = Image::encode(image, Image::Format::JPEG);
+  auto jpeg = Image::encode(image, Image::Format::JPEG, Image::Quality::HIGH);
   return jpeg;
 }
 

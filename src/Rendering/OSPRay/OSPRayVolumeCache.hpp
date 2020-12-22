@@ -49,12 +49,15 @@ public:
   bool has(StructuredGrid *data) noexcept;
   auto get(StructuredGrid *data) -> OSPVolume;
   void load(StructuredGrid *data);
+  OSPDevice get_device() const noexcept;
 
 private:
-  OSPRayVolumeCache() = default;
+  OSPRayVolumeCache();
+  ~OSPRayVolumeCache() noexcept;
 
   std::mutex m_mutex;
   LRUCache<StructuredGrid *, OSPRayManagedResource> m_cache{};
+  OSPDevice m_osp_device{};
 };
 
 } // namespace voxer

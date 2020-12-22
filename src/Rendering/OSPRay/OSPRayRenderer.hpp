@@ -29,8 +29,6 @@ private:
   std::vector<std::shared_ptr<Volume>> m_volumes;
   std::vector<std::shared_ptr<Isosurface>> m_isosurfaces;
   Camera m_camera;
-
-  OSPDevice osp_device = nullptr;
 };
 
 } // namespace voxer

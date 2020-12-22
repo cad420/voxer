@@ -1,6 +1,8 @@
 #include "Service/VolumeRenderingService.hpp"
 #include <fmt/format.h>
 #include <seria/deserialize.hpp>
+#include <spdlog/spdlog.h>
+#include <spdlog/stopwatch.h>
 #include <voxer/Rendering/VolumeRenderer.hpp>
 
 using namespace std;
@@ -19,7 +21,12 @@ void VolumeRenderingService::on_message(
   if (m_datasets == nullptr)
     return;
 
+  const char *env = getenv("LOG_LEVEL");
+  auto log_time = env != nullptr && strlen(env) > 0;
+
   try {
+    spdlog::stopwatch sw{};
+
     auto command = parse(message, size);
     auto &engine = command.first;
     if (m_renderer == nullptr || m_renderer->get_backend() != engine) {
@@ -31,7 +38,14 @@ void VolumeRenderingService::on_message(
     m_renderer->render();
     auto &image = m_renderer->get_colors();
 
-    auto compressed = Image::encode(image, Image::Format::JPEG, Image::Quality::MEDIUM, true);
+    auto compressed =
+        Image::encode(image, Image::Format::JPEG, Image::Quality::MEDIUM, true);
+
+    if (log_time) {
+      spdlog::info("Elapsed {}", sw);
+    }
+    spdlog::stopwatch sw2;
+
     callback(reinterpret_cast<const uint8_t *>(compressed.data.data()),
              compressed.data.size(), true);
     m_renderer->clear_scene();

@@ -3,7 +3,6 @@
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
 #include <spdlog/spdlog.h>
-#include <stdexcept>
 #include <string>
 
 using namespace std;
@@ -25,37 +24,10 @@ namespace voxer {
 
 OSPRayRenderer::OSPRayRenderer() {
   m_cache = OSPRayVolumeCache::get_instance();
-
-  ospLoadModule("ispc");
-  osp_device = ospNewDevice("cpu");
-  if (osp_device == nullptr) {
-    throw runtime_error("Failed to initialize OSPRay");
-  }
-#ifndef NDEBUG
-  auto logLevel = OSP_LOG_DEBUG;
-  ospDeviceSetParam(osp_device, "logLevel", OSP_INT, &logLevel);
-  ospDeviceSetParam(osp_device, "logOutput", OSP_STRING, "cout");
-  ospDeviceSetParam(osp_device, "errorOutput", OSP_STRING, "cerr");
-#endif
-  ospDeviceCommit(osp_device);
-  ospSetCurrentDevice(osp_device);
-
-  auto major_version =
-      ospDeviceGetProperty(osp_device, OSP_DEVICE_VERSION_MAJOR);
-  auto minor_version =
-      ospDeviceGetProperty(osp_device, OSP_DEVICE_VERSION_MINOR);
-  spdlog::info("OSPRayRenderer initialized, OSPRay version {}.{}.",
-               major_version, minor_version);
+  spdlog::info("OSPRayRenderer initialized.");
 }
 
-OSPRayRenderer::~OSPRayRenderer() {
-  if (osp_device == nullptr)
-    return;
-
-  ospDeviceRelease(osp_device);
-
-  spdlog::info("OSPRayRenderer destroyed.");
-}
+OSPRayRenderer::~OSPRayRenderer() { spdlog::info("OSPRayRenderer destroyed."); }
 
 void OSPRayRenderer::set_camera(const Camera &camera) noexcept {
   m_camera = camera;

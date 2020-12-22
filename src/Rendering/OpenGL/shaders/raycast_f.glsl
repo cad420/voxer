@@ -126,28 +126,30 @@ vec4 render_volume(vec3 startPos, vec3 rayDirection, int steps, float step) {
 
     vec3 samplePos = startPos + rayDirection * step * (float(i) + 0.5);
     //samplePos.z*=2.0;//!!!
-    //      samplePos *= boundRatio;
+    // samplePos *= boundRatio;
     vec4 scalar = texture(Block, samplePos);
     vec4 sampleColor;
-    if (!gradPreCal){
-      if (usePreIntTF){
-        sampleColor = texture(preIntTF, vec2(oldScalar.r, scalar.r));
+    if (scalar.r > 0.0f) {
+      if (!gradPreCal){
+        if (usePreIntTF){
+          sampleColor = texture(preIntTF, vec2(oldScalar.r, scalar.r));
+        } else {
+          sampleColor = texture(TF, scalar.r);
+        }
       } else {
-        sampleColor = texture(TF, scalar.r);
+        if (usePreIntTF) {
+          sampleColor = texture(preIntTF, vec2(oldScalar.a, scalar.a));
+        } else {
+          sampleColor = texture(TF, scalar.a);
+        }
       }
-    } else {
-      if (usePreIntTF) {
-        sampleColor = texture(preIntTF, vec2(oldScalar.a, scalar.a));
-      } else {
-        sampleColor = texture(TF, scalar.a);
+      sampleColor.rgb = phongShading(samplePos, sampleColor.rgb);
+      color = color + sampleColor * vec4(sampleColor.aaa, 1.0) * (1.0 - color.a);
+      if (color.a > 0.99) {
+        break;
       }
+      oldScalar = scalar;
     }
-    sampleColor.rgb = phongShading(samplePos, sampleColor.rgb);
-    color = color + sampleColor * vec4(sampleColor.aaa, 1.0) * (1.0 - color.a);
-    if (color.a > 0.99) {
-      break;
-    }
-    oldScalar = scalar;
   }
   return color;
 }

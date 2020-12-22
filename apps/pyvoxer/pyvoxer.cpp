@@ -79,11 +79,11 @@ PYBIND11_MODULE(pyvoxer, m) {
               &Image::encode))
       .def_static(
           "encode",
-          py::overload_cast<const Image &, Image::Format, Image::Quality>(
+          py::overload_cast<const Image &, Image::Format, Image::Quality, bool>(
               &Image::encode));
 
   py::class_<VolumeRenderer> volume_renderer(m, "VolumeRenderer");
-  volume_renderer.def(py::init<const char *>())
+  volume_renderer.def(py::init<const char*>())
       .def("set_camera", &VolumeRenderer::set_camera)
       .def("add_volume", &VolumeRenderer::add_volume)
       .def("add_isosurface", &VolumeRenderer::add_isosurface)

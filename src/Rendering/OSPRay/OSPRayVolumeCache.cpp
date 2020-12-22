@@ -1,5 +1,7 @@
 #include "OSPRayVolumeCache.hpp"
 #include <ospray/ospray_util.h>
+#include <spdlog/spdlog.h>
+#include <stdexcept>
 
 namespace {
 
@@ -29,6 +31,35 @@ OSPVolume create_osp_volume(voxer::StructuredGrid *dataset) {
 } // namespace
 
 namespace voxer {
+
+OSPRayVolumeCache::OSPRayVolumeCache() {
+  ospLoadModule("ispc");
+  m_osp_device = ospNewDevice("cpu");
+  if (m_osp_device == nullptr) {
+    throw std::runtime_error("Failed to initialize OSPRay");
+  }
+#ifndef NDEBUG
+  auto logLevel = OSP_LOG_DEBUG;
+  ospDeviceSetParam(m_osp_device, "logLevel", OSP_INT, &logLevel);
+  ospDeviceSetParam(m_osp_device, "logOutput", OSP_STRING, "cout");
+  ospDeviceSetParam(m_osp_device, "errorOutput", OSP_STRING, "cerr");
+#endif
+  ospDeviceCommit(m_osp_device);
+  ospSetCurrentDevice(m_osp_device);
+
+  auto major_version =
+      ospDeviceGetProperty(m_osp_device, OSP_DEVICE_VERSION_MAJOR);
+  auto minor_version =
+      ospDeviceGetProperty(m_osp_device, OSP_DEVICE_VERSION_MINOR);
+  spdlog::info("OSPRayRenderer initialized, OSPRay version {}.{}.",
+               major_version, minor_version);
+}
+
+OSPRayVolumeCache::~OSPRayVolumeCache() noexcept {
+  if (m_osp_device != nullptr) {
+    ospDeviceRelease((m_osp_device));
+  }
+}
 
 auto OSPRayVolumeCache::get_instance() noexcept -> OSPRayVolumeCache * {
   static OSPRayVolumeCache instance{};
@@ -69,6 +100,10 @@ void OSPRayVolumeCache::load(StructuredGrid *data) {
 bool OSPRayVolumeCache::has(StructuredGrid *data) noexcept {
   std::lock_guard<std::mutex> lock(m_mutex);
   return m_cache.has(data);
+}
+
+OSPDevice OSPRayVolumeCache::get_device() const noexcept {
+  return m_osp_device;
 }
 
 } // namespace voxer
