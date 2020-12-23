@@ -1,6 +1,7 @@
 include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/poco.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/spdlog.cmake)
+include(${PROJECT_SOURCE_DIR}/third_party/mpack.cmake)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 
@@ -39,6 +40,7 @@ target_link_libraries(
     Poco::Net
     Poco::Util
     spdlog
+    mpack
 )
 target_compile_features(VoxerWorker PRIVATE cxx_std_17)
 if (VOXER_BUILD_ANNOTATION_MODULE)

@@ -1,11 +1,4 @@
-import run from "./server";
+import Server from "./Server";
 
-let port = 3001;
-if (process.env.PORT) {
-  const tmp = parseInt(process.env.PORT);
-  if (!isNaN(tmp) && tmp > 0 && tmp < 65535) {
-    port = tmp;
-  }
-}
-
-run(port);
+const server = new Server();
+server.listen();

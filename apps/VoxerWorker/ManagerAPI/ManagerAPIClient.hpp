@@ -12,22 +12,31 @@
 #include <seria/object.hpp>
 #include <sstream>
 #include <string>
+#include <thread>
 
 namespace voxer::remote {
+
+class VolumeRenderingService;
 
 class ManagerAPIClient {
 public:
   explicit ManagerAPIClient();
   explicit ManagerAPIClient(std::string address);
+  ~ManagerAPIClient();
+
+  ManagerAPIClient(ManagerAPIClient &&another) noexcept ;
+  ManagerAPIClient & operator=(ManagerAPIClient &&another) noexcept;
 
   DatasetLoadInfo get_dataset_info(const std::string &id);
 
   const char *get_address() const noexcept { return m_address.c_str(); }
 
+  std::unique_ptr<VolumeRenderingService> m_service;
 private:
   std::string m_address;
   Poco::URI m_uri;
   std::unique_ptr<WebSocketClient> m_ws = nullptr;
+  std::thread m_thread {};
 
   template <typename ResultType> ResultType request(const std::string &path) {
     using Poco::Net::HTTPClientSession;

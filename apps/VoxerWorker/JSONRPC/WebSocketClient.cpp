@@ -20,7 +20,7 @@ WebSocketClient::~WebSocketClient() noexcept {
 
 void WebSocketClient::connect(const char *host, uint16_t port,
                               const char *path) {
-  if (m_handle_message != nullptr) {
+  if (m_handle_message == nullptr) {
     throw std::runtime_error("should register handler for WebSocket messages");
   }
 
@@ -61,7 +61,7 @@ void WebSocketClient::on_message(
   m_handle_message = callback;
 }
 
-void WebSocketClient::send(uint8_t *message, uint32_t size, bool is_binary) {
+void WebSocketClient::send(const uint8_t *message, uint32_t size, bool is_binary) {
   using namespace Poco::Net;
   if (m_ws == nullptr)
     return;
@@ -72,6 +72,13 @@ void WebSocketClient::send(uint8_t *message, uint32_t size, bool is_binary) {
   if (len == 0) {
     spdlog::warn("WebSocketClient sent message failed.");
   }
+}
+
+void WebSocketClient::close() {
+  if (m_ws == nullptr)
+    return;
+
+  m_ws->close();
 }
 
 } // namespace voxer::remote

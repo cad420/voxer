@@ -20,11 +20,13 @@ public:
   };
 
   voxer::remote::DatasetStore *m_datasets = nullptr;
+  void render(const Scene &scene,  const MessageCallback &callback);
 
 private:
   std::unique_ptr<voxer::VolumeRenderer> m_renderer;
 
-  void render(const Scene &scene,  const MessageCallback &callback);
+
+  Scene parse_scene(uint8_t *message, uint32_t size, std::string &id);
 };
 
 } // namespace voxer::remote

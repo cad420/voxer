@@ -41,7 +41,7 @@ void VoxerWorkerApplication::defineOptions(Poco::Util::OptionSet &options) {
                             this, &VoxerWorkerApplication::hanldle_option)));
 
   options.addOption(Option("manager", "m", "manager address")
-                        .required(true)
+                        .required(false)
                         .argument("manager")
                         .repeatable(false)
                         .callback(OptionCallback(
@@ -59,8 +59,7 @@ void VoxerWorkerApplication::hanldle_option(const std::string &name,
                                             const std::string &value) {
   if (name == "manager") {
     try {
-      Poco::URI uri{value};
-      m_manager = ManagerAPIClient(value);
+      m_manager = std::make_unique<ManagerAPIClient>(value);
     } catch (std::exception &exp) {
       spdlog::critical("invalid manager address");
       stopOptionsProcessing();
@@ -98,7 +97,8 @@ int VoxerWorkerApplication::main(const std::vector<std::string> &args) {
   using HTTPServer = Poco::Net::HTTPServer;
   using HTTPServerParams = Poco::Net::HTTPServerParams;
 
-  m_datasets = std::make_unique<DatasetStore>(&m_manager, m_storage);
+  m_datasets = std::make_unique<DatasetStore>(m_manager.get(), m_storage);
+  m_manager->m_service->m_datasets = m_datasets.get();
   register_rpc_methods();
   auto routes = resgiter_services();
 

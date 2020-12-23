@@ -68,6 +68,10 @@ auto DatasetStore::get(const DatasetId &id) -> shared_ptr<StructuredGrid> {
     return dataset;
   }
 
+  if (m_manager == nullptr) {
+    throw runtime_error("cannot find dataset");
+  }
+
   auto load_info = m_manager->get_dataset_info(id);
   auto loaded = this->load(load_info.id, load_info.name, load_info.path);
   handle = loaded;

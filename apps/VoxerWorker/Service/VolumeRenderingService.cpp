@@ -64,8 +64,13 @@ void VolumeRenderingService::on_message(
 
 void VolumeRenderingService::render(const Scene &scene,
                                     const MessageCallback &callback) {
-  if (m_renderer == nullptr || m_renderer->get_backend() != scene.renderer) {
-    m_renderer = make_unique<VolumeRenderer>(scene.renderer.c_str());
+  assert(m_datasets != nullptr && callback != nullptr);
+
+  auto renderer = scene.renderer;
+  std::transform(renderer.begin(), renderer.end(), renderer.begin(),
+                 [](unsigned char c){ return std::tolower(c); });
+  if (m_renderer == nullptr || m_renderer->get_backend() != renderer) {
+    m_renderer = make_unique<VolumeRenderer>(renderer.c_str());
   }
 
   m_renderer->set_camera(scene.camera);

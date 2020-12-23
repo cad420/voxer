@@ -15,9 +15,11 @@ public:
   void connect(const char *host, uint16_t port,
                const char *path);
 
-  void send(uint8_t *message, uint32_t size, bool is_binary);
+  void send(const uint8_t *message, uint32_t size, bool is_binary);
 
   void on_message(const MessageCallback &callback);
+
+  void close();
 
 private:
   std::unique_ptr<Poco::Net::WebSocket> m_ws = nullptr;
