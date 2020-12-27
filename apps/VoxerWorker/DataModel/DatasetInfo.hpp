@@ -5,10 +5,10 @@
 
 namespace voxer::remote {
 
-using DatasetId = std::string;
+using DatasetID = std::string;
 
 struct DatasetInfo {
-  DatasetId id;
+  DatasetID id;
   std::array<uint32_t, 3> dimensions{};
   std::vector<uint32_t> histogram{};
   std::array<float, 2> range{};

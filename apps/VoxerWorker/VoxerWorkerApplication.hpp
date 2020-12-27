@@ -15,9 +15,9 @@ protected:
 
   void defineOptions(Poco::Util::OptionSet &options) override;
 
-  int main(const std::vector<std::string> &args) override;
-
   void hanldle_option(const std::string &name, const std::string &value);
+
+  int main(const std::vector<std::string> &args) override;
 
 private:
   bool m_show_help = false;
@@ -25,10 +25,6 @@ private:
   std::string m_storage = ".";
   uint32_t m_port = 3040;
   std::unique_ptr<DatasetStore> m_datasets;
-
-  auto resgiter_services() -> Poco::SharedPtr<RequestHandlerFactory>;
-
-  void register_rpc_methods();
 };
 
 } // namespace voxer::remote

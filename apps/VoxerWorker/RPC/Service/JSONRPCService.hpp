@@ -1,7 +1,7 @@
 #pragma once
-#include "JSONRPC/Error.hpp"
-#include "JSONRPC/RPCMethodsStore.hpp"
-#include "Service/AbstractService.hpp"
+#include "RPC/Error.hpp"
+#include "RPC/RPCMethodsStore.hpp"
+#include "RPC/Service/AbstractService.hpp"
 #include <Store/DatasetStore.hpp>
 #include <seria/deserialize.hpp>
 #include <seria/serialize.hpp>

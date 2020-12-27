@@ -6,7 +6,7 @@
 namespace voxer::remote {
 
 struct DatasetLoadInfo {
-  DatasetId id;
+  DatasetID id;
   std::string name;
   std::string path;
 

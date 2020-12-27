@@ -1,5 +1,5 @@
 #include "JSONRPCService.hpp"
-#include "JSONRPC/Error.hpp"
+#include "RPC/Error.hpp"
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
@@ -7,7 +7,7 @@ namespace voxer::remote {
 
 void JSONRPCService::on_message(
     const char *message, uint32_t size,
-    const voxer::remote::MessageCallback &callback) noexcept {
+    const MessageCallback &callback) noexcept {
   // see https://www.jsonrpc.org/specification
   rapidjson::Document response(rapidjson::kObjectType);
   auto &allocator = response.GetAllocator();

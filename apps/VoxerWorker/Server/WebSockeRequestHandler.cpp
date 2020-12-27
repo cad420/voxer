@@ -3,15 +3,10 @@
 #include <Poco/Net/WebSocket.h>
 #include <Poco/Util/Application.h>
 
-using Poco::Util::Application;
-
 namespace voxer::remote {
 
-WebSocketRequestHandler::WebSocketRequestHandler(
-    std::unique_ptr<AbstractService> service) {
-  assert(service != nullptr);
-  m_service = move(service);
-}
+WebSocketRequestHandler::WebSocketRequestHandler(DatasetStore *datasets)
+    : m_datasets(datasets), m_service(std::make_unique<Service>(datasets)) {}
 
 void WebSocketRequestHandler::handleRequest(
     Poco::Net::HTTPServerRequest &request,
@@ -20,28 +15,34 @@ void WebSocketRequestHandler::handleRequest(
 
   using WebSocket = Poco::Net::WebSocket;
 
-  Application &app = Application::instance();
   try {
-    char buffer[4096];
+    auto buffer_size = 4 * 1024 * 1024; // 4MB buffer
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
     int flags = 0;
-    int len;
+    int size;
+    auto should_close = false;
 
     WebSocket ws(request, response);
     auto one_hour = Poco::Timespan(0, 1, 0, 0, 0);
     ws.setReceiveTimeout(one_hour);
+
+    auto handler = [&ws](const uint8_t *data, uint32_t size) {
+      ws.sendFrame(data, size, WebSocket::FRAME_BINARY);
+    };
+
     do {
-      len = ws.receiveFrame(buffer, sizeof(buffer), flags);
-      m_service->on_message(
-          buffer, len,
-          [&ws](const uint8_t *message, uint32_t size, bool is_binary) {
-            ws.sendFrame(message, size,
-                         is_binary ? WebSocket::FRAME_BINARY
-                                   : WebSocket::FRAME_TEXT);
-          });
-    } while (len > 0 && (flags & WebSocket::FRAME_OP_BITMASK) !=
-                            WebSocket::FRAME_OP_CLOSE);
+      size = ws.receiveFrame(buffer.get(), buffer_size, flags);
+      should_close = size <= 0 || ((flags & WebSocket::FRAME_OP_BITMASK) ==
+                                   WebSocket::FRAME_OP_CLOSE);
+      auto is_binary =
+          (flags & WebSocket::FRAME_OP_BITMASK) == WebSocket::FRAME_OP_BINARY;
+      if (!should_close && is_binary) {
+        m_service->on_message(reinterpret_cast<const uint8_t *>(buffer.get()),
+                              size, handler);
+      }
+    } while (!should_close);
   } catch (Poco::Net::WebSocketException &exc) {
-    app.logger().log(exc);
+    spdlog::error(exc.what());
     switch (exc.code()) {
     case WebSocket::WS_ERR_HANDSHAKE_UNSUPPORTED_VERSION:
       response.set("Sec-WebSocket-Version", WebSocket::WEBSOCKET_VERSION);

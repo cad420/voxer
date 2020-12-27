@@ -42,14 +42,14 @@ void WebSocketClient::connect(const char *host, uint16_t port,
 
     do {
       length = m_ws->receiveFrame(buffer.get(), buffer_size, flags);
-      should_close =
-          (flags & WebSocket::FRAME_OP_BITMASK) == WebSocket::FRAME_OP_CLOSE;
+      should_close = length < 0 || (flags & WebSocket::FRAME_OP_BITMASK) ==
+                                       WebSocket::FRAME_OP_CLOSE;
       if (!should_close) {
         m_handle_message(buffer.get(), length,
                          (flags & WebSocket::FRAME_OP_BINARY) ==
-                             WebSocket::FRAME_BINARY);
+                             WebSocket::FRAME_OP_BINARY);
       }
-    } while (length > 0 && !should_close);
+    } while (!should_close);
     spdlog::info("WebSocketClient connection closed");
   } catch (std::exception &error) {
     spdlog::error("WebSocketClient Connect Error: {}", error.what());
@@ -61,7 +61,8 @@ void WebSocketClient::on_message(
   m_handle_message = callback;
 }
 
-void WebSocketClient::send(const uint8_t *message, uint32_t size, bool is_binary) {
+void WebSocketClient::send(const uint8_t *message, uint32_t size,
+                           bool is_binary) {
   using namespace Poco::Net;
   if (m_ws == nullptr)
     return;

@@ -1,7 +1,6 @@
 include(${PROJECT_SOURCE_DIR}/third_party/seria.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/poco.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/spdlog.cmake)
-include(${PROJECT_SOURCE_DIR}/third_party/mpack.cmake)
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)
 
@@ -11,16 +10,12 @@ list(
     main.cpp
     VoxerWorkerApplication.cpp
     Server/RequestHandlerFactory.cpp
-    Server/HTTPJSONRequestHandler.cpp
     Server/WebSockeRequestHandler.cpp
-    Service/AbstractService.cpp
-    Service/JSONRPCService.cpp
-    Service/SliceService.cpp
-    Service/VolumeRenderingService.cpp
     Store/DatasetStore.cpp
+    RPC/RPCMethodsStore.cpp
+    RPC/Service.cpp
     ManagerAPI/ManagerAPIClient.cpp
-    JSONRPC/RPCMethodsStore.cpp
-    JSONRPC/WebSocketClient.cpp
+    ManagerAPI/WebSocketClient.cpp
 )
 
 add_executable(VoxerWorker ${VoxerWorker_SRCS})

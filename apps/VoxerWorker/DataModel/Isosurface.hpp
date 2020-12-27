@@ -6,7 +6,7 @@
 namespace voxer::remote {
 
 struct Isosurface {
-  DatasetId dataset;
+  DatasetID dataset;
   std::string color = "#FF0000";
   float value = 0.0f;
   bool render = true;

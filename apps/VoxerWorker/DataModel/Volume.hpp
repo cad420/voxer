@@ -7,7 +7,7 @@
 namespace voxer::remote {
 
 struct Volume {
-  DatasetId dataset;
+  DatasetID dataset;
   int32_t tfcn_idx = -1;
   std::array<float, 3> spacing = {1.0f, 1.0f, 1.0f};
 

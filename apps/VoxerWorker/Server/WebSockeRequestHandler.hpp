@@ -1,5 +1,5 @@
 #pragma once
-#include "Service/AbstractService.hpp"
+#include "RPC/Service.hpp"
 #include <Poco/Net/HTTPRequestHandler.h>
 #include <Poco/Net/HTTPServerRequest.h>
 #include <Poco/Net/HTTPServerResponse.h>
@@ -9,12 +9,13 @@ namespace voxer::remote {
 
 class WebSocketRequestHandler : public Poco::Net::HTTPRequestHandler {
 public:
-  explicit WebSocketRequestHandler(std::unique_ptr<AbstractService> service);
+  explicit WebSocketRequestHandler(DatasetStore *m_dataset);
   void handleRequest(Poco::Net::HTTPServerRequest &request,
                      Poco::Net::HTTPServerResponse &response) override;
 
 private:
-  std::unique_ptr<AbstractService> m_service;
+  DatasetStore *m_datasets = nullptr;
+  std::unique_ptr<Service> m_service = nullptr;
 };
 
 } // namespace voxer::remote

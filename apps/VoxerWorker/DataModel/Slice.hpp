@@ -9,7 +9,7 @@
 namespace voxer::remote {
 
 struct Slice {
-  DatasetId dataset;
+  DatasetID dataset;
   StructuredGrid::Axis axis = StructuredGrid::Axis::X;
   uint32_t index = 0;
 };
