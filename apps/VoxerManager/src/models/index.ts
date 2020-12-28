@@ -1,8 +1,8 @@
-import { DATABASE } from "../config";
+import { options } from "../index";
 import { MongoClient, Db } from "mongodb";
 
 async function connect(): Promise<Db> {
-  const client = new MongoClient(`mongodb://${DATABASE}?w=majority`, {
+  const client = new MongoClient(`mongodb://${options.database}?w=majority`, {
     useUnifiedTopology: true,
     useNewUrlParser: true,
   });

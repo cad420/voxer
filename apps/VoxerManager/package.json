@@ -4,11 +4,12 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "watch": "tsc -w",
+    "watch": "ncc build src/index.ts -w -s",
     "start": "node dist/index.js",
-    "build": "tsc"
+    "build": "ncc build src/index.ts -m -s"
   },
   "dependencies": {
+    "@vercel/ncc": "^0.26.1",
     "@ygoe/msgpack": "^1.0.2",
     "ajv": "^6.12.6",
     "cors": "^2.8.5",
