@@ -1,9 +1,9 @@
 #pragma once
-#include "Common/LRUCache.hpp"
 #include <mutex>
 #include <ospray/ospray.h>
 #include <unordered_map>
 #include <voxer/Data/StructuredGrid.hpp>
+#include <voxer/Util/LRUCache.hpp>
 
 namespace voxer {
 

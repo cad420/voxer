@@ -3,7 +3,7 @@ import multer from "multer";
 import mongodb, { ObjectID } from "mongodb";
 import { options } from "../index";
 import Dataset from "../models/Dataset";
-import { getDatasetInfo } from "../worker_api/jsonrpc";
+import WorkerRPCCaller from "../worker_api";
 
 const router = express.Router();
 
@@ -50,6 +50,7 @@ router.post("/", upload.single("dataset"), async (req, res) => {
   const filename = req.file.filename;
 
   const database: mongodb.Db = req.app.get("database");
+  const worker: WorkerRPCCaller = req.app.get("worker");
   const collection = database.collection("datasets");
 
   const exist = (await collection.findOne(
@@ -85,7 +86,7 @@ router.post("/", upload.single("dataset"), async (req, res) => {
   }
 
   try {
-    const info = await getDatasetInfo(id, filename, filename);
+    const info = await worker.getDatasetInfo(id, filename, filename);
     await collection.updateOne(
       { _id: new ObjectID(id) },
       {
@@ -114,6 +115,7 @@ router.get("/:id", async (req, res) => {
   const { id } = req.params;
 
   const database: mongodb.Db = req.app.get("database");
+  const worker: WorkerRPCCaller = req.app.get("worker");
 
   const collection = database.collection("datasets");
 
@@ -136,7 +138,11 @@ router.get("/:id", async (req, res) => {
 
   if (dataset.histogram.length === 0) {
     try {
-      const info = await getDatasetInfo(dataset.id, dataset.name, dataset.path);
+      const info = await worker.getDatasetInfo(
+        dataset.id,
+        dataset.name,
+        dataset.path
+      );
       await collection.updateOne(
         { _id: new ObjectID(dataset.id) },
         {

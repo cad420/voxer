@@ -15,7 +15,6 @@ list(
     RPC/RPCMethodsStore.cpp
     RPC/Service.cpp
     ManagerAPI/ManagerAPIClient.cpp
-    ManagerAPI/WebSocketClient.cpp
 )
 
 add_executable(VoxerWorker ${VoxerWorker_SRCS})

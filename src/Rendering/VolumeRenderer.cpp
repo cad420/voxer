@@ -1,4 +1,3 @@
-#include "Common/Logger.hpp"
 #include "Rendering/IRenderer.hpp"
 #include <chrono>
 #include <dlfcn.h>

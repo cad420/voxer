@@ -2,7 +2,7 @@
 #define MESA_EGL_NO_X11_HEADERS
 #define EGL_NO_X11
 #define EGL_EGLEXT_PROTOTYPES
-#include "Common/LRUCache.hpp"
+#include <voxer/Util/LRUCache.hpp>
 #include <EGL/egl.h>
 #include <glad/glad.h>
 #include <mutex>

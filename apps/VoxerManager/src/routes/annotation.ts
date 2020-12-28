@@ -2,7 +2,6 @@ import express from "express";
 import mongodb, { ObjectID } from "mongodb";
 import DatasetGroup, { Label } from "../models/DatasetGroup";
 import Annotation from "../models/Annotation";
-import { applyGrabCut, applyLevelSet } from "../worker_api/jsonrpc";
 
 type Axis = "x" | "y" | "z";
 
@@ -183,80 +182,6 @@ router.post("/:group/:dataset/:axis/:index", async (req, res) => {
 
   res.send({
     code: 200,
-  });
-});
-
-/**
- * actions for annotation
- */
-router.post("/action", async (req, res) => {
-  // TODO: validate req.body
-  type ReqData = {
-    operation: string;
-    params: {
-      group: string;
-      dataset: string;
-      axis: string;
-      index: number;
-      annotations: Array<{
-        tag: number;
-        comment: string;
-        coordinates: Annotation["coordinates"];
-      }>;
-    };
-  };
-  const { operation, params } = req.body as ReqData;
-
-  const error = validate(params.axis, params.index);
-  if (error.length > 0) {
-    res.send({
-      code: 400,
-      data: error,
-    });
-    return;
-  }
-
-  if (operation === "levelset") {
-    applyLevelSet(params.dataset, params.axis, params.index, params.annotations)
-      .then((annotations) => {
-        res.send({
-          code: 200,
-          data: annotations,
-        });
-      })
-      .catch((err) => {
-        res.send({
-          code: 400,
-          data: err.message,
-        });
-      });
-    return;
-  }
-
-  if (operation === "grabcut") {
-    try {
-      const annotations = await applyGrabCut(
-        params.dataset,
-        params.axis,
-        params.index,
-        params.annotations
-      );
-      res.send({
-        code: 200,
-        data: annotations,
-      });
-    } catch (err) {
-      res.send({
-        code: 400,
-        data: err.message,
-      });
-    }
-    return;
-  }
-
-  res.send({
-    code: 404,
-    data: "unknown operation",
   });
 });
 

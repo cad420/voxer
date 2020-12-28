@@ -1,11 +1,9 @@
 #include <voxer/Data/Image.hpp>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "Common/Logger.hpp"
 #include "third_party/stb_image_write.h"
 #include <cassert>
 #include <chrono>
 #include <stdexcept>
-#include <string>
 #include <vector>
 
 using namespace std;
@@ -13,8 +11,6 @@ using namespace std;
 namespace voxer {
 
 namespace {
-
-Logger logger("encoder");
 
 void stbi_write_func(void *context, void *data, int size) {
   auto image = reinterpret_cast<vector<uint8_t> *>(context);
@@ -54,10 +50,6 @@ Image Image::encode(const uint8_t *data, uint32_t width, uint32_t height,
   if (res == 0) {
     throw runtime_error("encoding image failed.");
   }
-
-  const auto delta = chrono::duration_cast<chrono::milliseconds>(
-      chrono::steady_clock::now() - start);
-  logger.info(to_string(delta.count()) + " ms");
 
   return image;
 }

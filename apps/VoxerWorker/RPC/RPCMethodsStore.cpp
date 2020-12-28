@@ -45,7 +45,7 @@ void RPCMethodsStore::invoke(const std::string &method,
     throw JSONRPCInvalidParamsError();
   }
 
-  spdlog::info("Invoke RPC method {}", method.c_str());
+  spdlog::debug("Invoke RPC method {}", method.c_str());
 
   handler(params, writer);
 }

@@ -1,15 +1,7 @@
 #pragma once
 #include "DataModel/DatasetLoadInfo.hpp"
-#include "ManagerAPI/WebSocketClient.hpp"
-#include <Poco/Net/HTTPClientSession.h>
-#include <Poco/Net/HTTPRequest.h>
-#include <Poco/Net/HTTPResponse.h>
-#include <Poco/NullStream.h>
-#include <Poco/StreamCopier.h>
 #include <Poco/URI.h>
-#include <fmt/core.h>
-#include <seria/deserialize.hpp>
-#include <seria/object.hpp>
+#include <atomic>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -21,15 +13,13 @@ class DatasetStore;
 
 class ManagerAPIClient {
 public:
-  explicit ManagerAPIClient();
   explicit ManagerAPIClient(std::string address);
+
   ~ManagerAPIClient();
 
   void set_datasets(DatasetStore *datasets);
 
-  [[nodiscard]] const char *get_address() const noexcept {
-    return m_address.c_str();
-  }
+  [[nodiscard]] const char *get_address() const noexcept;
 
   void register_worker();
 
@@ -38,9 +28,9 @@ public:
   // TODO: download from manager
 
 private:
+  std::atomic<bool> m_done{};
   std::string m_address;
   Poco::URI m_uri;
-  std::unique_ptr<WebSocketClient> m_ws = nullptr;
   std::unique_ptr<Service> m_service;
   std::thread m_thread{};
 

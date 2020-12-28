@@ -6,6 +6,7 @@
 #include <memory>
 #include <seria/object.hpp>
 #include <voxer/Rendering/VolumeRenderer.hpp>
+#include <voxer/Util/LRUCache.hpp>
 
 namespace voxer::remote {
 
@@ -43,6 +44,7 @@ public:
 private:
   std::unique_ptr<voxer::VolumeRenderer> m_renderer = nullptr;
   std::unique_ptr<RPCMethodsStore> m_methods = nullptr;
+  LRUCache<DatasetID, std::shared_ptr<StructuredGrid>> m_datasets_for_slice;
   DatasetStore *m_datasets = nullptr;
   bool m_log_time = false;
 };

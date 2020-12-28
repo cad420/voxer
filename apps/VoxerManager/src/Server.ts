@@ -7,6 +7,7 @@ import routes from "./routes";
 import { Db, MongoClient } from "mongodb";
 import pino from "pino";
 import nanoid from "nanoid";
+import WorkerAPICaller from "./worker_api";
 
 const msgpack = require("@ygoe/msgpack");
 
@@ -26,6 +27,7 @@ class Server {
   database: Db;
   databseAddr: string;
   port: number;
+  worker: WorkerAPICaller;
 
   constructor(options: ServerOptions) {
     this.workers = [];
@@ -34,6 +36,30 @@ class Server {
     this.port = options.port || 3001;
     this.databseAddr = options.database || "127.0.0.1:27017";
     this.workerIdx = 0;
+    this.worker = new WorkerAPICaller();
+    this.worker.send = (message) => {
+      const workerNum = this.workers.length;
+
+      if (workerNum <= 0) {
+        throw new Error("no available worker");
+      }
+
+      const worker = this.workers[this.workerIdx];
+      this.workerIdx = (this.workerIdx + 1) % workerNum;
+      const data = msgpack.serialize(message);
+      worker.send(data);
+    };
+
+    setInterval(() => {
+      this.workers.forEach((worker) => {
+        if ((worker as any).isAlive === false) {
+          return worker.terminate();
+        }
+
+        (worker as any).isAlive = false;
+        worker.ping();
+      });
+    }, 5 * 1000);
   }
 
   async connectDatabase() {
@@ -59,13 +85,18 @@ class Server {
   }
 
   handleClientConnect = (ws: WebSocket) => {
-    logger.info("new client");
-
     const id = nanoid(10);
 
     this.clients.set(id, ws);
 
-    const info = msgpack.serialize({ method: "connect", id });
+    logger.info(`New client connected, id: ${id}`);
+
+    const info = msgpack.serialize({
+      caller: id,
+      method: "connect",
+      id,
+      result: id,
+    });
     ws.send(info);
 
     ws.on("message", (message) => {
@@ -74,9 +105,12 @@ class Server {
       if (workerNum <= 0) {
         const error = "no available worker";
         logger.warn(error);
-        ws.send(
-          msgpack.serialize({ id, error: { code: 500, message: error } })
-        );
+        const data = msgpack.serialize({
+          caller: id,
+          id,
+          error: { code: 500, message: error },
+        });
+        ws.send(data);
         return;
       }
 
@@ -86,17 +120,22 @@ class Server {
     });
 
     ws.on("close", () => {
-      logger.warn("Client Close");
+      logger.warn(`Client(${id}) Closed`);
       this.clients.delete(id);
     });
 
     ws.on("error", (msg: WebSocket.Data) => {
-      logger.warn(`Client Error: ${msg.toString()}`);
+      logger.warn(`Client(${id}) Error: ${msg.toString()}`);
     });
   };
 
   handleWorkerConnect = (ws: WebSocket) => {
-    logger.info("new worker");
+    logger.info("New worker connected");
+
+    (ws as any).isAlive = true;
+    ws.on("pong", () => {
+      (ws as any).isAlive = true;
+    });
 
     const index = this.workers.length;
     this.workers.push(ws);
@@ -104,8 +143,8 @@ class Server {
     ws.on("message", this.handleWorkerMessage);
 
     ws.on("close", () => {
-      logger.warn("Worker Close");
-      this.workers = this.workers.splice(index, 1);
+      logger.warn("Worker Closed");
+      this.workers.splice(index, 1);
       if (this.workerIdx > index) {
         this.workerIdx = this.workerIdx % this.workers.length;
       }
@@ -117,13 +156,27 @@ class Server {
   };
 
   handleWorkerMessage = (message: WebSocket.Data) => {
-    let id = "";
-    if (message instanceof Buffer) {
-      const idLen = Math.min(message.readUInt8(4) ^ 0x10100000, 10);
-      id = message.toString("utf8", 5, 5 + idLen);
+    if (!(message instanceof Buffer)) {
+      return;
     }
 
-    const client = this.clients.get(id);
+    // see https://github.com/msgpack/msgpack/blob/master/spec.md#str-format-family
+    const callerLenByteOffset = 8; // { "caller": "xxxxxx", ... }
+    const callerByteOffset = callerLenByteOffset + 1;
+    const callerLen = message.readUInt8(callerLenByteOffset) ^ 0b10100000;
+    const caller = message.toString(
+      "utf8",
+      callerByteOffset,
+      callerByteOffset + callerLen
+    );
+
+    if (caller === "VoxerManager") {
+      // RPC called by manager
+      this.worker.responsed(message);
+      return;
+    }
+
+    const client = this.clients.get(caller);
     if (!client) {
       return;
     }
@@ -147,6 +200,7 @@ class Server {
     });
 
     app.set("database", this.database);
+    app.set("worker", this.worker);
 
     const server = http.createServer(app);
 

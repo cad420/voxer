@@ -18,9 +18,9 @@ void WebSocketRequestHandler::handleRequest(
   try {
     auto buffer_size = 4 * 1024 * 1024; // 4MB buffer
     std::unique_ptr<uint8_t[]> buffer(new uint8_t[buffer_size]);
-    int flags = 0;
-    int size;
-    auto should_close = false;
+    uint32_t flags = 0;
+    int received;
+    bool should_close;
 
     WebSocket ws(request, response);
     auto one_hour = Poco::Timespan(0, 1, 0, 0, 0);
@@ -31,16 +31,31 @@ void WebSocketRequestHandler::handleRequest(
     };
 
     do {
-      size = ws.receiveFrame(buffer.get(), buffer_size, flags);
-      should_close = size <= 0 || ((flags & WebSocket::FRAME_OP_BITMASK) ==
-                                   WebSocket::FRAME_OP_CLOSE);
+      received = ws.receiveFrame(buffer.get(), buffer_size,
+                                 reinterpret_cast<int &>(flags));
+
+      auto is_ping =
+          (flags & WebSocket::FRAME_OP_BITMASK) == WebSocket::FRAME_OP_PING;
+      if (is_ping) {
+        ws.sendFrame(buffer.get(), received,
+                     WebSocket::FRAME_FLAG_FIN | WebSocket::FRAME_OP_PONG);
+        continue;
+      }
+
+      should_close = received <= 0 || ((flags & WebSocket::FRAME_OP_BITMASK) ==
+                                       WebSocket::FRAME_OP_CLOSE);
+      if (should_close) {
+        break;
+      }
+
       auto is_binary =
           (flags & WebSocket::FRAME_OP_BITMASK) == WebSocket::FRAME_OP_BINARY;
-      if (!should_close && is_binary) {
-        m_service->on_message(reinterpret_cast<const uint8_t *>(buffer.get()),
-                              size, handler);
+      if (!is_binary || m_service == nullptr) {
+        continue;
       }
-    } while (!should_close);
+
+      m_service->on_message(buffer.get(), received, handler);
+    } while (true);
   } catch (Poco::Net::WebSocketException &exc) {
     spdlog::error(exc.what());
     switch (exc.code()) {

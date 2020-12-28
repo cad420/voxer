@@ -1,11 +1,9 @@
 import { Command } from "commander";
-import { version } from "../package.json";
 import Server from "./Server";
 
 const program = new Command();
 
 program
-  .version(version)
   .option("--port <port>", "port listening")
   .option("--database <file>")
   .option("--storage <directory>", "directory to store data")

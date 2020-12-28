@@ -1,6 +1,5 @@
 #pragma once
 #include "RPC/Error.hpp"
-#include "Service/AbstractService.hpp"
 #include "Store/DatasetStore.hpp"
 #include <mpack/mpack.h>
 #include <seria/serialize/mpack.hpp>

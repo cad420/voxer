@@ -19,6 +19,9 @@ Service::Service(DatasetStore *datasets)
   m_log_time = env != nullptr && strlen(env) > 0;
 
   m_methods->register_method(
+      "get_dataset_info",
+      RPCMethodsStore::GetHandler(&Service::get_dataset_info, *this));
+  m_methods->register_method(
       "render", RPCMethodsStore::GetHandler(&Service::render, *this));
   m_methods->register_method(
       "get_dataset_slice",
@@ -46,7 +49,7 @@ void Service::on_message(const uint8_t *message, uint32_t size,
   uint32_t total;
   mpack_writer_t response_writer;
 
-  // see https://www.jsonrpc.org/specification
+  // extended JSON-RPC, see https://www.jsonrpc.org/specification
   try {
     mpack_tree_t tree;
     mpack_tree_init_data(&tree, reinterpret_cast<const char *>(message), size);
@@ -59,15 +62,20 @@ void Service::on_message(const uint8_t *message, uint32_t size,
     mpack_node_t root = mpack_tree_root(&tree);
 
     if (root.data->type != mpack_type_map ||
+        !mpack_node_map_contains_cstr(root, "caller") ||
         !mpack_node_map_contains_cstr(root, "id") ||
         !mpack_node_map_contains_cstr(root, "method") ||
         !mpack_node_map_contains_cstr(root, "params")) {
       throw JSONRPCInvalidRequestError();
     }
 
+    auto caller_node = mpack_node_map_cstr(root, "caller");
+    if (caller_node.data->type != mpack_type_str) {
+      throw JSONRPCInvalidRequestError();
+    }
+
     auto id_node = mpack_node_map_cstr(root, "id");
-    if ((id_node.data->type != mpack_type_str) &&
-        (id_node.data->type != mpack_type_int)) {
+    if (id_node.data->type != mpack_type_str) {
       throw JSONRPCInvalidRequestError();
     }
 
@@ -76,6 +84,8 @@ void Service::on_message(const uint8_t *message, uint32_t size,
       throw JSONRPCInvalidRequestError();
     }
 
+    auto caller = std::string(mpack_node_str(caller_node),
+                              mpack_node_strlen(caller_node));
     auto id = std::string(mpack_node_str(id_node), mpack_node_strlen(id_node));
     auto method = std::string(mpack_node_str(method_node),
                               mpack_node_strlen(method_node));
@@ -84,7 +94,9 @@ void Service::on_message(const uint8_t *message, uint32_t size,
     mpack_writer_init_growable(&response_writer,
                                reinterpret_cast<char **>(&response),
                                reinterpret_cast<size_t *>(&total));
-    mpack_start_map(&response_writer, 3);
+    mpack_start_map(&response_writer, 4);
+    mpack_write_cstr(&response_writer, "caller");
+    mpack_write_cstr(&response_writer, caller.c_str());
     mpack_write_cstr(&response_writer, "id");
     mpack_write_cstr(&response_writer, id.c_str());
     mpack_write_cstr(&response_writer, "method");
@@ -189,9 +201,15 @@ Image Service::render(const Scene &scene) {
 
 Image Service::get_dataset_slice(const std::string &dataset_id,
                                  StructuredGrid::Axis axis, uint32_t index) {
-  auto dataset = m_datasets->get(dataset_id);
+  auto dataset = m_datasets_for_slice.has(dataset_id)
+                     ? *m_datasets_for_slice.get(dataset_id)
+                     : m_datasets->get(dataset_id);
+
   auto image = dataset->get_slice(axis, index);
   auto jpeg = Image::encode(image, Image::Format::JPEG, Image::Quality::HIGH);
+
+  m_datasets_for_slice.emplace(dataset_id, std::move(dataset));
+
   return jpeg;
 }
 
