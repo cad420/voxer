@@ -118,7 +118,7 @@ async function saveAnnotations(
   axis: string,
   index: number,
   annotations: Array<{
-    tag: number;
+    tag: string;
     comment: string;
     coordinates: Annotation["coordinates"];
   }>
@@ -136,34 +136,14 @@ async function saveAnnotations(
     }
   );
 
-  if (annotations.length === 0) {
-    const updateExp: Record<string, {}> = {};
-    (group.labels as DatasetGroup["labels"]).forEach((label) => {
-      updateExp[`datasets.${dataset}.labels.${label.id}.${axis}.${index}`] = [];
-    });
-    await collection.updateOne(
-      {
-        _id: group._id,
-      },
-      {
-        $set: updateExp,
-      }
+  const updateExp: Record<string, {}> = {};
+  (group.labels as DatasetGroup["labels"]).forEach((label) => {
+    const data = annotations.filter(
+      (annotation) => annotation.tag === label.id.toHexString()
     );
-    return;
-  }
 
-  const updateExp: Record<string, Array<Annotation>> = {};
-  annotations.map((annotation) => {
-    const { tag } = annotation;
-    const key = `datasets.${dataset}.labels.${tag}.${axis}.${index}`;
-
-    if (updateExp[key]) {
-      updateExp[key].push(annotation);
-    } else {
-      updateExp[key] = [annotation];
-    }
+    updateExp[`datasets.${dataset}.labels.${label.id}.${axis}.${index}`] = data;
   });
-
   await collection.updateOne(
     {
       _id: group._id,
@@ -182,7 +162,7 @@ router.post("/:group/:dataset/:axis/:index", async (req, res) => {
 
   // TODO: validate req.body
   type ReqData = Array<{
-    tag: number;
+    tag: string;
     comment: string;
     coordinates: Annotation["coordinates"];
   }>;
