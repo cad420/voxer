@@ -1,6 +1,5 @@
 import jayson from "jayson";
 import Annotation from "../models/Annotation";
-import { WORKER } from "../config";
 
 function parseWorkerAddress(address: string): { host: string; port: number } {
   let host = address;
@@ -19,7 +18,7 @@ function parseWorkerAddress(address: string): { host: string; port: number } {
   return { host, port };
 }
 
-const worker = parseWorkerAddress(WORKER);
+const worker = parseWorkerAddress("");
 
 const client = jayson.Client.http({
   host: worker.host,

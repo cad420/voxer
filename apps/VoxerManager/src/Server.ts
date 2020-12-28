@@ -2,7 +2,6 @@ import express from "express";
 import WebSocket from "ws";
 import http from "http";
 import net from "net";
-import { PUBLIC_PATH, DATABASE } from "./config";
 import cors from "cors";
 import routes from "./routes";
 import { Db, MongoClient } from "mongodb";
@@ -13,24 +12,32 @@ const msgpack = require("@ygoe/msgpack");
 
 const logger = pino();
 
+interface ServerOptions {
+  port?: number;
+  serve?: string;
+  database?: string;
+}
+
 class Server {
   workers: WebSocket[];
   clients: Map<string, WebSocket>;
   workerIdx: number;
   publicDir: string;
   database: Db;
+  databseAddr: string;
   port: number;
 
-  constructor() {
+  constructor(options: ServerOptions) {
     this.workers = [];
     this.clients = new Map();
-    this.publicDir = PUBLIC_PATH;
-    this.port = 3001;
+    this.publicDir = options.serve || "public";
+    this.port = options.port || 3001;
+    this.databseAddr = options.database || "127.0.0.1:27017";
     this.workerIdx = 0;
   }
 
   async connectDatabase() {
-    const client = new MongoClient(`mongodb://${DATABASE}?w=majority`, {
+    const client = new MongoClient(`mongodb://${this.databseAddr}?w=majority`, {
       useUnifiedTopology: true,
       useNewUrlParser: true,
     });
@@ -129,7 +136,7 @@ class Server {
 
     const app = express();
 
-    app.use(express.static(PUBLIC_PATH));
+    app.use(express.static(this.publicDir));
     app.use(cors());
     app.use(express.json());
     app.use(routes);

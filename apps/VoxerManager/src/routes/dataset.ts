@@ -1,15 +1,15 @@
 import express from "express";
 import multer from "multer";
 import mongodb, { ObjectID } from "mongodb";
+import { options } from "../index";
 import Dataset from "../models/Dataset";
-import { UPLOAD_PATH } from "../config";
 import { getDatasetInfo } from "../worker_api/jsonrpc";
 
 const router = express.Router();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, UPLOAD_PATH);
+    cb(null, options.storage);
   },
   filename: (req, file, cb) => {
     cb(null, file.originalname);
