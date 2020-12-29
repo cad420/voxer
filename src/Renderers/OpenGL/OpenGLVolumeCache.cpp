@@ -1,4 +1,4 @@
-#include "Rendering/OpenGL/OpenGLVolumeCache.hpp"
+#include "Renderers/OpenGL/OpenGLVolumeCache.hpp"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <spdlog/spdlog.h>

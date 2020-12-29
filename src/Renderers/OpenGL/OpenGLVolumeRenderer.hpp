@@ -2,9 +2,9 @@
 #define MESA_EGL_NO_X11_HEADERS
 #define EGL_NO_X11
 #define EGL_EGLEXT_PROTOTYPES
-#include "Rendering/IRenderer.hpp"
-#include "Rendering/OpenGL/OpenGLVolumeCache.hpp"
-#include "Rendering/OpenGL/ShaderProgram.hpp"
+#include "Renderers/IRenderer.hpp"
+#include "Renderers/OpenGL/OpenGLVolumeCache.hpp"
+#include "Renderers/OpenGL/ShaderProgram.hpp"
 #include <EGL/egl.h>
 #include <unordered_map>
 #include <voxer/Data/Image.hpp>
@@ -61,5 +61,5 @@ private:
 } // namespace voxer
 
 extern "C" {
-VoxerIRenderer *voxer_get_backend();
+VoxerIRenderer *voxer_get_renderer();
 }

@@ -14,38 +14,38 @@ std::unordered_map<std::string, GetRenderingBackend> VolumeRenderer::symbols{};
 
 VolumeRenderer::~VolumeRenderer() = default;
 
-VolumeRenderer::VolumeRenderer(const char *backend) {
-  m_backend = backend;
-  auto it = symbols.find(backend);
+VolumeRenderer::VolumeRenderer(const char *renderer) {
+  m_name = renderer;
+  auto it = symbols.find(renderer);
 
   string postfix;
 #ifndef NDEBUG
   postfix = "d";
 #endif
 
-  std::function<VoxerIRenderer *()> get_backend = nullptr;
+  std::function<VoxerIRenderer *()> get_renderer = nullptr;
   if (it != symbols.end()) {
-    get_backend = it->second;
+    get_renderer = it->second;
   } else {
-    auto lib_name = string("libvoxer_backend_") + backend + postfix + ".so";
+    auto lib_name = string("libvoxer_renderer_") + renderer + postfix + ".so";
     void *lib = dlopen(lib_name.c_str(), RTLD_NOW);
     if (lib == nullptr) {
       throw runtime_error(dlerror());
     }
 
-    void *symbol = dlsym(lib, "voxer_get_backend");
+    void *symbol = dlsym(lib, "voxer_get_renderer");
     if (symbol == nullptr) {
-      throw runtime_error("Cannot find symbol `voxer_get_backend` in " +
+      throw runtime_error("Cannot find symbol `voxer_get_renderer` in " +
                           lib_name);
     }
 
-    get_backend = reinterpret_cast<GetRenderingBackend>(symbol);
-    symbols.emplace(string(backend),
+    get_renderer = reinterpret_cast<GetRenderingBackend>(symbol);
+    symbols.emplace(string(renderer),
                     reinterpret_cast<GetRenderingBackend>(symbol));
-    spdlog::info("rendering backend loaded: {}", lib_name);
+    spdlog::info("rendering renderer loaded: {}", lib_name);
   }
 
-  auto context = get_backend();
+  auto context = get_renderer();
   m_impl.reset(context);
 }
 
@@ -86,8 +86,8 @@ void VolumeRenderer::set_background(float r, float g, float b) noexcept {
   m_impl->set_background(r, g, b);
 }
 
-auto VolumeRenderer::get_backend() const noexcept -> const char * {
-  return m_backend.c_str();
+auto VolumeRenderer::get_name() const noexcept -> const char * {
+  return m_name.c_str();
 }
 
 bool VolumeRenderer::has_cache(StructuredGrid *data) const noexcept {

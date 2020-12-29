@@ -1,6 +1,6 @@
 #pragma once
-#include "Rendering/IRenderer.hpp"
-#include "Rendering/OSPRay/OSPRayVolumeCache.hpp"
+#include "Renderers/IRenderer.hpp"
+#include "Renderers/OSPRay/OSPRayVolumeCache.hpp"
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
 #include <unordered_map>
@@ -34,5 +34,5 @@ private:
 } // namespace voxer
 
 extern "C" {
-VoxerIRenderer *voxer_get_backend();
+VoxerIRenderer *voxer_get_renderer();
 }

@@ -15,9 +15,9 @@ list(
     ${PROJECT_SOURCE_DIR}/third_party/glad/src/glad.c
 )
 
-add_library(voxer_backend_opengl SHARED ${VOXER_BACKEND_GL_SRCS})
+add_library(voxer_renderer_opengl SHARED ${VOXER_BACKEND_GL_SRCS})
 target_link_libraries(
-    voxer_backend_opengl
+    voxer_renderer_opengl
     PUBLIC
     voxer_core
     OpenGL::OpenGL
@@ -28,17 +28,17 @@ target_link_libraries(
     -static-libstdc++
 )
 target_include_directories(
-    voxer_backend_opengl
+    voxer_renderer_opengl
     PRIVATE
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/third_party/glad/include
 )
-target_compile_options(voxer_backend_opengl PRIVATE -Wall -Wextra)
-target_compile_features(voxer_backend_opengl PRIVATE cxx_std_14)
+target_compile_options(voxer_renderer_opengl PRIVATE -Wall -Wextra)
+target_compile_features(voxer_renderer_opengl PRIVATE cxx_std_14)
 
 if (VOXER_INSTALL)
   install(
-      TARGETS voxer_backend_opengl
+      TARGETS voxer_renderer_opengl
       DESTINATION lib
       EXPORT voxer-targets
   )

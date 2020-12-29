@@ -138,7 +138,7 @@ Image Service::render(const Scene &scene) {
   auto renderer = scene.renderer;
   std::transform(renderer.begin(), renderer.end(), renderer.begin(),
                  [](unsigned char c) { return std::tolower(c); });
-  if (m_renderer == nullptr || m_renderer->get_backend() != renderer) {
+  if (m_renderer == nullptr || m_renderer->get_name() != renderer) {
     m_renderer = make_unique<VolumeRenderer>(renderer.c_str());
   }
 

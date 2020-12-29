@@ -1,6 +1,6 @@
-#include "Rendering/OpenGL/OpenGLVolumeRenderer.hpp"
-#include "Rendering/OpenGL/ShaderProgram.hpp"
-#include "Rendering/OpenGL/shaders.hpp"
+#include "Renderers/OpenGL/OpenGLVolumeRenderer.hpp"
+#include "Renderers/OpenGL/ShaderProgram.hpp"
+#include "Renderers/OpenGL/shaders.hpp"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <glad/glad.h>
@@ -459,7 +459,7 @@ bool OpenGLVolumeRenderer::has_cache(StructuredGrid *data) const noexcept {
 } // namespace voxer
 
 extern "C" {
-VoxerIRenderer *voxer_get_backend() {
+VoxerIRenderer *voxer_get_renderer() {
   return new voxer::OpenGLVolumeRenderer();
 }
 }

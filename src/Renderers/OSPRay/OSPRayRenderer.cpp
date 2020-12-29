@@ -1,4 +1,4 @@
-#include "Rendering/OSPRay/OSPRayRenderer.hpp"
+#include "Renderers/OSPRay/OSPRayRenderer.hpp"
 #include <cmath>
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
@@ -239,5 +239,5 @@ bool OSPRayRenderer::has_cache(voxer::StructuredGrid *data) const noexcept {
 } // namespace voxer
 
 extern "C" {
-VoxerIRenderer *voxer_get_backend() { return new voxer::OSPRayRenderer(); }
+VoxerIRenderer *voxer_get_renderer() { return new voxer::OSPRayRenderer(); }
 }
