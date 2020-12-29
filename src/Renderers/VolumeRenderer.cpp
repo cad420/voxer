@@ -1,10 +1,10 @@
-#include "Rendering/IRenderer.hpp"
+#include "Renderers/IRenderer.hpp"
 #include <chrono>
 #include <dlfcn.h>
 #include <functional>
 #include <memory>
 #include <spdlog/spdlog.h>
-#include <voxer/Rendering/VolumeRenderer.hpp>
+#include <voxer/Renderers/VolumeRenderer.hpp>
 
 using namespace std;
 

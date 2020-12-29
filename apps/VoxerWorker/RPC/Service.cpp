@@ -6,7 +6,7 @@
 #include <spdlog/stopwatch.h>
 #include <voxer/Filters/AnnotationGrabCutFilter.hpp>
 #include <voxer/Filters/AnnotationLevelSetFilter.hpp>
-#include <voxer/Rendering/VolumeRenderer.hpp>
+#include <voxer/Renderers/VolumeRenderer.hpp>
 
 using namespace std;
 using namespace voxer;

@@ -17,8 +17,8 @@ list(
     Filters/EqualizeFilter.cpp
     Filters/ContrastFilter.cpp
     Filters/GradientFilter.cpp
-    Rendering/VolumeRenderer.cpp
-    Rendering/SliceRenderer.cpp
+    Renderers/VolumeRenderer.cpp
+    Renderers/SliceRenderer.cpp
     IO/MRC/MRCReader.cpp
     IO/Raw/RawReader.cpp
 )
@@ -84,12 +84,12 @@ if (UNIX)
   )
 endif ()
 
-if (VOXER_BUILD_BACKEND_OSPRAY)
-  add_subdirectory(Rendering/OSPRay)
+if (VOXER_BUILD_RENDERER_OSPRAY)
+  add_subdirectory(Renderers/OSPRay)
 endif ()
 
-if (VOXER_BUILD_BACKEND_OPENGL)
-  add_subdirectory(Rendering/OpenGL)
+if (VOXER_BUILD_RENDERER_OPENGL)
+  add_subdirectory(Renderers/OpenGL)
 endif ()
 
 if (VOXER_INSTALL)

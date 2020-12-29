@@ -5,7 +5,7 @@
 #include "Store/DatasetStore.hpp"
 #include <memory>
 #include <seria/object.hpp>
-#include <voxer/Rendering/VolumeRenderer.hpp>
+#include <voxer/Renderers/VolumeRenderer.hpp>
 #include <voxer/Util/LRUCache.hpp>
 
 namespace voxer::remote {

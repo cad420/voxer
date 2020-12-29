@@ -1,7 +1,7 @@
 #include <stdexcept>
 #include <voxer/Data/Color.hpp>
 #include <voxer/Data/StructuredGrid.hpp>
-#include <voxer/Rendering/SliceRenderer.hpp>
+#include <voxer/Renderers/SliceRenderer.hpp>
 
 using namespace std;
 
