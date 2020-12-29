@@ -33,12 +33,12 @@ public:
 
 #ifdef ENABLE_ANNOTATION_SERVICE
   [[nodiscard]] std::vector<voxer::Annotation>
-  apply_levelset(const std::vector<voxer::Annotation> &, const std::string &,
-                 StructuredGrid::Axis, uint32_t);
+  apply_levelset(const std::string &, StructuredGrid::Axis, uint32_t,
+                 const std::vector<voxer::Annotation> &);
 
   [[nodiscard]] std::vector<voxer::Annotation>
-  apply_grabcut(const std::vector<voxer::Annotation> &, const std::string &,
-                StructuredGrid::Axis, uint32_t);
+  apply_grabcut(const std::string &, StructuredGrid::Axis, uint32_t,
+                const std::vector<voxer::Annotation> &);
 #endif
 
 private:

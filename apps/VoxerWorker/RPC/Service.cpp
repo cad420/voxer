@@ -215,9 +215,9 @@ Image Service::get_dataset_slice(const std::string &dataset_id,
 
 #ifdef ENABLE_ANNOTATION_SERVICE
 std::vector<voxer::Annotation>
-Service::apply_levelset(const vector<voxer::Annotation> &annotations,
-                        const string &dataset_id, StructuredGrid::Axis axis,
-                        uint32_t index) {
+Service::apply_levelset(const string &dataset_id, StructuredGrid::Axis axis,
+                        uint32_t index,
+                        const vector<voxer::Annotation> &annotations) {
   auto dataset = m_datasets->get(dataset_id);
   if (!dataset) {
     throw std::runtime_error("cannot find dataset " + dataset_id);
@@ -236,9 +236,9 @@ Service::apply_levelset(const vector<voxer::Annotation> &annotations,
 }
 
 std::vector<voxer::Annotation>
-Service::apply_grabcut(const vector<voxer::Annotation> &annotations,
-                       const string &dataset_id, StructuredGrid::Axis axis,
-                       uint32_t index) {
+Service::apply_grabcut(const string &dataset_id, StructuredGrid::Axis axis,
+                       uint32_t index,
+                       const vector<voxer::Annotation> &annotations) {
   auto dataset = m_datasets->get(dataset_id);
   if (!dataset) {
     throw std::runtime_error("cannot find dataset " + dataset_id);
