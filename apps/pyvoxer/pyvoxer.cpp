@@ -3,7 +3,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <voxer/Rendering/VolumeRenderer.hpp>
+#include <voxer/Renderers/VolumeRenderer.hpp>
 
 using namespace std;
 using namespace voxer;
