@@ -23,4 +23,4 @@ target_include_directories(
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CImg_src}>
 )
-
+target_compile_definitions(CImg INTERFACE cimg_display=0)

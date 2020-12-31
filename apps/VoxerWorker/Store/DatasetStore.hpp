@@ -19,6 +19,8 @@ public:
   [[nodiscard]] std::shared_ptr<StructuredGrid>
   load(const std::string &id, const std::string &name, const std::string &path);
 
+  void add(const DatasetID &id, const std::shared_ptr<StructuredGrid> &dataset);
+
 private:
   ManagerAPIClient *m_manager = nullptr;
   std::string m_storage_path;

@@ -1,5 +1,4 @@
 #include "Renderers/IRenderer.hpp"
-#include <chrono>
 #include <dlfcn.h>
 #include <functional>
 #include <memory>
@@ -54,13 +53,7 @@ void VolumeRenderer::render() const {
     return;
   }
 
-  auto start = chrono::steady_clock::now();
-
   m_impl->render();
-
-  const auto delta = chrono::duration_cast<chrono::milliseconds>(
-      chrono::steady_clock::now() - start);
-  spdlog::debug(to_string(delta.count()) + " ms");
 }
 
 auto VolumeRenderer::get_colors() -> const Image & {

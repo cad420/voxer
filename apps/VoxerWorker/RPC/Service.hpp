@@ -5,6 +5,7 @@
 #include "Store/DatasetStore.hpp"
 #include <memory>
 #include <seria/object.hpp>
+#include <unordered_map>
 #include <voxer/Renderers/VolumeRenderer.hpp>
 #include <voxer/Util/LRUCache.hpp>
 
@@ -23,6 +24,11 @@ public:
 
   [[nodiscard]] Image render(const Scene &scene);
 
+  [[nodiscard]] Image render_with_processed_data(
+      const Scene &scene,
+      const std::unordered_map<std::string, std::shared_ptr<StructuredGrid>>
+          &processed_data);
+
   [[nodiscard]] Image get_dataset_slice(const std::string &dataset_id,
                                         StructuredGrid::Axis axis,
                                         uint32_t index);
@@ -30,6 +36,9 @@ public:
   [[nodiscard]] DatasetInfo get_dataset_info(const std::string &id,
                                              const std::string &name,
                                              const std::string &path);
+
+  void run_pipeline(const std::vector<mpack_node_t> &params,
+                    mpack_writer_t *writer);
 
 #ifdef ENABLE_ANNOTATION_SERVICE
   [[nodiscard]] std::vector<voxer::Annotation>

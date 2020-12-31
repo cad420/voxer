@@ -22,15 +22,12 @@ const EGLint egl_config_attribs[] = {EGL_SURFACE_TYPE,
                                      EGL_NONE};
 
 const EGLint pbuffer_attribs[] = {
-    EGL_WIDTH, 1024, EGL_HEIGHT, 1024, EGL_NONE,
+    EGL_WIDTH, 1920, EGL_HEIGHT, 1080, EGL_NONE,
 };
 
 GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
   auto &info = dataset.info;
   auto &dimension = info.dimensions;
-
-  //  voxer::GradientFilter filter{};
-  //  auto filtered = filter.process(dataset);
 
   GLuint volume_texture = 0;
   glGenTextures(1, &volume_texture);

@@ -65,4 +65,10 @@ void DatasetStore::set_manager(ManagerAPIClient *client) noexcept {
   m_manager = client;
 }
 
+void DatasetStore::add(const DatasetID &id,
+                       const std::shared_ptr<StructuredGrid> &dataset) {
+  std::unique_lock lock(m_mutex);
+  m_datasets.emplace(id, dataset);
+}
+
 } // namespace voxer::remote

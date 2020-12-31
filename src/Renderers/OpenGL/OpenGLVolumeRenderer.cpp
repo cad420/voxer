@@ -29,7 +29,7 @@ const EGLint egl_config_attribs[] = {EGL_SURFACE_TYPE,
                                      EGL_NONE};
 
 const EGLint pbuffer_attribs[] = {
-    EGL_WIDTH, 1024, EGL_HEIGHT, 1024, EGL_NONE,
+    EGL_WIDTH, 1920, EGL_HEIGHT, 1080, EGL_NONE,
 };
 
 void EGLCheck(const char *fn) {

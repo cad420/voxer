@@ -2,7 +2,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "third_party/stb_image_write.h"
 #include <cassert>
-#include <chrono>
 #include <stdexcept>
 #include <vector>
 
@@ -28,8 +27,6 @@ Image Image::encode(const uint8_t *data, uint32_t width, uint32_t height,
   if (format != Image::Format::JPEG) {
     throw domain_error("currently only support JPEG format!");
   }
-
-  auto start = chrono::steady_clock::now();
 
   Image image{width, height, channels, format};
   image.data.reserve(width * height * channels);
