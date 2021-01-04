@@ -53,6 +53,7 @@ void VolumeRenderer::render() const {
     return;
   }
 
+  // TODO: use memory pool to store image
   m_impl->render();
 }
 

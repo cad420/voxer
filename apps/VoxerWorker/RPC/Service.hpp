@@ -4,7 +4,9 @@
 #include "RPC/RPCMethodsStore.hpp"
 #include "Store/DatasetStore.hpp"
 #include <memory>
+#include <seria/deserialize/mpack.hpp>
 #include <seria/object.hpp>
+#include <seria/serialize/mpack.hpp>
 #include <unordered_map>
 #include <voxer/Renderers/VolumeRenderer.hpp>
 #include <voxer/Util/LRUCache.hpp>
@@ -13,12 +15,12 @@ namespace voxer::remote {
 
 class Service {
 public:
-  using MessageCallback = std::function<void(const uint8_t *, uint32_t)>;
+  using Callback = std::function<void(const uint8_t *, uint32_t)>;
 
   explicit Service(DatasetStore *datasets);
 
   void on_message(const uint8_t *message, uint32_t size,
-                  const MessageCallback &callback) noexcept;
+                  const Callback &callback) noexcept;
 
   static void on_error(const JSONRPCError &error, mpack_writer_t *writer);
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "ManagerAPI/ManagerAPIClient.hpp"
+#include "DataModel/DatasetInfo.hpp"
 #include <memory>
 #include <mutex>
 #include <string>
@@ -8,9 +8,13 @@
 
 namespace voxer::remote {
 
+class ManagerAPIClient;
+
 class DatasetStore {
 public:
-  explicit DatasetStore(std::string storage_path);
+  static DatasetStore &default_instance() noexcept;
+
+  void set_storage(std::string storage_path) noexcept;
 
   void set_manager(ManagerAPIClient *manager) noexcept;
 
@@ -22,6 +26,8 @@ public:
   void add(const DatasetID &id, const std::shared_ptr<StructuredGrid> &dataset);
 
 private:
+  DatasetStore() = default;
+
   ManagerAPIClient *m_manager = nullptr;
   std::string m_storage_path;
 

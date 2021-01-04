@@ -29,7 +29,7 @@ void VoxerWorkerApplication::defineOptions(Poco::Util::OptionSet &options) {
                         .required(false)
                         .argument("port")
                         .repeatable(false)
-                        .validator(new Poco::Util::IntValidator(0, 65536))
+                        .validator(new Poco::Util::IntValidator(1, 65536))
                         .callback(OptionCallback(
                             this, &VoxerWorkerApplication::hanldle_option)));
 
@@ -46,6 +46,12 @@ void VoxerWorkerApplication::defineOptions(Poco::Util::OptionSet &options) {
                         .repeatable(false)
                         .callback(OptionCallback(
                             this, &VoxerWorkerApplication::hanldle_option)));
+
+  options.addOption(Option("debug", "d", "show debug log")
+                        .required(false)
+                        .repeatable(false)
+                        .callback(OptionCallback(
+                            this, &VoxerWorkerApplication::hanldle_option)));
 }
 
 void VoxerWorkerApplication::hanldle_option(const std::string &name,
@@ -56,17 +62,17 @@ void VoxerWorkerApplication::hanldle_option(const std::string &name,
   }
 
   if (name == "manager") {
-    try {
-      m_manager = std::make_unique<ManagerAPIClient>(value);
-    } catch (std::exception &exp) {
-      spdlog::critical("invalid manager address");
-      stopOptionsProcessing();
-    }
+    m_manager_address = value;
     return;
   }
 
   if (name == "storage") {
     m_storage = value;
+    return;
+  }
+
+  if (name == "debug") {
+    spdlog::set_level(spdlog::level::debug);
     return;
   }
 
@@ -88,23 +94,39 @@ int VoxerWorkerApplication::main(const std::vector<std::string> &args) {
     return Application::EXIT_OK;
   }
 
-  m_datasets = std::make_unique<DatasetStore>(m_storage);
+  // create dataset store
+  auto &store = DatasetStore::default_instance();
+  store.set_storage(m_storage);
 
-  if (m_manager) {
-    m_datasets->set_manager(m_manager.get());
-    m_manager->set_datasets(m_datasets.get());
+  // connect to manager if exist
+  std::unique_ptr<ManagerAPIClient> manager = nullptr;
+  if (!m_manager_address.empty()) {
+    manager = std::make_unique<ManagerAPIClient>(m_manager_address);
+    store.set_manager(manager.get());
+    spdlog::info("RPC client created");
   }
 
-  Poco::Net::ServerSocket svs(m_port);
-  Poco::Net::HTTPServer srv(
-      Poco::makeShared<RequestHandlerFactory>(m_datasets.get()), svs,
-      Poco::makeAuto<Poco::Net::HTTPServerParams>());
-  srv.start();
-
-  spdlog::info("server starts at port: {}", m_port);
+  // start rpc server
+  std::unique_ptr<Poco::Net::HTTPServer> server = nullptr;
+  if (m_port > 0) {
+    Poco::Net::ServerSocket svs(m_port);
+    server = std::make_unique<Poco::Net::HTTPServer>(
+        Poco::makeShared<RequestHandlerFactory>(), svs,
+        Poco::makeAuto<Poco::Net::HTTPServerParams>());
+    server->start();
+    spdlog::info("RPC server starts at port: {}", m_port);
+  }
 
   waitForTerminationRequest();
-  srv.stop();
+
+  if (server != nullptr) {
+    server->stop();
+  }
+
+  if (manager != nullptr) {
+    manager->shutdown();
+  }
+
   return Application::EXIT_OK;
 }
 

@@ -5,13 +5,13 @@
 
 namespace voxer::remote {
 
-WebSocketRequestHandler::WebSocketRequestHandler(DatasetStore *datasets)
-    : m_datasets(datasets), m_service(std::make_unique<Service>(datasets)) {}
+WebSocketRequestHandler::WebSocketRequestHandler()
+    : m_queue(&MessageQueue::get_instance()) {}
 
 void WebSocketRequestHandler::handleRequest(
     Poco::Net::HTTPServerRequest &request,
     Poco::Net::HTTPServerResponse &response) {
-  assert(m_service != nullptr);
+  assert(m_queue != nullptr);
 
   using WebSocket = Poco::Net::WebSocket;
 
@@ -50,11 +50,11 @@ void WebSocketRequestHandler::handleRequest(
 
       auto is_binary =
           (flags & WebSocket::FRAME_OP_BITMASK) == WebSocket::FRAME_OP_BINARY;
-      if (!is_binary || m_service == nullptr) {
+      if (!is_binary || m_queue == nullptr) {
         continue;
       }
 
-      m_service->on_message(buffer.get(), received, handler);
+      m_queue->add_message(buffer.get(), received, handler);
     } while (true);
   } catch (Poco::Net::WebSocketException &exc) {
     spdlog::error(exc.what());

@@ -14,6 +14,7 @@ list(
     Store/DatasetStore.cpp
     RPC/RPCMethodsStore.cpp
     RPC/Service.cpp
+    RPC/MessageQueue.cpp
     ManagerAPI/ManagerAPIClient.cpp
 )
 

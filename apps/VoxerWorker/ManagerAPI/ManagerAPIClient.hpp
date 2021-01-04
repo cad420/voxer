@@ -1,5 +1,7 @@
 #pragma once
 #include "DataModel/DatasetLoadInfo.hpp"
+#include "RPC/MessageQueue.hpp"
+#include <Poco/Net/WebSocket.h>
 #include <Poco/URI.h>
 #include <atomic>
 #include <sstream>
@@ -8,16 +10,11 @@
 
 namespace voxer::remote {
 
-class Service;
-class DatasetStore;
-
 class ManagerAPIClient {
 public:
   explicit ManagerAPIClient(std::string address);
 
   ~ManagerAPIClient();
-
-  void set_datasets(DatasetStore *datasets);
 
   [[nodiscard]] const char *get_address() const noexcept;
 
@@ -27,12 +24,14 @@ public:
 
   // TODO: download from manager
 
+  void shutdown();
+
 private:
-  std::atomic<bool> m_done{};
   std::string m_address;
   Poco::URI m_uri;
-  std::unique_ptr<Service> m_service;
+  MessageQueue *m_queue;
   std::thread m_thread{};
+  std::unique_ptr<Poco::Net::WebSocket> m_ws = nullptr;
 
   template <typename ResultType> ResultType request(const std::string &path);
 };

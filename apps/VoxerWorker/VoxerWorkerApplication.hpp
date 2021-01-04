@@ -21,10 +21,9 @@ protected:
 
 private:
   bool m_show_help = false;
-  std::unique_ptr<ManagerAPIClient> m_manager;
+  std::string m_manager_address;
   std::string m_storage = ".";
-  uint32_t m_port = 3040;
-  std::unique_ptr<DatasetStore> m_datasets;
+  uint32_t m_port = 0;
 };
 
 } // namespace voxer::remote

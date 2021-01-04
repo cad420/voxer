@@ -27,15 +27,13 @@ public:
 
 namespace voxer::remote {
 
-RequestHandlerFactory::RequestHandlerFactory(DatasetStore *datasets):m_dataset(datasets) {}
-
 Poco::Net::HTTPRequestHandler *RequestHandlerFactory::createRequestHandler(
     const Poco::Net::HTTPServerRequest &request) {
   if (request.getURI() != "/rpc") {
     return new DefaultRequestHandler();
   }
 
-  return new WebSocketRequestHandler(m_dataset);
+  return new WebSocketRequestHandler();
 }
 
 

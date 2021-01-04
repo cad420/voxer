@@ -38,7 +38,7 @@ Service::Service(DatasetStore *datasets)
 }
 
 void Service::on_message(const uint8_t *message, uint32_t size,
-                         const MessageCallback &callback) noexcept {
+                         const Callback &callback) noexcept {
   assert(m_datasets != nullptr && callback != nullptr);
   if (m_datasets == nullptr || callback == nullptr) {
     return;
@@ -123,6 +123,8 @@ void Service::on_message(const uint8_t *message, uint32_t size,
 }
 
 void Service::on_error(const JSONRPCError &error, mpack_writer_t *writer) {
+  spdlog::error("RPC Service error: {}", error.what());
+
   mpack_write_cstr(writer, "error");
   // encode error object
   mpack_start_map(writer, 2);

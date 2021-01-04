@@ -1,12 +1,19 @@
 #include "Store/DatasetStore.hpp"
+#include "ManagerAPI/ManagerAPIClient.hpp"
 #include <spdlog/spdlog.h>
 #include <string>
 #include <voxer/Data/StructuredGrid.hpp>
 
 namespace voxer::remote {
 
-DatasetStore::DatasetStore(std::string storage_path)
-    : m_storage_path{std::move(storage_path)} {
+DatasetStore &DatasetStore::default_instance() noexcept {
+  static DatasetStore store{};
+
+  return store;
+}
+
+void DatasetStore::set_storage(std::string storage_path) noexcept {
+  m_storage_path = std::move(storage_path);
   if (m_storage_path[m_storage_path.size() - 1] != '/') {
     m_storage_path += '/';
   }
