@@ -49,17 +49,6 @@ class Server {
       const data = msgpack.serialize(message);
       worker.send(data);
     };
-
-    setInterval(() => {
-      this.workers.forEach((worker) => {
-        if ((worker as any).isAlive === false) {
-          return worker.terminate();
-        }
-
-        (worker as any).isAlive = false;
-        worker.ping();
-      });
-    }, 5 * 1000);
   }
 
   async connectDatabase() {
@@ -87,6 +76,11 @@ class Server {
   handleClientConnect = (ws: WebSocket) => {
     const id = nanoid(10);
 
+    const client = ws as any;
+    client.isAlive = true;
+    ws.on("pong", () => {
+      client.isAlive = true;
+    });
     this.clients.set(id, ws);
 
     logger.info(`New client connected, id: ${id}`);
@@ -132,9 +126,10 @@ class Server {
   handleWorkerConnect = (ws: WebSocket) => {
     logger.info("New worker connected");
 
-    (ws as any).isAlive = true;
+    const worker = ws as any;
+    worker.isAlive = true;
     ws.on("pong", () => {
-      (ws as any).isAlive = true;
+      worker.isAlive = true;
     });
 
     const index = this.workers.length;
@@ -182,6 +177,32 @@ class Server {
     }
 
     client.send(message);
+  };
+
+  checkAlive = () => {
+    setInterval(() => {
+      this.workers.forEach((worker) => {
+        const ws = worker as any;
+        if (ws.isAlive === false) {
+          return ws.close();
+        }
+
+        ws.isAlive = false;
+        ws.ping();
+      });
+    }, 5 * 1000);
+
+    setInterval(() => {
+      this.clients.forEach((client) => {
+        const ws = client as any;
+        if (ws.isAlive === false) {
+          return ws.close();
+        }
+
+        ws.isAlive = false;
+        ws.ping();
+      });
+    }, 10 * 1000);
   };
 
   async listen() {
