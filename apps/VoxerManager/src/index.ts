@@ -19,7 +19,10 @@ export const options = {
 
 if (program.port) {
   const port = parseInt(program.port);
-  if (!isNaN(port) && port > 0 && port < 65536) {
+  if (isNaN(port) || port < 0 || port > 65536) {
+    console.log("Invalid port");
+    process.exit();
+  } else {
     options.port = port;
   }
 }
