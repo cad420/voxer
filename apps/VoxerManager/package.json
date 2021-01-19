@@ -9,6 +9,7 @@
     "build": "ncc build src/index.ts -m -s"
   },
   "dependencies": {
+    "@types/jsonwebtoken": "^8.5.0",
     "@vercel/ncc": "^0.26.1",
     "@ygoe/msgpack": "^1.0.2",
     "ajv": "^6.12.6",
@@ -17,6 +18,7 @@
     "express": "^4.17.1",
     "express-jwt": "^6.0.0",
     "fs-extra": "^8.1.0",
+    "jsonwebtoken": "^8.5.1",
     "mongodb": "^3.6.0",
     "multer": "^1.4.2",
     "nanoid": "^2.1.11",
@@ -29,6 +31,7 @@
     "@types/express": "^4.17.3",
     "@types/express-jwt": "^6.0.0",
     "@types/fs-extra": "^8.1.0",
+    "@types/jsonwebtoken": "^8.5.0",
     "@types/mongodb": "^3.5.26",
     "@types/multer": "^1.4.2",
     "@types/nanoid": "^2.1.0",
