@@ -37,17 +37,19 @@ router.get<{ name: string; password: string }, ResBody | string, {}>(
       name,
       password: crypto.createHash("sha256").update(password).digest("hex"),
       permission: {
-        platform: {
-          createUsers: true,
-          deleteUsers: true,
-          readUsers: true,
-          updateUsers: true,
-          createGroups: true,
-          deleteGroups: true,
-          readGroups: true,
-          updateGroups: true,
+        users: {
+          create: true,
+          delete: true,
+          read: true,
+          update: true,
         },
-        groups: {},
+        groups: {
+          create: true,
+          delete: true,
+          read: true,
+          update: true,
+        },
+        group: {},
       },
     };
 
