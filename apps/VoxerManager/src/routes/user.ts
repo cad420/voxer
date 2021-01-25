@@ -43,7 +43,14 @@ router.get<{}, ResBody>("/", async (req, res) => {
 
   const users = database.collection("users");
 
-  const { page = 1, size = 10 } = req.query;
+  let page = parseInt(req.query.page);
+  if (isNaN(page) || page <= 0) {
+    page = 1;
+  }
+  let size = parseInt(req.query.size);
+  if (isNaN(page) || size <= 0) {
+    size = 10;
+  }
   const total = await users.countDocuments();
   const list = await users
     .find<{
@@ -59,7 +66,7 @@ router.get<{}, ResBody>("/", async (req, res) => {
         },
       }
     )
-    .skip(((page || 1) - 1) * size)
+    .skip((page - 1) * size)
     .limit(size)
     .toArray();
 

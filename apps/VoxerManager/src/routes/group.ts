@@ -3,8 +3,13 @@ import mongodb, { ObjectId, ObjectID } from "mongodb";
 import DatasetGroup from "../models/DatasetGroup";
 import Dataset from "../models/Dataset";
 import { DatasetAnnotations } from "../models/Annotation";
+import { auth } from "./auth";
+import { getUser } from "./user";
+import { ResBody } from ".";
 
 const router = express.Router();
+
+router.use(auth);
 
 /**
  * get all groups
@@ -12,35 +17,74 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("groups");
+  const caller = await getUser(database, (req as any).user.id);
 
+  const ids = Object.keys(caller.permission.group).map(
+    (id) => new ObjectID(id)
+  );
+  const query: any = { _id: { $in: ids } };
+
+  let page = parseInt(req.query.page);
+  if (isNaN(page) || page <= 0) {
+    page = 1;
+  }
+  let size = parseInt(req.query.size);
+  if (isNaN(page) || size <= 0) {
+    size = 10;
+  }
+
+  if (
+    caller.permission &&
+    caller.permission.groups &&
+    caller.permission.groups.read
+  ) {
+    delete query._id;
+  }
+
+  const total = await collection.countDocuments(query);
   const groups = await collection
-    .find(
-      {},
-      {
-        projection: {
-          _id: false,
-          id: {
-            $toString: "$_id",
-          },
-          name: true,
+    .find<{ id: string; name: string }>(query, {
+      projection: {
+        _id: false,
+        id: {
+          $toString: "$_id",
         },
-      }
-    )
+        name: true,
+      },
+    })
+    .skip((page - 1) * size)
+    .limit(size)
     .toArray();
 
   res.send({
     code: 200,
-    data: groups,
+    data: {
+      total,
+      list: groups,
+    },
   });
 });
 
 /**
  * add group
  */
-router.post("/", async (req, res) => {
+router.post<{}, ResBody, { name: string }>("/", auth, async (req, res) => {
+  const database: mongodb.Db = req.app.get("database");
+  const caller = await getUser(database, (req as any).user.id);
+  if (
+    !caller.permission ||
+    !caller.permission.groups ||
+    !caller.permission.groups.create
+  ) {
+    res.send({
+      code: 401,
+      data: "No permission",
+    });
+    return;
+  }
+
   const { name } = req.body;
 
-  const database: mongodb.Db = req.app.get("database");
   const collection = database.collection("groups");
 
   const result = await collection.insertOne({
@@ -130,6 +174,44 @@ router.get("/:id", async (req, res) => {
       labels: labels,
       datasets: datasets,
     },
+  });
+});
+
+/**
+ * delete a group
+ */
+router.delete<{ id: string }, ResBody, {}>("/:id", auth, async (req, res) => {
+  const database: mongodb.Db = req.app.get("database");
+  const caller = await getUser(database, (req as any).user.id);
+  const { id } = req.params;
+  if (
+    (!caller.permission.group ||
+      !caller.permission.group[id] ||
+      !caller.permission.group[id].delete) &&
+    (!caller.permission ||
+      !caller.permission.groups ||
+      !caller.permission.groups.delete)
+  ) {
+    res.send({
+      code: 401,
+      data: "No permission",
+    });
+    return;
+  }
+
+  const collection = database.collection("groups");
+  const action = await collection.deleteOne({ _id: new ObjectID(id) });
+  if (!action.result.ok) {
+    res.send({
+      code: 500,
+      data: "Unknown Error",
+    });
+    return;
+  }
+
+  res.send({
+    code: 200,
+    data: "Unknown Error",
   });
 });
 
