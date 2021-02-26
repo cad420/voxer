@@ -50,6 +50,8 @@ router.get("/", async (req, res) => {
           $toString: "$_id",
         },
         name: true,
+        createTime: true,
+        creator: true,
       },
     })
     .skip((page - 1) * size)
@@ -89,8 +91,10 @@ router.post<{}, ResBody, { name: string }>("/", auth, async (req, res) => {
 
   const result = await collection.insertOne({
     name,
+    creator: caller.id,
+    createTime: Date.now(),
     labels: [],
-    datasets: [],
+    datasets: {},
   });
 
   res.send({
@@ -118,6 +122,8 @@ router.get("/:id", async (req, res) => {
           },
           name: true,
           labels: true,
+          createTime: true,
+          creator: true,
           datasets: { $objectToArray: "$datasets" },
         },
       },
@@ -127,6 +133,8 @@ router.get("/:id", async (req, res) => {
           id: true,
           datasets: { $arrayToObject: "$datasets" },
           name: true,
+          createTime: true,
+          creator: true,
           labels: true,
         },
       },
@@ -154,6 +162,8 @@ router.get("/:id", async (req, res) => {
           },
           name: true,
           dimensions: true,
+          createTime: true,
+          creator: true,
         },
       }
     );
@@ -169,8 +179,7 @@ router.get("/:id", async (req, res) => {
   res.send({
     code: 200,
     data: {
-      id: group.id,
-      name: group.name,
+      ...group,
       labels: labels,
       datasets: datasets,
     },
