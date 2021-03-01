@@ -26,11 +26,14 @@ interface Permission {
   >;
 }
 
-interface User {
+interface IUserFrontEnd {
   id?: string;
   name: string;
-  password?: string;
   permission: Permission;
 }
 
-export default User;
+interface IUserBackend extends IUserFrontEnd {
+  password: string;
+}
+
+export { IUserFrontEnd, IUserBackend };

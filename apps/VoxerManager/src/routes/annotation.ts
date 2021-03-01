@@ -51,6 +51,7 @@ router.get("/:groupId/:datasetId/:axis/:index", async (req, res) => {
         name: true,
         labels: true,
         datasets: true,
+        users: true,
       },
     }
   )) as DatasetGroup;

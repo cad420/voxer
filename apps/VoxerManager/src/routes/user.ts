@@ -2,11 +2,11 @@ import express from "express";
 import mongodb, { ObjectID } from "mongodb";
 import crypto from "crypto";
 import { auth } from "./auth";
-import User from "../models/User";
+import { IUserFrontEnd, IUserBackend } from "../models/User";
 import { ResBody } from ".";
 
-export function getUser(db: mongodb.Db, id: string): Promise<User> {
-  return db.collection("users").findOne<User>(
+export function getUser(db: mongodb.Db, id: string): Promise<IUserFrontEnd> {
+  return db.collection("users").findOne<IUserFrontEnd>(
     { _id: new ObjectID(id) },
     {
       projection: {
@@ -82,7 +82,7 @@ router.get<{}, ResBody>("/", async (req, res) => {
 /**
  * add user
  */
-router.post<{}, ResBody, User>("/", async (req, res) => {
+router.post<{}, ResBody, IUserBackend>("/", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
   const caller = await getUser(database, (req as any).user.id);
   if (
@@ -366,7 +366,7 @@ router.get<
   const exist = await users.findOne<{
     password: string;
     name: string;
-    permission: User["permission"];
+    permission: IUserFrontEnd["permission"];
   }>(
     { _id: new ObjectID(id) },
     { projection: { password: true, name: true, permission: true } }
@@ -394,7 +394,7 @@ router.put<
     id: string;
   },
   ResBody,
-  User["permission"]
+  IUserFrontEnd["permission"]
 >("/:id/permission", async (req, res) => {
   const database: mongodb.Db = req.app.get("database");
   const caller = await getUser(database, (req as any).user.id);

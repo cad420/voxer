@@ -4,7 +4,7 @@ import mongodb from "mongodb";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { ResBody } from ".";
-import User from "../models/User";
+import { IUserBackend } from "../models/User";
 
 const secret = "shhhhhhared-secret";
 const auth = expressJWT({
@@ -33,7 +33,7 @@ router.get<{ name: string; password: string }, ResBody | string, {}>(
     }
 
     const { name, password } = req.query;
-    const admin: User = {
+    const admin: IUserBackend = {
       name,
       password: crypto.createHash("sha256").update(password).digest("hex"),
       permission: {
