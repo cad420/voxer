@@ -49,9 +49,12 @@ router.get("/:groupId/:datasetId/:axis/:index", async (req, res) => {
           $toString: "$_id",
         },
         name: true,
+        createTime: true,
+        creator: true,
         labels: true,
         datasets: true,
         users: true,
+        applications: true,
       },
     }
   )) as DatasetGroup;

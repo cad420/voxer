@@ -1,11 +1,12 @@
 import express from "express";
 import mongodb, { ObjectId, ObjectID } from "mongodb";
+import crypto from "crypto";
 import DatasetGroup, { IGroupBackend } from "../models/DatasetGroup";
 import Dataset from "../models/Dataset";
 import { DatasetAnnotations } from "../models/Annotation";
 import { auth } from "./auth";
 import { getUser } from "./user";
-import { IUserFrontEnd } from "../models/User";
+import { IUserBackend, IUserFrontEnd } from "../models/User";
 import { ResBody } from "./index";
 
 const router = express.Router();
@@ -53,6 +54,7 @@ router.get("/", async (req, res) => {
         name: true,
         createTime: true,
         creator: true,
+        applications: true,
       },
     })
     .skip((page - 1) * size)
@@ -71,41 +73,45 @@ router.get("/", async (req, res) => {
 /**
  * add group
  */
-router.post<{}, ResBody, { name: string }>("/", auth, async (req, res) => {
-  const database: mongodb.Db = req.app.get("database");
-  const caller = await getUser(database, (req as any).user.id);
-  if (
-    !caller.permission ||
-    !caller.permission.groups ||
-    !caller.permission.groups.create
-  ) {
+router.post<{}, ResBody, { name: string; applications: string[] }>(
+  "/",
+  auth,
+  async (req, res) => {
+    const database: mongodb.Db = req.app.get("database");
+    const caller = await getUser(database, (req as any).user.id);
+    if (
+      !caller.permission ||
+      !caller.permission.groups ||
+      !caller.permission.groups.create
+    ) {
+      res.send({
+        code: 401,
+        data: "No permission",
+      });
+      return;
+    }
+
+    const { name, applications = [] } = req.body;
+
+    const collection = database.collection("groups");
+
+    const group: IGroupBackend = {
+      name,
+      creator: caller.id,
+      createTime: Date.now(),
+      labels: [],
+      datasets: {},
+      users: [],
+      applications,
+    };
+    const result = await collection.insertOne(group);
+
     res.send({
-      code: 401,
-      data: "No permission",
+      code: 200,
+      data: result.insertedId,
     });
-    return;
   }
-
-  const { name } = req.body;
-
-  const collection = database.collection("groups");
-
-  const group: IGroupBackend = {
-    name,
-    creator: caller.id,
-    createTime: Date.now(),
-    labels: [],
-    datasets: {},
-    users: [],
-    applications: [],
-  };
-  const result = await collection.insertOne(group);
-
-  res.send({
-    code: 200,
-    data: result.insertedId,
-  });
-});
+);
 
 /**
  * get group info
@@ -130,6 +136,7 @@ router.get("/:id", async (req, res) => {
           creator: true,
           datasets: { $objectToArray: "$datasets" },
           users: true,
+          applications: true,
         },
       },
       { $project: { "datasets.v.labels": 0 } },
@@ -142,6 +149,7 @@ router.get("/:id", async (req, res) => {
           creator: true,
           labels: true,
           users: true,
+          applications: true,
         },
       },
     ])
@@ -190,10 +198,15 @@ router.get("/:id", async (req, res) => {
     )
     .toArray();
 
+  const creator = await database
+    .collection("users")
+    .findOne<IUserBackend>({ _id: new ObjectID(group.creator) });
+
   res.send({
     code: 200,
     data: {
       ...group,
+      creator: creator.name,
       labels,
       datasets,
       users,
@@ -235,9 +248,60 @@ router.delete<{ id: string }, ResBody, {}>("/:id", auth, async (req, res) => {
 
   res.send({
     code: 200,
-    data: "Unknown Error",
   });
 });
+
+/**
+ * update group base info
+ */
+router.put<{ id: string }, ResBody, { name: string; applications: string[] }>(
+  "/:id",
+  auth,
+  async (req, res) => {
+    const database: mongodb.Db = req.app.get("database");
+    const caller = await getUser(database, (req as any).user.id);
+
+    if (
+      !caller.permission ||
+      !caller.permission.groups ||
+      !caller.permission.groups.update
+    ) {
+      res.send({
+        code: 401,
+        data: "No permission",
+      });
+      return;
+    }
+
+    const { id } = req.params;
+    const groupId = new ObjectID(id);
+
+    const collection = database.collection("groups");
+    const exist = await collection.findOne<DatasetGroup>({ _id: groupId });
+    if (!exist) {
+      res.send({
+        code: 404,
+        data: "group not found",
+      });
+      return;
+    }
+
+    const { name = exist.name, applications = exist.applications } = req.body;
+    await collection.updateOne(
+      { _id: groupId },
+      {
+        $set: {
+          name,
+          applications,
+        },
+      }
+    );
+
+    res.send({
+      code: 200,
+    });
+  }
+);
 
 /**
  * add a dataset to a group
@@ -290,30 +354,56 @@ router.post("/:groupId/datasets", async (req, res) => {
 /**
  * add a user to a group
  */
-router.post("/:groupId/users", async (req, res) => {
+router.post("/:id/users", async (req, res) => {
   // TODO: validate body
   const user = req.body;
-  const { groupId } = req.params;
-  const userId = new ObjectID(user.id);
+  const { id } = req.params;
+  const groupId = new ObjectId(id);
 
   const database: mongodb.Db = req.app.get("database");
   const users = database.collection("users");
 
-  const exist = await users.findOne<IUserFrontEnd>({ _id: userId });
-  if (!exist) {
-    res.send({
-      code: 404,
-      data: "user not found.",
-    });
-    return;
+  let userId = new ObjectID();
+  if (user.id) {
+    // add exist user
+    userId = new ObjectID(user.id);
+    const result = await users.updateOne(
+      { _id: userId },
+      {
+        $addToSet: {
+          groups: groupId,
+        },
+      }
+    );
+    if (!result.modifiedCount) {
+      res.send({
+        code: 404,
+        data: "user not found.",
+      });
+      return;
+    }
+  } else {
+    // new user
+    const hashedPwd = crypto
+      .createHash("sha256")
+      .update(user.password)
+      .digest("hex");
+    const newUser = {
+      name: user.name,
+      password: hashedPwd,
+      groups: [groupId],
+      permissions: {},
+    };
+    const result = await users.insertOne(newUser);
+    userId = result.insertedId;
   }
 
   const groups = database.collection("groups");
 
   const result = await groups.updateOne(
-    { _id: new ObjectId(groupId) },
+    { _id: groupId },
     {
-      $push: {
+      $addToSet: {
         users: userId,
       },
     }
@@ -323,6 +413,39 @@ router.post("/:groupId/users", async (req, res) => {
     res.send({
       code: 400,
       data: "Failed to update",
+    });
+    return;
+  }
+
+  res.send({
+    code: 200,
+  });
+});
+
+/**
+ * delete a user from a group
+ */
+router.delete("/:groupId/users/:userId", async (req, res) => {
+  // TODO: validate body
+  const { groupId, userId } = req.params;
+
+  const database: mongodb.Db = req.app.get("database");
+
+  const groups = database.collection("groups");
+
+  const result = await groups.updateOne(
+    { _id: new ObjectId(groupId) },
+    {
+      $pull: {
+        users: new ObjectID(userId),
+      },
+    }
+  );
+
+  if (result.modifiedCount !== 1) {
+    res.send({
+      code: 400,
+      data: "Failed to delete",
     });
     return;
   }

@@ -109,6 +109,7 @@ router.post<{}, ResBody, IUserBackend>("/", async (req, res) => {
     name,
     password: hashedPwd,
     permission,
+    groups: [],
   });
 
   res.send({

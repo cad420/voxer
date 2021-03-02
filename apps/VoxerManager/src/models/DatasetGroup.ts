@@ -3,11 +3,6 @@ import { AnnotationType, DatasetAnnotations } from "./Annotation";
 
 export type LabelId = ObjectID;
 
-enum Application {
-  Annotation = "annotation",
-  Pipeline = "pipeline",
-}
-
 export type Label = {
   id: LabelId;
   name: string;
@@ -27,7 +22,7 @@ type IGroupShared = {
     }
   >;
   users: string[];
-  applications: Application[];
+  applications: string[];
   labels?: Array<Label>;
 };
 
@@ -50,7 +45,7 @@ type DatasetGroup = {
     }
   >;
   users: string[];
-  applications: Application[];
+  applications: string[];
   labels?: Array<Label>;
 };
 
