@@ -4,6 +4,8 @@ import mongodb, { ObjectID } from "mongodb";
 import { options } from "../index";
 import Dataset from "../models/Dataset";
 import WorkerRPCCaller from "../worker_api";
+import { ResBody } from "./index";
+import DatasetGroup from "../models/DatasetGroup";
 
 const router = express.Router();
 
@@ -15,13 +17,27 @@ const storage = multer.diskStorage({
     cb(null, file.originalname);
   },
 });
-const upload = multer({ storage });
+export const upload = multer({ storage });
 
-router.get("/", async (req, res) => {
-  const database: mongodb.Db = req.app.get("database");
+/**
+ * get all datasets
+ */
+router.get<{}, ResBody>("/", async (req, res) => {
+  const db: mongodb.Db = req.app.get("database");
+  const datasets = db.collection("datasets");
 
-  const collection = database.collection("datasets");
-  const datasets = await collection
+  let page = parseInt(req.query.page);
+  if (isNaN(page) || page <= 0) {
+    page = 1;
+  }
+
+  let size = parseInt(req.query.size);
+  if (isNaN(page) || size <= 0) {
+    size = 10;
+  }
+
+  const total = await datasets.countDocuments();
+  const list = await datasets
     .find(
       {},
       {
@@ -31,30 +47,42 @@ router.get("/", async (req, res) => {
             $toString: "$_id",
           },
           name: true,
-          path: true,
           dimensions: true,
-          histogram: true,
           range: true,
         },
       }
     )
+    .skip((page - 1) * size)
+    .limit(size)
     .toArray();
 
   res.send({
     code: 200,
-    data: datasets,
+    data: {
+      list,
+      total,
+    },
   });
 });
 
+/**
+ * add a dataset by upload
+ */
 router.post("/", upload.single("dataset"), async (req, res) => {
-  const filename = req.file.filename;
+  let path = "";
+  const { name } = req.body;
+  if (req.file) {
+    path = req.file.filename;
+  } else {
+    path = req.body.path;
+  }
 
-  const database: mongodb.Db = req.app.get("database");
+  const db: mongodb.Db = req.app.get("database");
   const worker: WorkerRPCCaller = req.app.get("worker");
-  const collection = database.collection("datasets");
+  const collection = db.collection("datasets");
 
   const exist = (await collection.findOne(
-    { path: filename },
+    { path },
     {
       projection: {
         id: {
@@ -76,17 +104,18 @@ router.post("/", upload.single("dataset"), async (req, res) => {
     }
   } else {
     const result = await collection.insertOne({
-      path: filename, // TODO
-      name: filename,
+      path, // TODO
+      name,
       dimensions: [1, 1, 1],
       histogram: [],
       range: [1, 1],
+      groups: [],
     });
     id = result.insertedId;
   }
 
   try {
-    const info = await worker.getDatasetInfo(id, filename, filename);
+    const info = await worker.getDatasetInfo(id, name, path);
     await collection.updateOne(
       { _id: new ObjectID(id) },
       {
@@ -111,15 +140,18 @@ router.post("/", upload.single("dataset"), async (req, res) => {
   }
 });
 
+/**
+ * get a dataset info
+ */
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
 
   const database: mongodb.Db = req.app.get("database");
   const worker: WorkerRPCCaller = req.app.get("worker");
 
-  const collection = database.collection("datasets");
+  const collection = database.collection<Dataset>("datasets");
 
-  const dataset = (await collection.findOne(
+  const dataset = await collection.findOne<Dataset>(
     { _id: new ObjectID(id) },
     {
       projection: {
@@ -134,7 +166,7 @@ router.get("/:id", async (req, res) => {
         range: true,
       },
     }
-  )) as Dataset;
+  );
 
   if (dataset.histogram.length === 0) {
     try {
@@ -174,6 +206,54 @@ router.get("/:id", async (req, res) => {
     code: 200,
     data: dataset,
   });
+});
+
+/**
+ * delete a dataset
+ */
+router.delete<{ id: string }, ResBody>("/:id", async (req, res) => {
+  const { id } = req.params;
+  const datasetId = new ObjectID(id);
+  const db: mongodb.Db = req.app.get("database");
+  const datasets = db.collection<Dataset>("datasets");
+  const result = await datasets.findOneAndDelete({
+    _id: new ObjectID(id),
+  });
+  if (!result.value) {
+    res.send({
+      code: 404,
+      data: "Dataset not found",
+    });
+    return;
+  }
+  if (!result.ok) {
+    res.send({
+      code: 500,
+      data: "Failed to delete dataset",
+    });
+    return;
+  }
+
+  const dataset = result.value;
+  const groups = db.collection<DatasetGroup>("datasets");
+  const op = await groups.updateMany(
+    { _id: { $in: dataset.groups || [] } },
+    {
+      $pull: {
+        datasets: datasetId,
+      },
+    }
+  );
+
+  if (!op.result.ok) {
+    res.send({
+      code: 500,
+      data: "Failed to delete dataset",
+    });
+    return;
+  }
+
+  res.send({ code: 200 });
 });
 
 export default router;

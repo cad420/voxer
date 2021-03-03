@@ -1,13 +1,12 @@
 import express from "express";
-import mongodb, { ObjectId, ObjectID } from "mongodb";
+import mongodb, { ObjectID } from "mongodb";
 import crypto from "crypto";
 import DatasetGroup, { IGroupBackend } from "../models/DatasetGroup";
-import Dataset from "../models/Dataset";
-import { DatasetAnnotations } from "../models/Annotation";
 import { auth } from "./auth";
 import { getUser } from "./user";
-import { IUserBackend, IUserFrontEnd } from "../models/User";
+import { IUserBackend } from "../models/User";
 import { ResBody } from "./index";
+import { upload } from "./dataset";
 
 const router = express.Router();
 
@@ -93,18 +92,23 @@ router.post<{}, ResBody, { name: string; applications: string[] }>(
 
     const { name, applications = [] } = req.body;
 
-    const collection = database.collection("groups");
+    const collection = database.collection<IGroupBackend>("groups");
 
-    const group: IGroupBackend = {
+    const result = await collection.insertOne({
       name,
-      creator: caller.id,
+      creator: new ObjectID(caller.id),
       createTime: Date.now(),
-      labels: [],
-      datasets: {},
-      users: [],
       applications,
-    };
-    const result = await collection.insertOne(group);
+      datasets: [],
+      users: [],
+    });
+
+    if (!result.insertedId) {
+      res.send({
+        code: 500,
+        data: "Failed to add group",
+      });
+    }
 
     res.send({
       code: 200,
@@ -116,46 +120,32 @@ router.post<{}, ResBody, { name: string; applications: string[] }>(
 /**
  * get group info
  */
-router.get("/:id", async (req, res) => {
+router.get<{ id: string }, ResBody, {}>("/:id", async (req, res) => {
   const { id } = req.params;
 
-  const database: mongodb.Db = req.app.get("database");
-  const collection = database.collection("groups");
-  const result: DatasetGroup[] = await collection
-    .aggregate([
-      { $match: { _id: new ObjectId(id) } },
-      {
-        $project: {
-          _id: false,
-          id: {
-            $toString: "$_id",
-          },
-          name: true,
-          labels: true,
-          createTime: true,
-          creator: true,
-          datasets: { $objectToArray: "$datasets" },
-          users: true,
-          applications: true,
+  const db: mongodb.Db = req.app.get("database");
+  const collection = db.collection("groups");
+  const group = await collection.findOne<DatasetGroup>(
+    {
+      _id: new ObjectID(id),
+    },
+    {
+      projection: {
+        _id: false,
+        id: {
+          $toString: "$_id",
         },
+        name: true,
+        createTime: true,
+        creator: true,
+        applications: true,
+        datasets: true,
+        users: true,
       },
-      { $project: { "datasets.v.labels": 0 } },
-      {
-        $project: {
-          id: true,
-          datasets: { $arrayToObject: "$datasets" },
-          name: true,
-          createTime: true,
-          creator: true,
-          labels: true,
-          users: true,
-          applications: true,
-        },
-      },
-    ])
-    .toArray();
+    }
+  );
 
-  if (result.length === 0) {
+  if (!group) {
     res.send({
       code: 404,
       data: "group not found.",
@@ -163,11 +153,10 @@ router.get("/:id", async (req, res) => {
     return;
   }
 
-  const datasetCollection = database.collection("datasets");
-  const group = { ...result[0] };
-  const tasks = Object.keys(group.datasets || []).map(async (id) => {
-    const dataset = await datasetCollection.findOne(
-      { _id: new ObjectID(id) },
+  const datasets = await db
+    .collection("datasets")
+    .find(
+      { _id: { $in: group.datasets } },
       {
         projection: {
           _id: false,
@@ -175,39 +164,33 @@ router.get("/:id", async (req, res) => {
             $toString: "$_id",
           },
           name: true,
-          dimensions: true,
           createTime: true,
           creator: true,
         },
       }
-    );
-    return dataset;
-  });
-  const datasets = await Promise.all(tasks);
+    )
+    .toArray();
 
-  const labels = (group.labels || []).map((item) => ({
-    ...item,
-    id: item.id.toHexString(),
-  }));
-
-  const users = await database
+  const users = await db
     .collection("users")
     .find(
-      { _id: { $in: group.users || [] } },
+      { _id: { $in: group.users } },
       { projection: { _id: false, id: { $toString: "$_id" }, name: true } }
     )
     .toArray();
 
-  const creator = await database
+  const creator = await db
     .collection("users")
-    .findOne<IUserBackend>({ _id: new ObjectID(group.creator) });
+    .findOne<IUserBackend>(
+      { _id: group.creator },
+      { projection: { _id: false, name: true } }
+    );
 
   res.send({
     code: 200,
     data: {
       ...group,
       creator: creator.name,
-      labels,
       datasets,
       users,
     },
@@ -218,8 +201,8 @@ router.get("/:id", async (req, res) => {
  * delete a group
  */
 router.delete<{ id: string }, ResBody, {}>("/:id", auth, async (req, res) => {
-  const database: mongodb.Db = req.app.get("database");
-  const caller = await getUser(database, (req as any).user.id);
+  const db: mongodb.Db = req.app.get("database");
+  const caller = await getUser(db, (req as any).user.id);
   const { id } = req.params;
   if (
     (!caller.permission.group ||
@@ -236,12 +219,40 @@ router.delete<{ id: string }, ResBody, {}>("/:id", auth, async (req, res) => {
     return;
   }
 
-  const collection = database.collection("groups");
-  const action = await collection.deleteOne({ _id: new ObjectID(id) });
-  if (!action.result.ok) {
+  const groupId = new ObjectID(id);
+  const groups = db.collection("groups");
+  const users = db.collection("users");
+  const datasets = db.collection("datasets");
+  const group = await groups.findOne<DatasetGroup>({ _id: groupId });
+  let op = await groups.deleteOne({ _id: groupId });
+  if (!op.result.ok) {
     res.send({
       code: 500,
-      data: "Unknown Error",
+      data: "Failed to delete group",
+    });
+    return;
+  }
+
+  op = await users.updateMany(
+    { _id: { $in: group.users } },
+    { $pull: { groups: groupId } }
+  );
+  if (!op.result.ok) {
+    res.send({
+      code: 500,
+      data: "Unknown error",
+    });
+    return;
+  }
+
+  op = await datasets.updateMany(
+    { _id: { $in: group.datasets } },
+    { $pull: { groups: groupId } }
+  );
+  if (!op.result.ok) {
+    res.send({
+      code: 500,
+      data: "Unknown error",
     });
     return;
   }
@@ -306,42 +317,135 @@ router.put<{ id: string }, ResBody, { name: string; applications: string[] }>(
 /**
  * add a dataset to a group
  */
-router.post("/:groupId/datasets", async (req, res) => {
+router.post("/:id/datasets", upload.single("dataset"), async (req, res) => {
   // TODO: validate body
   const dataset = req.body;
-  const { groupId } = req.params;
-  const datasetId = new ObjectID(dataset.id);
+  const { id } = req.params;
+  const groupId = new ObjectID(id);
 
-  const database: mongodb.Db = req.app.get("database");
-  const datasets = database.collection("datasets");
+  const db: mongodb.Db = req.app.get("database");
+  const datasets = db.collection("datasets");
 
-  const exist = await datasets.findOne<Dataset>({ _id: datasetId });
-  if (!exist) {
-    res.send({
-      code: 404,
-      data: "dataset not found.",
-    });
-    return;
+  let datasetId = new ObjectID();
+  if (dataset.id) {
+    // add exist dataset
+    datasetId = new ObjectID(dataset.id);
+    const result = await datasets.updateOne(
+      { _id: datasetId },
+      {
+        $addToSet: {
+          groups: groupId,
+        },
+      }
+    );
+    if (!result.modifiedCount) {
+      res.send({
+        code: 404,
+        data: "Failed to add dataset",
+      });
+      return;
+    }
+  } else {
+    const { name } = dataset;
+    let path = "";
+    if (req.file) {
+      path = req.file.filename;
+    } else {
+      path = req.body.path;
+    }
+    const exist = await datasets.findOne(
+      { path },
+      { projection: { _id: true } }
+    );
+
+    if (exist) {
+      datasetId = exist._id as ObjectID;
+      await datasets.updateOne(
+        {
+          _id: datasetId,
+        },
+        { $push: { groups: groupId } }
+      );
+    } else {
+      const result = await datasets.insertOne({
+        path, // TODO
+        name,
+        dimensions: [1, 1, 1],
+        histogram: [],
+        range: [1, 1],
+        groups: [groupId],
+      });
+      datasetId = result.insertedId;
+    }
   }
 
-  const groups = database.collection("groups");
-
+  const groups = db.collection("groups");
   const result = await groups.updateOne(
-    { _id: new ObjectId(groupId) },
+    { _id: groupId },
     {
-      $set: {
-        [`datasets.${datasetId}`]: {
-          name: exist.name,
-          labels: {},
-        },
+      $addToSet: {
+        datasets: datasetId,
       },
     }
   );
 
   if (result.modifiedCount !== 1) {
     res.send({
-      code: 400,
-      data: "Failed to update",
+      code: 500,
+      data: "Failed to add dataset",
+    });
+    return;
+  }
+
+  res.send({
+    code: 200,
+  });
+});
+
+/**
+ * remove a dataset from a group
+ */
+router.delete("/:gid/datasets/:did", async (req, res) => {
+  // TODO: validate body
+  const { gid, did } = req.params;
+  const groupId = new ObjectID(gid);
+  const datasetId = new ObjectID(did);
+
+  const db: mongodb.Db = req.app.get("database");
+
+  const groups = db.collection("groups");
+  const datasets = db.collection("datasets");
+
+  let result = await groups.updateOne(
+    { _id: groupId },
+    {
+      $pull: {
+        datasets: datasetId,
+      },
+    }
+  );
+
+  if (result.modifiedCount !== 1) {
+    res.send({
+      code: 500,
+      data: "Failed to remove dataset",
+    });
+    return;
+  }
+
+  result = await datasets.updateOne(
+    { _id: datasetId },
+    {
+      $pull: {
+        groups: groupId,
+      },
+    }
+  );
+
+  if (result.modifiedCount !== 1) {
+    res.send({
+      code: 500,
+      data: "Failed to remove dataset",
     });
     return;
   }
@@ -358,7 +462,7 @@ router.post("/:id/users", async (req, res) => {
   // TODO: validate body
   const user = req.body;
   const { id } = req.params;
-  const groupId = new ObjectId(id);
+  const groupId = new ObjectID(id);
 
   const database: mongodb.Db = req.app.get("database");
   const users = database.collection("users");
@@ -411,7 +515,7 @@ router.post("/:id/users", async (req, res) => {
 
   if (result.modifiedCount !== 1) {
     res.send({
-      code: 400,
+      code: 500,
       data: "Failed to update",
     });
     return;
@@ -423,288 +527,52 @@ router.post("/:id/users", async (req, res) => {
 });
 
 /**
- * delete a user from a group
+ * remove a user from a group
  */
-router.delete("/:groupId/users/:userId", async (req, res) => {
+router.delete("/:gid/users/:uid", async (req, res) => {
   // TODO: validate body
-  const { groupId, userId } = req.params;
+  const { gid, uid } = req.params;
+  const groupId = new ObjectID(gid);
+  const userId = new ObjectID(uid);
 
-  const database: mongodb.Db = req.app.get("database");
+  const db: mongodb.Db = req.app.get("database");
 
-  const groups = database.collection("groups");
+  const groups = db.collection("groups");
+  const users = db.collection("users");
 
-  const result = await groups.updateOne(
-    { _id: new ObjectId(groupId) },
+  let result = await groups.updateOne(
+    { _id: groupId },
     {
       $pull: {
-        users: new ObjectID(userId),
+        users: userId,
       },
     }
   );
 
   if (result.modifiedCount !== 1) {
     res.send({
-      code: 400,
-      data: "Failed to delete",
+      code: 500,
+      data: "Failed to remove user",
     });
     return;
   }
 
-  res.send({
-    code: 200,
-  });
-});
-
-/**
- * add a label for a group
- */
-router.post("/:groupId/labels", async (req, res) => {
-  // TODO: validate body
-  const label = req.body;
-  const { groupId } = req.params;
-
-  const database: mongodb.Db = req.app.get("database");
-  const collection = database.collection("groups");
-
-  const labelId = new ObjectID();
-  const result = await collection.updateOne(
-    { _id: new ObjectId(groupId) },
-    {
-      $push: {
-        labels: {
-          id: labelId,
-          name: label.name,
-          color: label.color,
-          type: label.type,
-        },
-      },
-    }
-  );
-
-  if (result.modifiedCount !== 1) {
-    res.send({
-      code: 400,
-      data: "Failed to update",
-    });
-    return;
-  }
-
-  res.send({
-    code: 200,
-    data: labelId.toHexString(),
-  });
-});
-
-/**
- * remove a label for a group
- */
-router.delete("/:groupId/labels/:labelId", async (req, res) => {
-  // TODO: validate body
-  const { groupId, labelId } = req.params;
-
-  const database: mongodb.Db = req.app.get("database");
-  const collection = database.collection("groups");
-
-  const group = await collection.findOne(
-    {
-      _id: new ObjectId(groupId),
-    },
-    {
-      projection: {
-        labels: true,
-        datasets: true,
-      },
-    }
-  );
-
-  if (!group) {
-    res.send({
-      code: 404,
-      data: "group not found",
-    });
-    return;
-  }
-
-  // TODO: too much overhead
-  Object.values(group.datasets).forEach((item) => {
-    if (item.labels[labelId]) {
-      delete item.labels[labelId];
-    }
-  });
-
-  const result = await collection.updateOne(
-    { _id: new ObjectId(groupId) },
+  result = await users.updateOne(
+    { _id: userId },
     {
       $pull: {
-        labels: {
-          id: new ObjectID(labelId),
-        },
-      },
-      $set: {
-        datasets: group.datasets,
+        groups: groupId,
       },
     }
   );
 
   if (result.modifiedCount !== 1) {
     res.send({
-      code: 400,
-      data: "Failed to update",
+      code: 500,
+      data: "Failed to remove user",
     });
     return;
   }
-
-  res.send({
-    code: 200,
-  });
-});
-
-/**
- * update a label for a group
- */
-router.put("/:groupId/labels/:labelId", async (req, res) => {
-  // TODO: validate body
-  const newLabel = req.body;
-  const { groupId, labelId } = req.params;
-
-  const database: mongodb.Db = req.app.get("database");
-  const collection = database.collection("groups");
-
-  const group = await collection.findOne(
-    { _id: new ObjectId(groupId) },
-    {
-      projection: {
-        _id: false,
-        id: {
-          $toString: "$_id",
-        },
-        labels: true,
-      },
-    }
-  );
-
-  if (!group) {
-    res.send({
-      code: 404,
-      data: "group not found",
-    });
-    return;
-  }
-
-  const labels = group.labels as DatasetGroup["labels"];
-  let idx = -1;
-  let id = new ObjectID();
-  for (let i = 0; i < labels.length; ++i) {
-    if (labels[i].id.toHexString() === labelId) {
-      idx = i;
-      id = labels[i].id;
-      break;
-    }
-  }
-
-  if (idx === -1) {
-    res.send({
-      code: 404,
-      data: "label not found",
-    });
-    return;
-  }
-
-  const result = await collection.updateOne(
-    { _id: new ObjectId(groupId) },
-    {
-      $set: {
-        [`labels.${idx}`]: {
-          ...newLabel,
-          id,
-        },
-      },
-    }
-  );
-
-  if (result.modifiedCount !== 1) {
-    res.send({
-      code: 400,
-      data: "Failed to update",
-    });
-    return;
-  }
-
-  res.send({
-    code: 200,
-  });
-});
-
-/**
- * add a dataset for a group
- */
-router.post("/:id/datasets", async (req, res) => {
-  // TODO: validate body
-  const { id: datasetId } = req.body;
-  const { id: groupId } = req.params;
-
-  const database: mongodb.Db = req.app.get("database");
-
-  const dataset: Dataset = await database.collection("datasets").findOne(
-    {
-      _id: new ObjectId(datasetId),
-    },
-    {
-      projection: {},
-    }
-  );
-
-  if (!dataset) {
-    res.send({
-      code: 404,
-      data: "dataset not found.",
-    });
-    return;
-  }
-
-  const collection = database.collection("groups");
-
-  const group = await collection.findOne(
-    {
-      _id: new ObjectID(groupId),
-    },
-    {
-      projection: {
-        datasets: true,
-        labels: true,
-      },
-    }
-  );
-
-  if (!group) {
-    res.send({
-      code: 404,
-      data: "group not found.",
-    });
-    return;
-  }
-
-  if ((group.datasets as DatasetGroup["datasets"])[datasetId]) {
-    res.send({
-      code: 200,
-    });
-    return;
-  }
-
-  const labels: Record<string, DatasetAnnotations> = {};
-  (group.labels as DatasetGroup["labels"]).forEach((label) => {
-    labels[label.id.toHexString()] = { z: {}, y: {}, x: {} };
-  });
-
-  await collection.updateOne(
-    { _id: new ObjectId(groupId) },
-    {
-      [`datasets.${datasetId}`]: {
-        name: dataset.name,
-        labels,
-      },
-    }
-  );
 
   res.send({
     code: 200,

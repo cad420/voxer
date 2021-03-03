@@ -250,7 +250,7 @@ class Server {
       }
     });
 
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       server.listen(this.port, () => {
         logger.error(`Listening on port ${this.port}`);
         resolve();

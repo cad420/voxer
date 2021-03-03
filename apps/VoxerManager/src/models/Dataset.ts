@@ -1,3 +1,5 @@
+import { ObjectID } from "mongodb";
+
 type Dataset = {
   id: string;
   name: string;
@@ -5,6 +7,7 @@ type Dataset = {
   dimensions: [number, number, number];
   histogram: number[];
   range: [number, number];
+  groups: ObjectID[];
 };
 
 export type DatasetInfo = {

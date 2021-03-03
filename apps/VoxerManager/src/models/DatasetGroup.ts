@@ -1,32 +1,17 @@
 import { ObjectID } from "mongodb";
-import { AnnotationType, DatasetAnnotations } from "./Annotation";
-
-export type LabelId = ObjectID;
-
-export type Label = {
-  id: LabelId;
-  name: string;
-  color: string;
-  type: AnnotationType;
-};
 
 type IGroupShared = {
   name: string;
-  creator: string;
+  creator: ObjectID;
   createTime: number;
-  datasets: Record<
-    string,
-    {
-      name: string;
-      labels: Record<string, DatasetAnnotations>;
-    }
-  >;
-  users: string[];
   applications: string[];
-  labels?: Array<Label>;
+  datasets: ObjectID[];
+  users: ObjectID[];
 };
 
-type IGroupBackend = IGroupShared;
+interface IGroupBackend extends IGroupShared {
+  _id: ObjectID;
+}
 
 interface IGroupFrontEnd extends IGroupShared {
   id: string;
@@ -37,16 +22,9 @@ type DatasetGroup = {
   name: string;
   creator: string;
   createTime: number;
-  datasets: Record<
-    string,
-    {
-      name: string;
-      labels: Record<string, DatasetAnnotations>;
-    }
-  >;
-  users: string[];
+  datasets: Array<ObjectID>;
+  users: Array<ObjectID>;
   applications: string[];
-  labels?: Array<Label>;
 };
 
 export default DatasetGroup;
