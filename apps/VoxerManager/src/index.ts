@@ -40,4 +40,5 @@ if (program.serve) {
 }
 
 const server = new Server(options);
+
 server.listen();

@@ -1,3 +1,5 @@
+import { ObjectID } from "mongodb";
+
 interface Permission {
   users: {
     create?: boolean;
@@ -26,14 +28,21 @@ interface Permission {
   >;
 }
 
-interface IUserFrontEnd {
+export interface IUser {
+  _id: ObjectID;
+  name: string;
+  password: string;
+  permission: Permission;
+}
+
+export type IUserWithoutPwd = Omit<IUser, "password">;
+
+export type IUserCreateInfo = Omit<IUser, "_id">;
+
+export interface IUserFrontEnd {
   id?: string;
   name: string;
   permission: Permission;
 }
 
-interface IUserBackend extends IUserFrontEnd {
-  password: string;
-}
-
-export { IUserFrontEnd, IUserBackend };
+export interface IUserBackend extends IUserFrontEnd {}

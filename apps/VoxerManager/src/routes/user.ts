@@ -1,17 +1,19 @@
-import express from "express";
-import mongodb, { ObjectID } from "mongodb";
 import crypto from "crypto";
-import { auth } from "./auth";
-import { IUserFrontEnd, IUserBackend } from "../models/User";
-import { ResBody } from ".";
+import { FastifyInstance } from "fastify";
+import mongodb, { ObjectID } from "mongodb";
+import {
+  IUser,
+  IUserFrontEnd,
+  IUserCreateInfo,
+  IUserWithoutPwd,
+} from "../models/User";
 
-export function getUser(db: mongodb.Db, id: string): Promise<IUserFrontEnd> {
-  return db.collection("users").findOne<IUserFrontEnd>(
+export function getUser(db: mongodb.Db, id: string): Promise<IUserWithoutPwd> {
+  return db.collection("users").findOne<IUserWithoutPwd>(
     { _id: new ObjectID(id) },
     {
       projection: {
-        _id: false,
-        id: { $toString: "$_id" },
+        _id: true,
         name: true,
         permission: true,
       },
@@ -19,432 +21,431 @@ export function getUser(db: mongodb.Db, id: string): Promise<IUserFrontEnd> {
   );
 }
 
-const router = express.Router();
-
-router.use(auth);
-
-/**
- * get users
- */
-router.get<{}, ResBody>("/", async (req, res) => {
-  const database: mongodb.Db = req.app.get("database");
-  const caller = await getUser(database, (req as any).user.id);
-  if (
-    !caller.permission ||
-    !caller.permission.users ||
-    !caller.permission.users.read
-  ) {
-    res.send({
-      code: 401,
-      data: "No permission",
-    });
+async function routes(server: FastifyInstance) {
+  const db = server.mongo.db;
+  if (!db) {
     return;
   }
 
-  const users = database.collection("users");
+  const users = db.collection<IUser>("users");
 
-  let page = parseInt(req.query.page);
-  if (isNaN(page) || page <= 0) {
-    page = 1;
-  }
-  let size = parseInt(req.query.size);
-  if (isNaN(page) || size <= 0) {
-    size = 10;
-  }
-  const total = await users.countDocuments();
-  const list = await users
-    .find<{
-      name: string;
-    }>(
-      {},
+  server.addHook("onRequest", async (request) => await request.jwtVerify());
+
+  /**
+   * get users
+   */
+  server.get<{
+    Querystring: {
+      page: string;
+      size: string;
+    };
+  }>("/users", async (req) => {
+    const caller = await getUser(db, req.user.id);
+    if (
+      !caller.permission ||
+      !caller.permission.users ||
+      !caller.permission.users.read
+    ) {
+      return {
+        code: 401,
+        data: "No permission",
+      };
+    }
+
+    const users = db.collection("users");
+
+    let page = parseInt(req.query.page);
+    if (isNaN(page) || page <= 0) {
+      page = 1;
+    }
+    let size = parseInt(req.query.size);
+    if (isNaN(page) || size <= 0) {
+      size = 10;
+    }
+    const total = await users.countDocuments();
+    const list = await users
+      .find<{
+        name: string;
+      }>(
+        {},
+        {
+          projection: {
+            _id: false,
+            id: { $toString: "$_id" },
+            name: true,
+            permission: true,
+          },
+        }
+      )
+      .skip((page - 1) * size)
+      .limit(size)
+      .toArray();
+
+    return {
+      code: 200,
+      data: {
+        list,
+        total,
+      },
+    };
+  });
+
+  /**
+   * add user
+   */
+  server.post<{
+    Body: IUserCreateInfo;
+  }>("/users", async (req) => {
+    const caller = await getUser(db, req.user.id);
+    if (
+      !caller.permission ||
+      !caller.permission.users ||
+      !caller.permission.users.create
+    ) {
+      return {
+        code: 401,
+        data: "No permission",
+      };
+    }
+
+    const { name, password, permission } = req.body;
+
+    // TODO: validate params
+
+    const hashedPwd = crypto
+      .createHash("sha256")
+      .update(password)
+      .digest("hex");
+
+    const collection = db.collection("users");
+
+    const row = await collection.insertOne({
+      name,
+      password: hashedPwd,
+      permission,
+      groups: [],
+    });
+
+    return {
+      code: 200,
+      data: row.insertedId.toString(),
+    };
+  });
+
+  /**
+   * delete user
+   */
+  server.delete<{
+    Params: { id: string };
+  }>("/users/:id", async (req) => {
+    const caller = await getUser(db, req.user.id);
+    if (
+      !caller.permission ||
+      !caller.permission.users ||
+      !caller.permission.users.delete
+    ) {
+      return {
+        code: 401,
+        data: "No permission",
+      };
+    }
+
+    const users = db.collection("users");
+
+    const { id } = req.params;
+
+    const result = await users.findOneAndDelete({
+      _id: new ObjectID(id),
+    });
+
+    if (!result.ok) {
+      return {
+        code: 400,
+      };
+    }
+
+    return { code: 200 };
+  });
+
+  /**
+   * get user info
+   */
+  server.get<{
+    Params: { id: string };
+  }>("/users/:id", async (req, res) => {
+    const { id } = req.params;
+    const userId = new ObjectID(id);
+    const caller = await getUser(db, req.user.id);
+    if (
+      caller._id !== userId &&
+      (!caller.permission ||
+        !caller.permission.users ||
+        !caller.permission.users.read)
+    ) {
+      res.send({
+        code: 401,
+        data: "No permission",
+      });
+      return;
+    }
+
+    const users = db.collection("users");
+
+    const result = await users.findOne<{ name: string }>(
+      { _id: new ObjectID(id) },
       {
         projection: {
           _id: false,
           id: { $toString: "$_id" },
           name: true,
-          permission: true,
         },
       }
-    )
-    .skip((page - 1) * size)
-    .limit(size)
-    .toArray();
+    );
 
-  res.send({
-    code: 200,
-    data: {
-      list,
-      total,
-    },
-  });
-});
-
-/**
- * add user
- */
-router.post<{}, ResBody, IUserBackend>("/", async (req, res) => {
-  const database: mongodb.Db = req.app.get("database");
-  const caller = await getUser(database, (req as any).user.id);
-  if (
-    !caller.permission ||
-    !caller.permission.users ||
-    !caller.permission.users.create
-  ) {
     res.send({
-      code: 401,
-      data: "No permission",
+      code: 200,
+      data: result,
     });
-    return;
-  }
-
-  const { name, password, permission } = req.body;
-
-  // TODO: validate params
-
-  const hashedPwd = crypto.createHash("sha256").update(password).digest("hex");
-
-  const collection = database.collection("users");
-
-  const row = await collection.insertOne({
-    name,
-    password: hashedPwd,
-    permission,
-    groups: [],
   });
 
-  res.send({
-    code: 200,
-    data: row.insertedId.toString(),
-  });
-});
-
-/**
- * delete user
- */
-router.delete<{}, ResBody, { id: string }>("/", async (req, res) => {
-  const database: mongodb.Db = req.app.get("database");
-  const caller = await getUser(database, (req as any).user.id);
-  if (
-    !caller.permission ||
-    !caller.permission.users ||
-    !caller.permission.users.delete
-  ) {
-    res.send({
-      code: 401,
-      data: "No permission",
-    });
-    return;
-  }
-
-  const users = database.collection("users");
-
-  const { id } = req.body;
-
-  const result = await users.findOneAndDelete({
-    _id: new ObjectID(id),
-  });
-
-  if (!result.ok) {
-    res.send({
-      code: 400,
-    });
-    return;
-  }
-
-  res.send({ code: 200 });
-});
-
-/**
- * get user info
- */
-router.get<{ id: string }, ResBody>("/:id", async (req, res) => {
-  const { id } = req.params;
-  const database: mongodb.Db = req.app.get("database");
-  const caller = await getUser(database, (req as any).user.id);
-  if (
-    caller.id !== id &&
-    (!caller.permission ||
-      !caller.permission.users ||
-      !caller.permission.users.read)
-  ) {
-    res.send({
-      code: 401,
-      data: "No permission",
-    });
-    return;
-  }
-
-  const users = database.collection("users");
-
-  const result = await users.findOne<{ name: string }>(
-    { _id: new ObjectID(id) },
-    {
-      projection: {
-        _id: false,
-        id: { $toString: "$_id" },
-        name: true,
-      },
+  /**
+   * update user info
+   */
+  server.put<{
+    Params: { id: string };
+    Body: {
+      oldPassword?: string;
+      password?: string;
+    };
+  }>("/:id", async (req) => {
+    const { id } = req.params;
+    const userId = new ObjectID(id);
+    const caller = await getUser(db, req.user.id);
+    const selfUpdate = userId === caller._id;
+    if (
+      !selfUpdate &&
+      (!caller.permission ||
+        !caller.permission.users ||
+        !caller.permission.users.update)
+    ) {
+      return {
+        code: 401,
+        data: "No permission",
+      };
+      return;
     }
-  );
 
-  res.send({
-    code: 200,
-    data: result,
-  });
-});
+    const users = db.collection("users");
 
-/**
- * update user info
- */
-router.put<
-  {
-    id: string;
-  },
-  ResBody,
-  {
-    oldPassword?: string;
-    password?: string;
-  }
->("/:id", async (req, res) => {
-  const { id } = req.params;
-  const database: mongodb.Db = req.app.get("database");
-  const caller = await getUser(database, (req as any).user.id);
-  const selfUpdate = id === caller.id;
-  if (
-    !selfUpdate &&
-    (!caller.permission ||
-      !caller.permission.users ||
-      !caller.permission.users.update)
-  ) {
-    res.send({
-      code: 401,
-      data: "No permission",
-    });
-    return;
-  }
+    const exist = await users.findOne<{
+      password: string;
+      name: string;
+    }>(
+      { _id: new ObjectID(id) },
+      { projection: { password: true, name: true } }
+    );
 
-  const users = database.collection("users");
+    if (!exist) {
+      return {
+        code: 400,
+        data: "user does not exist",
+      };
+    }
 
-  const exist = await users.findOne<{
-    password: string;
-    name: string;
-  }>({ _id: new ObjectID(id) }, { projection: { password: true, name: true } });
-
-  if (!exist) {
-    res.send({
-      code: 400,
-      data: "user does not exist",
-    });
-    return;
-  }
-
-  let password = exist.password;
-  if (req.body.password) {
-    const newPwd = req.body.password;
-    if (selfUpdate) {
-      const old = req.body.oldPassword;
-      const hashed = crypto.createHash("sha256").update(old).digest("hex");
-      if (hashed !== exist.password) {
-        res.send({
-          code: 400,
-          data: "password not correct",
-        });
-        return;
+    let password = exist.password;
+    if (req.body.password) {
+      const newPwd = req.body.password;
+      if (selfUpdate) {
+        const old = req.body.oldPassword;
+        const hashed = crypto.createHash("sha256").update(old).digest("hex");
+        if (hashed !== exist.password) {
+          return {
+            code: 400,
+            data: "password not correct",
+          };
+        }
       }
+
+      password = crypto.createHash("sha256").update(newPwd).digest("hex");
     }
 
-    password = crypto.createHash("sha256").update(newPwd).digest("hex");
-  }
+    const result = await users.updateOne(
+      { _id: new ObjectID(id) },
+      { $set: { password } }
+    );
 
-  const result = await users.updateOne(
-    { _id: new ObjectID(id) },
-    { $set: { password } }
-  );
+    if (!result.result.ok) {
+      return {
+        code: 500,
+        data: "Failed to update user",
+      };
+    }
 
-  if (!result.result.ok) {
-    res.send({
-      code: 500,
-      data: "Failed to update user",
-    });
-    return;
-  }
-
-  res.send({
-    code: 200,
+    return {
+      code: 200,
+    };
   });
-});
 
-/**
- * delete user
- */
-router.delete<
-  {
-    id: string;
-  },
-  ResBody
->("/:id", async (req, res) => {
-  const { id } = req.params;
-  const database: mongodb.Db = req.app.get("database");
-  const caller = await getUser(database, (req as any).user.id);
-  if (caller.id === id) {
-    res.send({
-      code: 401,
-      data: "Cannot delete self.",
-    });
-    return;
-  }
+  /**
+   * delete user
+   */
+  server.delete<{
+    Params: { id: string };
+  }>("/:id", async (req) => {
+    const { id } = req.params;
+    const userId = new ObjectID(id);
+    const caller = await getUser(db, req.user.id);
+    if (caller._id === userId) {
+      return {
+        code: 401,
+        data: "Cannot delete self.",
+      };
+    }
 
-  if (
-    !caller.permission ||
-    !caller.permission.users ||
-    !caller.permission.users.delete
-  ) {
-    res.send({
-      code: 401,
-      data: "No permission",
-    });
-    return;
-  }
+    if (
+      !caller.permission ||
+      !caller.permission.users ||
+      !caller.permission.users.delete
+    ) {
+      return {
+        code: 401,
+        data: "No permission",
+      };
+    }
 
-  const collection = database.collection("users");
+    const collection = db.collection("users");
 
-  const exist = await collection.findOne<{
-    password: string;
-    name: string;
-  }>({ _id: new ObjectID(id) }, { projection: { password: true, name: true } });
+    const exist = await collection.findOne<{
+      password: string;
+      name: string;
+    }>(
+      { _id: new ObjectID(id) },
+      { projection: { password: true, name: true } }
+    );
 
-  if (!exist) {
-    res.send({
-      code: 400,
-      data: "user does not exist",
-    });
-    return;
-  }
+    if (!exist) {
+      return {
+        code: 400,
+        data: "user does not exist",
+      };
+    }
 
-  const result = await collection.deleteOne({ _id: new ObjectID(id) });
+    const result = await collection.deleteOne({ _id: new ObjectID(id) });
 
-  if (result.deletedCount !== 1) {
-    res.send({
-      code: 500,
-      data: "Failed to update user",
-    });
-    return;
-  }
+    if (result.deletedCount !== 1) {
+      return {
+        code: 500,
+        data: "Failed to update user",
+      };
+    }
 
-  res.send({
-    code: 200,
+    return {
+      code: 200,
+    };
   });
-});
 
-/**
- * get user permissions
- */
-router.get<
-  {
-    id: string;
-  },
-  ResBody,
-  {}
->("/:id/permission", async (req, res) => {
-  const database: mongodb.Db = req.app.get("database");
-  const caller = await getUser(database, (req as any).user.id);
-  if (
-    !caller.permission ||
-    !caller.permission.users ||
-    !caller.permission.users.read
-  ) {
-    res.send({
-      code: 401,
-      data: "No permission",
-    });
-    return;
-  }
+  /**
+   * get user permissions
+   */
+  server.get<{
+    Params: { id: string };
+  }>("/:id/permission", async (req) => {
+    const caller = await getUser(db, req.user.id);
+    if (
+      !caller.permission ||
+      !caller.permission.users ||
+      !caller.permission.users.read
+    ) {
+      return {
+        code: 401,
+        data: "No permission",
+      };
+    }
 
-  const users = database.collection("users");
+    const users = db.collection("users");
 
-  const { id } = req.params;
+    const { id } = req.params;
 
-  const exist = await users.findOne<{
-    password: string;
-    name: string;
-    permission: IUserFrontEnd["permission"];
-  }>(
-    { _id: new ObjectID(id) },
-    { projection: { password: true, name: true, permission: true } }
-  );
+    const exist = await users.findOne<{
+      password: string;
+      name: string;
+      permission: IUserFrontEnd["permission"];
+    }>(
+      { _id: new ObjectID(id) },
+      { projection: { password: true, name: true, permission: true } }
+    );
 
-  if (!exist) {
-    res.send({
-      code: 400,
-      data: "user does not exist",
-    });
-    return;
-  }
+    if (!exist) {
+      return {
+        code: 400,
+        data: "user does not exist",
+      };
+    }
 
-  res.send({
-    code: 200,
-    data: exist.permission,
+    return {
+      code: 200,
+      data: exist.permission,
+    };
   });
-});
 
-/**
- * update user permission
- */
-router.put<
-  {
-    id: string;
-  },
-  ResBody,
-  IUserFrontEnd["permission"]
->("/:id/permission", async (req, res) => {
-  const database: mongodb.Db = req.app.get("database");
-  const caller = await getUser(database, (req as any).user.id);
-  if (
-    !caller.permission ||
-    !caller.permission.users ||
-    !caller.permission.users.update
-  ) {
+  /**
+   * update user permission
+   */
+  server.put<{
+    Params: { id: string };
+    Body: IUserFrontEnd["permission"];
+  }>("/:id/permission", async (req, res) => {
+    const caller = await getUser(db, req.user.id);
+    if (
+      !caller.permission ||
+      !caller.permission.users ||
+      !caller.permission.users.update
+    ) {
+      res.send({
+        code: 401,
+        data: "No permission",
+      });
+      return;
+    }
+
+    const collection = db.collection("users");
+
+    const { id } = req.params;
+
+    const exist = await collection.findOne<{
+      password: string;
+      name: string;
+    }>(
+      { _id: new ObjectID(id) },
+      { projection: { password: true, name: true } }
+    );
+
+    if (!exist) {
+      res.send({
+        code: 400,
+        data: "user does not exist",
+      });
+      return;
+    }
+
+    const { users = {}, groups = {} } = req.body;
+    const result = await collection.updateOne(
+      { _id: new ObjectID(id) },
+      { $set: { permission: { users, groups } } }
+    );
+
+    if (result.modifiedCount !== 1) {
+      res.send({
+        code: 500,
+        data: "Failed to update user",
+      });
+      return;
+    }
+
     res.send({
-      code: 401,
-      data: "No permission",
+      code: 200,
     });
-    return;
-  }
-
-  const collection = database.collection("users");
-
-  const { id } = req.params;
-
-  const exist = await collection.findOne<{
-    password: string;
-    name: string;
-  }>({ _id: new ObjectID(id) }, { projection: { password: true, name: true } });
-
-  if (!exist) {
-    res.send({
-      code: 400,
-      data: "user does not exist",
-    });
-    return;
-  }
-
-  const { users = {}, groups = {} } = req.body;
-  const result = await collection.updateOne(
-    { _id: new ObjectID(id) },
-    { $set: { permission: { users, groups } } }
-  );
-
-  if (result.modifiedCount !== 1) {
-    res.send({
-      code: 500,
-      data: "Failed to update user",
-    });
-    return;
-  }
-
-  res.send({
-    code: 200,
   });
-});
+}
 
-export default router;
+export default routes;

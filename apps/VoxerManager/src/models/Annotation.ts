@@ -36,3 +36,9 @@ interface IAnnotation {
 interface IAnnotationBackend extends IAnnotation {
   _id: ObjectID;
 }
+
+interface IAnnotationFrontend extends IAnnotation {
+  id: string;
+}
+
+export { IAnnotation, IAnnotationBackend, IAnnotationFrontend };

@@ -1,17 +1,27 @@
-import express from "express";
-import WebSocket from "ws";
 import http from "http";
 import net from "net";
-import cors from "cors";
-import routes from "./routes";
-import { Db, MongoClient } from "mongodb";
+import path from "path";
 import pino from "pino";
+import WebSocket from "ws";
 import nanoid from "nanoid";
+import { Db } from "mongodb";
+import FastifyJWTPlugin from "fastify-jwt";
+import FastifyCORSPlugin from "fastify-cors";
+import FastifyStaticPlugin from "fastify-static";
+import FastifyHelmetPlugin from "fastify-helmet";
+import FastifyMongoDBPlugin from "fastify-mongodb";
+import FastifyMultiPartPlugin from "fastify-multipart";
+import fastify, { FastifyLoggerInstance, FastifyServerFactory } from "fastify";
+import routes from "./routes";
 import WorkerAPICaller from "./worker_api";
 
-const msgpack = require("@ygoe/msgpack");
+declare module "fastify" {
+  interface FastifyInstance {
+    getWorker: () => WorkerAPICaller;
+  }
+}
 
-const logger = pino();
+const msgpack = require("@ygoe/msgpack");
 
 interface ServerOptions {
   port?: number;
@@ -28,8 +38,10 @@ class Server {
   databseAddr: string;
   port: number;
   worker: WorkerAPICaller;
+  logger: FastifyLoggerInstance;
 
   constructor(options: ServerOptions) {
+    this.logger = pino();
     this.workers = [];
     this.clients = new Map();
     this.publicDir = options.serve || "public";
@@ -51,28 +63,6 @@ class Server {
     };
   }
 
-  async connectDatabase() {
-    const client = new MongoClient(`mongodb://${this.databseAddr}?w=majority`, {
-      useUnifiedTopology: true,
-      useNewUrlParser: true,
-    });
-
-    try {
-      await client.connect();
-
-      // Establish and verify connection
-      const db = await client.db("voxer");
-      await db.command({ ping: 1 });
-
-      logger.info("Connected successfully to database");
-
-      this.database = db;
-    } catch (e) {
-      logger.info("Failed to connect to server: ", e.message);
-      await client.close();
-    }
-  }
-
   handleClientConnect = (ws: WebSocket) => {
     const id = nanoid(10);
 
@@ -83,7 +73,7 @@ class Server {
     });
     this.clients.set(id, ws);
 
-    logger.info(`New client connected, id: ${id}`);
+    this.logger.info(`New client connected, id: ${id}`);
 
     const info = msgpack.serialize({
       caller: id,
@@ -98,7 +88,7 @@ class Server {
 
       if (workerNum <= 0) {
         const error = "no available worker";
-        logger.warn(error);
+        this.logger.warn(error);
         const data = msgpack.serialize({
           caller: id,
           id,
@@ -114,17 +104,17 @@ class Server {
     });
 
     ws.on("close", () => {
-      logger.warn(`Client(${id}) Closed`);
+      this.logger.warn(`Client(${id}) Closed`);
       this.clients.delete(id);
     });
 
     ws.on("error", (msg: WebSocket.Data) => {
-      logger.warn(`Client(${id}) Error: ${msg.toString()}`);
+      this.logger.warn(`Client(${id}) Error: ${msg.toString()}`);
     });
   };
 
   handleWorkerConnect = (ws: WebSocket) => {
-    logger.info("New worker connected");
+    this.logger.info("New worker connected");
 
     const worker = ws as any;
     worker.isAlive = true;
@@ -138,7 +128,7 @@ class Server {
     ws.on("message", this.handleWorkerMessage);
 
     ws.on("close", () => {
-      logger.warn("Worker Closed");
+      this.logger.warn("Worker Closed");
       this.workers.splice(index, 1);
       if (this.workerIdx > index) {
         this.workerIdx = this.workerIdx % this.workers.length;
@@ -146,7 +136,7 @@ class Server {
     });
 
     ws.on("error", (msg: WebSocket.Data) => {
-      logger.warn(`Worker Error: ${msg.toString()}`);
+      this.logger.warn(`Worker Error: ${msg.toString()}`);
     });
   };
 
@@ -206,56 +196,65 @@ class Server {
   };
 
   async listen() {
-    await this.connectDatabase();
-
-    const app = express();
-
-    app.use(express.static(this.publicDir));
-    app.use(cors());
-    app.use(express.json());
-    app.use(routes);
-
-    app.use((req, res) => {
-      res.status(404);
-      res.end("Not found.");
-    });
-
-    app.set("database", this.database);
-    app.set("worker", this.worker);
-
-    const server = http.createServer(app);
-
-    const wss = new WebSocket.Server({
-      clientTracking: false,
-      noServer: true,
-    });
-
-    server.on(
-      "upgrade",
-      (request: http.IncomingMessage, socket: net.Socket, head: Buffer) => {
-        wss.handleUpgrade(request, socket, head, (ws) => {
-          wss.emit("connection", ws, request);
-        });
-      }
-    );
-
-    wss.on("connection", (ws, req) => {
-      if (req.url === "/worker") {
-        this.handleWorkerConnect(ws);
-      } else if (req.url === "/rpc") {
-        this.handleClientConnect(ws);
-      } else {
-        ws.close();
-        return;
-      }
-    });
-
-    return new Promise<void>((resolve) => {
-      server.listen(this.port, () => {
-        logger.error(`Listening on port ${this.port}`);
-        resolve();
+    const serverFactory: FastifyServerFactory = (handler) => {
+      const server = http.createServer((req, res) => {
+        handler(req, res);
       });
+
+      const wss = new WebSocket.Server({
+        clientTracking: false,
+        noServer: true,
+      });
+
+      server.on(
+        "upgrade",
+        (request: http.IncomingMessage, socket: net.Socket, head: Buffer) => {
+          wss.handleUpgrade(request, socket, head, (ws) => {
+            wss.emit("connection", ws, request);
+          });
+        }
+      );
+
+      wss.on("connection", (ws, req) => {
+        if (req.url === "/worker") {
+          this.handleWorkerConnect(ws);
+        } else if (req.url === "/rpc") {
+          this.handleClientConnect(ws);
+        } else {
+          ws.close();
+          return;
+        }
+      });
+
+      return server;
+    };
+
+    const app = fastify({ serverFactory, logger: true });
+
+    app.register(FastifyHelmetPlugin);
+    app.register(FastifyStaticPlugin, {
+      root: path.resolve(process.cwd(), this.publicDir),
+      prefix: "/",
     });
+    app.register(FastifyMongoDBPlugin, {
+      forceClose: true,
+      url: `mongodb://${this.databseAddr}/voxer`,
+    });
+    app.register(FastifyCORSPlugin, {});
+    app.register(FastifyMultiPartPlugin);
+    app.register(FastifyJWTPlugin, {
+      secret: "shhhhhhared-secret",
+    });
+    app.register(routes);
+    app.decorate("getWorker", () => this.worker);
+    this.logger = app.log;
+
+    try {
+      const address = await app.listen(this.port, "0.0.0.0");
+      app.log.info(`Listening on ${address}`);
+    } catch (err) {
+      app.log.error(err);
+    }
   }
 }
 

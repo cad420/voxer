@@ -1,128 +1,125 @@
-import express from "express";
-import expressJWT from "express-jwt";
-import mongodb from "mongodb";
-import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { ResBody } from ".";
-import { IUserBackend } from "../models/User";
+import { FastifyInstance } from "fastify";
+import { IUser } from "../models/User";
 
-const secret = "shhhhhhared-secret";
-const auth = expressJWT({
-  secret,
-  algorithms: ["HS256"],
-});
-
-const router = express.Router();
-
-/**
- * create first user if not exist
- */
-router.get<{ name: string; password: string }, ResBody | string, {}>(
-  "/initialize",
-  async (req, res) => {
-    const database: mongodb.Db = req.app.get("database");
-    const users = database.collection("users");
-    const total = await users.countDocuments();
-
-    if (total > 0) {
-      res.send({
-        code: 400,
-        data: "Invalid request",
-      });
-      return;
-    }
-
-    const { name, password } = req.query;
-    const admin: IUserBackend = {
-      name,
-      password: crypto.createHash("sha256").update(password).digest("hex"),
-      permission: {
-        users: {
-          create: true,
-          delete: true,
-          read: true,
-          update: true,
-        },
-        groups: {
-          create: true,
-          delete: true,
-          read: true,
-          update: true,
-        },
-        group: {},
-      },
+declare module "fastify-jwt" {
+  interface FastifyJWT {
+    payload: {
+      id: string;
+      name: string;
     };
-
-    const result = await users.insertOne(admin);
-    if (result && result.insertedId) {
-      res.send("Initialized.");
-    } else {
-      res.send({
-        code: 500,
-        data: "Failed to initailize",
-      });
-    }
   }
-);
+}
 
-/**
- * Login
- */
-router.post<{}, ResBody, { name: string; password: string }>(
-  "/login",
-  async (req, res) => {
-    const { name, password } = req.body;
+export function processPwd(password: string): string {
+  return crypto.createHash("sha256").update(password).digest("hex");
+}
 
-    const database: mongodb.Db = req.app.get("database");
-    const users = database.collection("users");
+async function routes(server: FastifyInstance) {
+  const db = server.mongo.db;
+  if (!db) {
+    return;
+  }
 
-    const exist = await users.findOne<{ id: string; password: string }>(
-      { name },
-      {
-        projection: {
-          _id: false,
-          id: {
-            $toString: "$_id",
-          },
-          password: true,
-        },
+  const users = db.collection<IUser>("users");
+
+  /**
+   * create first user if not exist
+   */
+  server.get<{ Querystring: { name: string; password: string } }>(
+    "/auth/initialize",
+    async (req) => {
+      const total = await users.countDocuments();
+
+      if (total > 0) {
+        return {
+          code: 400,
+          data: "Invalid request",
+        };
       }
-    );
 
-    if (!exist) {
-      res.send({
-        code: 400,
-        data: "invalid login info",
+      const { name, password } = req.query;
+      const result = await users.insertOne({
+        name,
+        password: processPwd(password),
+        permission: {
+          users: {
+            create: true,
+            delete: true,
+            read: true,
+            update: true,
+          },
+          groups: {
+            create: true,
+            delete: true,
+            read: true,
+            update: true,
+          },
+          group: {},
+        },
       });
-      return;
-    }
+      if (!result || !result.insertedId) {
+        return {
+          code: 500,
+          data: "Failed to initailize",
+        };
+      }
 
-    const hashedPwd = crypto
-      .createHash("sha256")
-      .update(password)
-      .digest("hex");
-    if (hashedPwd != exist.password) {
-      res.send({
-        code: 400,
-        data: "invalid login info",
-      });
-      return;
+      return { code: 200, data: "Initialized." };
     }
+  );
 
-    const token = jwt.sign(
-      {
+  /**
+   * Login
+   */
+  server.post<{ Body: { name: string; password: string } }>(
+    "/login",
+    async (req) => {
+      const { name, password } = req.body;
+
+      const users = db.collection("users");
+
+      const exist = await users.findOne<{ id: string; password: string }>(
+        { name },
+        {
+          projection: {
+            _id: false,
+            id: {
+              $toString: "$_id",
+            },
+            password: true,
+          },
+        }
+      );
+
+      if (!exist) {
+        return {
+          code: 400,
+          data: "invalid login info",
+        };
+      }
+
+      const hashedPwd = crypto
+        .createHash("sha256")
+        .update(password)
+        .digest("hex");
+      if (hashedPwd != exist.password) {
+        return {
+          code: 400,
+          data: "invalid login info",
+        };
+      }
+
+      const token = server.jwt.sign({
         id: exist.id,
         name,
-      },
-      secret
-    );
-    res.send({
-      code: 200,
-      data: token,
-    });
-  }
-);
+      });
+      return {
+        code: 200,
+        data: token,
+      };
+    }
+  );
+}
 
-export { auth };
-
-export default router;
+export default routes;
