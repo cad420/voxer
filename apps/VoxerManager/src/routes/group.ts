@@ -83,7 +83,7 @@ async function routes(server: FastifyInstance) {
    */
   server.post<{
     Body: { name: string; applications: string[] };
-  }>("/", async (req) => {
+  }>("/groups", async (req) => {
     const caller = await getUser(db, req.user.id);
     if (
       !caller.permission ||
@@ -102,7 +102,7 @@ async function routes(server: FastifyInstance) {
 
     const result = await collection.insertOne({
       name,
-      creator: new ObjectID(caller.id),
+      creator: caller._id,
       createTime: Date.now(),
       applications,
       datasets: [],
@@ -125,7 +125,7 @@ async function routes(server: FastifyInstance) {
   /**
    * get group info
    */
-  server.get<{ Params: { id: string } }>("/:id", async (req) => {
+  server.get<{ Params: { id: string } }>("/groups/:id", async (req) => {
     const { id } = req.params;
 
     const collection = db.collection("groups");
@@ -203,7 +203,7 @@ async function routes(server: FastifyInstance) {
   /**
    * delete a group
    */
-  server.delete<{ Params: { id: string } }>("/:id", async (req) => {
+  server.delete<{ Params: { id: string } }>("/groups/:id", async (req) => {
     const caller = await getUser(db, req.user.id);
     const { id } = req.params;
     if (
@@ -266,7 +266,7 @@ async function routes(server: FastifyInstance) {
   server.put<{
     Params: { id: string };
     Body: { name: string; applications: string[] };
-  }>("/:id", async (req, res) => {
+  }>("/groups/:id", async (req, res) => {
     const caller = await getUser(db, req.user.id);
     if (
       !caller.permission ||
@@ -322,7 +322,7 @@ async function routes(server: FastifyInstance) {
           path?: string;
         }
       | undefined;
-  }>("/:id/datasets", async (req) => {
+  }>("/groups/:id/datasets", async (req) => {
     // TODO: validate body
     const { id } = req.params;
     const groupId = new ObjectID(id);
@@ -419,7 +419,7 @@ async function routes(server: FastifyInstance) {
       gid: string;
       did: string;
     };
-  }>("/:gid/datasets/:did", async (req) => {
+  }>("/groups/:gid/datasets/:did", async (req) => {
     // TODO: validate body
     const { gid, did } = req.params;
     const groupId = new ObjectID(gid);
@@ -475,7 +475,7 @@ async function routes(server: FastifyInstance) {
       name: String;
       password: string;
     };
-  }>("/:id/users", async (req) => {
+  }>("/groups/:id/users", async (req) => {
     // TODO: validate body
     const user = req.body;
     const { id } = req.params;
@@ -548,7 +548,7 @@ async function routes(server: FastifyInstance) {
       gid: string;
       uid: string;
     };
-  }>("/:gid/users/:uid", async (req) => {
+  }>("/groups/:gid/users/:uid", async (req) => {
     // TODO: validate body
     const { gid, uid } = req.params;
     const groupId = new ObjectID(gid);

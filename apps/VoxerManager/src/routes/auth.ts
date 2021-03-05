@@ -73,7 +73,7 @@ async function routes(server: FastifyInstance) {
    * Login
    */
   server.post<{ Body: { name: string; password: string } }>(
-    "/login",
+    "/auth/login",
     async (req) => {
       const { name, password } = req.body;
 

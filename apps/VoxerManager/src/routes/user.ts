@@ -217,7 +217,7 @@ async function routes(server: FastifyInstance) {
       oldPassword?: string;
       password?: string;
     };
-  }>("/:id", async (req) => {
+  }>("/users/:id", async (req) => {
     const { id } = req.params;
     const userId = new ObjectID(id);
     const caller = await getUser(db, req.user.id);
@@ -287,69 +287,11 @@ async function routes(server: FastifyInstance) {
   });
 
   /**
-   * delete user
-   */
-  server.delete<{
-    Params: { id: string };
-  }>("/:id", async (req) => {
-    const { id } = req.params;
-    const userId = new ObjectID(id);
-    const caller = await getUser(db, req.user.id);
-    if (caller._id === userId) {
-      return {
-        code: 401,
-        data: "Cannot delete self.",
-      };
-    }
-
-    if (
-      !caller.permission ||
-      !caller.permission.users ||
-      !caller.permission.users.delete
-    ) {
-      return {
-        code: 401,
-        data: "No permission",
-      };
-    }
-
-    const collection = db.collection("users");
-
-    const exist = await collection.findOne<{
-      password: string;
-      name: string;
-    }>(
-      { _id: new ObjectID(id) },
-      { projection: { password: true, name: true } }
-    );
-
-    if (!exist) {
-      return {
-        code: 400,
-        data: "user does not exist",
-      };
-    }
-
-    const result = await collection.deleteOne({ _id: new ObjectID(id) });
-
-    if (result.deletedCount !== 1) {
-      return {
-        code: 500,
-        data: "Failed to update user",
-      };
-    }
-
-    return {
-      code: 200,
-    };
-  });
-
-  /**
    * get user permissions
    */
   server.get<{
     Params: { id: string };
-  }>("/:id/permission", async (req) => {
+  }>("/users/:id/permission", async (req) => {
     const caller = await getUser(db, req.user.id);
     if (
       !caller.permission ||
@@ -394,7 +336,7 @@ async function routes(server: FastifyInstance) {
   server.put<{
     Params: { id: string };
     Body: IUserFrontEnd["permission"];
-  }>("/:id/permission", async (req, res) => {
+  }>("/users/:id/permission", async (req, res) => {
     const caller = await getUser(db, req.user.id);
     if (
       !caller.permission ||
