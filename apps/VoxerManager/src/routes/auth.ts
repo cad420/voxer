@@ -28,6 +28,15 @@ async function routes(server: FastifyInstance) {
    */
   server.get<{ Querystring: { name: string; password: string } }>(
     "/auth/initialize",
+    {
+      schema: {
+        description: "create a admin user when platform has no users",
+        querystring: {
+          name: { type: "string" },
+          password: { type: "string" },
+        },
+      },
+    },
     async (req) => {
       const total = await users.countDocuments();
 

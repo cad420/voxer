@@ -1,6 +1,8 @@
 import { Command } from "commander";
 import Server from "./Server";
 
+export const isProduction = process.env.NODE_ENV === "production";
+
 const program = new Command();
 
 program

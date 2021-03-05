@@ -22,61 +22,72 @@ async function routes(server: FastifyInstance) {
    */
   server.get<{
     Querystring: {
-      page: string;
-      size: string;
+      page: number;
+      size: number;
     };
-  }>("/groups", async (req) => {
-    const collection = db.collection("groups");
-    const caller = await getUser(db, req.user.id);
-
-    const ids = Object.keys(caller.permission.group).map(
-      (id) => new ObjectID(id)
-    );
-    const query: any = { _id: { $in: ids } };
-
-    let page = parseInt(req.query.page);
-    if (isNaN(page) || page <= 0) {
-      page = 1;
-    }
-    let size = parseInt(req.query.size);
-    if (isNaN(page) || size <= 0) {
-      size = 10;
-    }
-
-    if (
-      caller.permission &&
-      caller.permission.groups &&
-      caller.permission.groups.read
-    ) {
-      delete query._id;
-    }
-
-    const total = await collection.countDocuments(query);
-    const groups = await collection
-      .find<{ id: string; name: string }>(query, {
-        projection: {
-          _id: false,
-          id: {
-            $toString: "$_id",
-          },
-          name: true,
-          createTime: true,
-          creator: true,
-          applications: true,
+  }>(
+    "/groups",
+    {
+      schema: {
+        description: "get all groups",
+        querystring: {
+          page: { type: "number" },
+          size: { type: "number" },
         },
-      })
-      .skip((page - 1) * size)
-      .limit(size)
-      .toArray();
-
-    return {
-      code: 200,
-      data: {
-        total,
-        list: groups,
       },
-    };
-  });
+    },
+    async (req) => {
+      const collection = db.collection("groups");
+      const caller = await getUser(db, req.user.id);
+
+      const ids = Object.keys(caller.permission.group).map(
+        (id) => new ObjectID(id)
+      );
+      const query: any = { _id: { $in: ids } };
+
+      let { page, size } = req.query;
+      if (page <= 0) {
+        page = 1;
+      }
+      if (size <= 0) {
+        size = 10;
+      }
+
+      if (
+        caller.permission &&
+        caller.permission.groups &&
+        caller.permission.groups.read
+      ) {
+        delete query._id;
+      }
+
+      const total = await collection.countDocuments(query);
+      const groups = await collection
+        .find<{ id: string; name: string }>(query, {
+          projection: {
+            _id: false,
+            id: {
+              $toString: "$_id",
+            },
+            name: true,
+            createTime: true,
+            creator: true,
+            applications: true,
+          },
+        })
+        .skip((page - 1) * size)
+        .limit(size)
+        .toArray();
+
+      return {
+        code: 200,
+        data: {
+          total,
+          list: groups,
+        },
+      };
+    }
+  );
 
   /**
    * add group

@@ -9,10 +9,13 @@ import FastifyJWTPlugin from "fastify-jwt";
 import FastifyCORSPlugin from "fastify-cors";
 import FastifyStaticPlugin from "fastify-static";
 import FastifyHelmetPlugin from "fastify-helmet";
+import FastifySwaggerPlugin from "fastify-swagger";
 import FastifyMongoDBPlugin from "fastify-mongodb";
 import FastifyMultiPartPlugin from "fastify-multipart";
 import fastify, { FastifyLoggerInstance, FastifyServerFactory } from "fastify";
 import routes from "./routes";
+import openapi from "./openapi";
+import { isProduction } from "./index";
 import WorkerAPICaller from "./worker_api";
 
 declare module "fastify" {
@@ -231,7 +234,22 @@ class Server {
 
     const app = fastify({ serverFactory, logger: true });
 
-    app.register(FastifyHelmetPlugin);
+    if (isProduction) {
+      app.register(FastifyHelmetPlugin);
+    } else {
+      app.register(FastifySwaggerPlugin, {
+        routePrefix: "/doc",
+        openapi,
+        exposeRoute: true,
+        uiConfig: {
+          persistAuthorization: true,
+        },
+      } as any);
+      app.ready((err) => {
+        if (err) throw err;
+        app.swagger();
+      });
+    }
     app.register(FastifyStaticPlugin, {
       root: path.resolve(process.cwd(), this.publicDir),
       prefix: "/",
