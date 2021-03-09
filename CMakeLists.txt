@@ -9,7 +9,6 @@ project(
 option(VOXER_BUILD_RENDERER_OPENGL "build OpenGL renderer" ON)
 option(VOXER_BUILD_RENDERER_OSPRAY "build OSPRay renderer" ON)
 option(VOXER_BUILD_ANNOTATION_MODULE "build annotation related module" ON)
-option(VOXER_BUILD_SERVER "whether to build voxer server" ON)
 option(VOXER_BUILD_PYBIND "whether to build python binding" OFF)
 option(VOXER_BUILD_VOLUME_TO_VIDEO "build volume to video application" OFF)
 option(VOXER_BUILD_TESTS "whether to build tests" OFF)
@@ -22,10 +21,6 @@ set(FETCHCONTENT_QUIET FALSE)
 SET(CMAKE_INSTALL_RPATH "\$ORIGIN:\$ORIGIN/../lib")
 
 add_subdirectory(src)
-
-if (VOXER_BUILD_SERVER)
-  add_subdirectory(apps/VoxerWorker)
-endif ()
 
 if (VOXER_BUILD_VOLUME_TO_VIDEO)
   add_subdirectory(apps/VolumeToVideo)
