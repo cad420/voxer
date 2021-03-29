@@ -2,7 +2,7 @@ find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/spdlog.cmake)
-include(${PROJECT_SOURCE_DIR}/third_party/CImg.cmake)
+#include(${PROJECT_SOURCE_DIR}/third_party/CImg.cmake)
 
 list(
     APPEND
@@ -44,6 +44,7 @@ target_include_directories(
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/third_party/
     ${PROJECT_SOURCE_DIR}/third_party/glad/include/
 )
 target_link_libraries(
@@ -68,9 +69,9 @@ if (VOXER_BUILD_ANNOTATION_MODULE)
   )
 endif ()
 
-target_compile_options(voxer_core PRIVATE -Wall -Wextra)
 target_compile_features(voxer_core PRIVATE cxx_std_14)
 if (UNIX)
+  target_compile_options(voxer_core PRIVATE -Wall -Wextra)
   set(SANITIZER "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined")
   set_target_properties(
       voxer_core
@@ -94,7 +95,7 @@ endif ()
 
 if (VOXER_INSTALL)
   install(
-      TARGETS voxer_core fmt spdlog CImg
+      TARGETS voxer_core fmt spdlog
       DESTINATION lib
       EXPORT voxer-targets
   )

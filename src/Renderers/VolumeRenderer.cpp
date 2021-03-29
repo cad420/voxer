@@ -1,5 +1,11 @@
-#include "Renderers/IRenderer.hpp"
+
+
+#ifdef LINUX
 #include <dlfcn.h>
+#elif WINDOWS
+#include <windows.h>
+#endif
+#include "Renderers/IRenderer.hpp"
 #include <functional>
 #include <memory>
 #include <spdlog/spdlog.h>
@@ -26,17 +32,32 @@ VolumeRenderer::VolumeRenderer(const char *renderer) {
   if (it != symbols.end()) {
     get_renderer = it->second;
   } else {
+
+#ifdef LINUX
     auto lib_name = string("libvoxer_renderer_") + renderer + postfix + ".so";
     void *lib = dlopen(lib_name.c_str(), RTLD_NOW);
     if (lib == nullptr) {
       throw runtime_error(dlerror());
     }
-
     void *symbol = dlsym(lib, "voxer_get_renderer");
+
     if (symbol == nullptr) {
       throw runtime_error("Cannot find symbol `voxer_get_renderer` in " +
                           lib_name);
     }
+#elif WINDOWS
+    auto lib_name = string("libvoxer_renderer_") + renderer + postfix + ".dll";
+    void *lib = LoadLibrary(TEXT(lib_name.c_str()));
+    if (lib == nullptr) {
+      throw runtime_error("windows open dll failed");
+    }
+    void *symbol =
+        GetProcAddress(reinterpret_cast<HINSTANCE>(lib), "voxer_get_renderer");
+    if (symbol == nullptr) {
+      throw runtime_error("Cannot find symbol `voxer_get_renderer` in " +
+                          lib_name);
+    }
+#endif
 
     get_renderer = reinterpret_cast<GetRenderingBackend>(symbol);
     symbols.emplace(string(renderer),
