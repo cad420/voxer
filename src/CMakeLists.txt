@@ -68,6 +68,7 @@ if (VOXER_BUILD_ANNOTATION_MODULE)
 endif ()
 
 target_compile_features(voxer_core PRIVATE cxx_std_14)
+target_compile_definitions(voxer_core PRIVATE cimg_display=0)
 if (UNIX)
   target_compile_options(voxer_core PRIVATE -Wall -Wextra)
   set(SANITIZER "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined")
