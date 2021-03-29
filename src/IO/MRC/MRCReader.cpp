@@ -492,9 +492,7 @@ auto MRCReader::load() -> std::unique_ptr<StructuredGrid> {
   return dataset;
 }
 
-auto MRCReader::load_region(__attribute__((unused))
-                            const std::array<uint16_t, 3> &begin,
-                            __attribute__((unused))
+auto MRCReader::load_region(const std::array<uint16_t, 3> &begin,
                             const std::array<uint16_t, 3> &end)
     -> std::unique_ptr<StructuredGrid> {
   // TODO: load subregion

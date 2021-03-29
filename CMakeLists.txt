@@ -6,6 +6,14 @@ project(
     VERSION 0.1.0
 )
 
+if(WIN32)
+  add_compile_definitions(WINDOWS)
+elseif(UNIX AND NOT APPLE)
+  if(CMAKE_SYSTEM_NAME MATCHES ".*Linux")
+    add_compile_definitions(LINUX)
+  endif()
+endif()
+
 option(VOXER_BUILD_RENDERER_OPENGL "build OpenGL renderer" ON)
 option(VOXER_BUILD_RENDERER_OSPRAY "build OSPRay renderer" ON)
 option(VOXER_BUILD_ANNOTATION_MODULE "build annotation related module" ON)
