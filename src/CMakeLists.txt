@@ -51,14 +51,12 @@ target_link_libraries(
     voxer_core
     PRIVATE
     spdlog
-    CImg
     PUBLIC
     Threads::Threads
     fmt::fmt
     spdlog
     OpenMP::OpenMP_CXX
     ${CMAKE_DL_LIBS}
-    PRIVATE -static-libstdc++
 )
 
 if (VOXER_BUILD_ANNOTATION_MODULE)
