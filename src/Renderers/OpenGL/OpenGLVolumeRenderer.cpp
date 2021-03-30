@@ -1,19 +1,26 @@
 #include "Renderers/OpenGL/OpenGLVolumeRenderer.hpp"
 #include "Renderers/OpenGL/ShaderProgram.hpp"
 #include "Renderers/OpenGL/shaders.hpp"
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
-#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <vector>
+#ifndef _WINDOWS
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <glad/glad.h>
+#else
+#include <gl/gl.h>
+#include <glad/wgl.h>
+#include <windows.h>
+#endif
 
 using namespace std;
 
 namespace {
 
+#ifndef _WINDOWS
 const EGLint egl_config_attribs[] = {EGL_SURFACE_TYPE,
                                      EGL_PBUFFER_BIT,
                                      EGL_BLUE_SIZE,
@@ -39,6 +46,7 @@ void EGLCheck(const char *fn) {
     throw runtime_error(fn + to_string(error));
   }
 }
+#endif
 
 GLuint create_tfcn_texture(voxer::TransferFunction &tfcn) {
   constexpr int tfcn_dim = 256;
@@ -84,32 +92,7 @@ float screen_quad_vertices[] = {
 } // namespace
 
 namespace voxer {
-
-OpenGLVolumeRenderer::OpenGLVolumeRenderer() {
-  m_cache = OpenGLVolumeCache::get_instance();
-
-  setup_context();
-  setup_resources();
-  setup_proxy_cude();
-
-  spdlog::info("OpenGLVolumeRenderer initialized.");
-}
-
-OpenGLVolumeRenderer::~OpenGLVolumeRenderer() noexcept {
-  glDeleteBuffers(1, &m_VBO);
-  glDeleteBuffers(1, &m_EBO);
-  glDeleteVertexArrays(1, &m_VAO);
-  glDeleteTextures(1, &m_entry_texture);
-  glDeleteTextures(1, &m_exit_texture);
-  glDeleteRenderbuffers(1, &m_RBO);
-  glDeleteFramebuffers(1, &m_FBO);
-
-  auto display = m_cache->get_display();
-  eglDestroySurface(display, m_egl_surface);
-  eglDestroyContext(display, m_egl_context);
-  spdlog::info("OpenGLVolumeRenderer destoryed.");
-}
-
+#ifndef _WINDOWS
 void OpenGLVolumeRenderer::setup_context() {
   auto display = m_cache->get_display();
   EGLint major, minor;
@@ -145,6 +128,40 @@ void OpenGLVolumeRenderer::setup_context() {
   if (!gladLoadGLLoader((void *(*)(const char *))(&eglGetProcAddress))) {
     throw runtime_error("Failed to load gl");
   }
+}
+#else
+void OpenGLVolumeRenderer::setup_context() {
+  m_wgl_window_handle = m_cache->get_handle();
+  init_opengl(m_wgl_window_handle, m_cache->get_context());
+}
+#endif
+
+OpenGLVolumeRenderer::OpenGLVolumeRenderer() {
+  m_cache = OpenGLVolumeCache::get_instance();
+
+  setup_context();
+  setup_resources();
+  setup_proxy_cude();
+
+  spdlog::info("OpenGLVolumeRenderer initialized.");
+}
+
+OpenGLVolumeRenderer::~OpenGLVolumeRenderer() noexcept {
+  glDeleteBuffers(1, &m_VBO);
+  glDeleteBuffers(1, &m_EBO);
+  glDeleteVertexArrays(1, &m_VAO);
+  glDeleteTextures(1, &m_entry_texture);
+  glDeleteTextures(1, &m_exit_texture);
+  glDeleteRenderbuffers(1, &m_RBO);
+  glDeleteFramebuffers(1, &m_FBO);
+
+#ifndef _WINDOWS
+  auto display = m_cache->get_display();
+  eglDestroySurface(display, m_egl_surface);
+  eglDestroyContext(display, m_egl_context);
+#endif
+
+  spdlog::info("OpenGLVolumeRenderer destoryed.");
 }
 
 void OpenGLVolumeRenderer::set_camera(const Camera &camera) {
@@ -458,8 +475,10 @@ bool OpenGLVolumeRenderer::has_cache(StructuredGrid *data) const noexcept {
 
 } // namespace voxer
 
+using namespace voxer;
+
 extern "C" {
 VoxerIRenderer *voxer_get_renderer() {
-  return new voxer::OpenGLVolumeRenderer();
+  return reinterpret_cast<VoxerIRenderer *>(new OpenGLVolumeRenderer());
 }
 }

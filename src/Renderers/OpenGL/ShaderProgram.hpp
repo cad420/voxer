@@ -1,10 +1,14 @@
 #pragma once
 #include <fstream>
-#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <iostream>
 #include <sstream>
 #include <string>
+#ifndef _WINDOWS
+#include <glad/glad.h>
+#else
+#include <glad/wgl.h>
+#endif
 
 namespace voxer {
 

@@ -1,13 +1,17 @@
 #pragma once
-#define MESA_EGL_NO_X11_HEADERS
-#define EGL_NO_X11
-#define EGL_EGLEXT_PROTOTYPES
 #include "Renderers/IRenderer.hpp"
 #include "Renderers/OpenGL/OpenGLVolumeCache.hpp"
 #include "Renderers/OpenGL/ShaderProgram.hpp"
-#include <EGL/egl.h>
 #include <unordered_map>
 #include <voxer/Data/Image.hpp>
+#ifndef _WINDOWS
+#define MESA_EGL_NO_X11_HEADERS
+#define EGL_NO_X11
+#define EGL_EGLEXT_PROTOTYPES
+#include <EGL/egl.h>
+#else
+#include <glad/wgl.h>
+#endif
 
 namespace voxer {
 
@@ -39,8 +43,13 @@ private:
   std::unique_ptr<ShaderProgram> m_essposition_program;
   std::unique_ptr<ShaderProgram> m_essraycast_program;
 
+#ifndef _WINDOWS
   EGLContext m_egl_context{};
   EGLSurface m_egl_surface{};
+#else
+  HDC m_wgl_window_handle;
+  HGLRC m_wgl_context;
+#endif
 
   GLuint m_VBO = 0;
   GLuint m_EBO = 0;

@@ -46,6 +46,7 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/third_party/
     ${PROJECT_SOURCE_DIR}/third_party/glad/include/
+    ${PROJECT_SOURCE_DIR}/third_party/glad_wgl/include/
 )
 target_link_libraries(
     voxer_core
