@@ -1,12 +1,23 @@
 #include "Renderers/OpenGL/OpenGLVolumeCache.hpp"
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <voxer/Filters/GradientFilter.hpp>
+#ifndef _WINDOWS
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#else
+#include <gl/gl.h>
+#include <glad/wgl.h>
+#include <windows.h>
+
+wglCreateContextAttribsARB_type *wglCreateContextAttribsARB;
+wglChoosePixelFormatARB_type *wglChoosePixelFormatARB;
+
+#endif
 
 namespace {
 
+#ifndef _WINDOWS
 const EGLint egl_config_attribs[] = {EGL_SURFACE_TYPE,
                                      EGL_PBUFFER_BIT,
                                      EGL_BLUE_SIZE,
@@ -24,6 +35,7 @@ const EGLint egl_config_attribs[] = {EGL_SURFACE_TYPE,
 const EGLint pbuffer_attribs[] = {
     EGL_WIDTH, 1920, EGL_HEIGHT, 1080, EGL_NONE,
 };
+#endif
 
 GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
   auto &info = dataset.info;
@@ -48,7 +60,7 @@ GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
 } // namespace
 
 namespace voxer {
-
+#ifndef _WINDOWS
 OpenGLVolumeCache::OpenGLVolumeCache() noexcept {
   static const int MAX_DEVICES = 4;
   EGLDeviceEXT egl_devices[MAX_DEVICES];
@@ -100,10 +112,19 @@ OpenGLVolumeCache::OpenGLVolumeCache() noexcept {
                "OpenGL version {}.{}",
                num_devices, GLVersion.major, GLVersion.minor);
 }
+#else
+OpenGLVolumeCache::OpenGLVolumeCache() noexcept {
+
+  auto ins = GetModuleHandleW(NULL);
+  m_wgl_window_handle = GetDC(create_window(ins, "WGL_fdjhsklf"));
+  m_wgl_context = init_opengl(m_wgl_window_handle);
+}
+#endif
 
 OpenGLVolumeCache::~OpenGLVolumeCache() noexcept {
+#ifndef _WINDOWS
   eglTerminate(m_egl_display);
-
+#endif
   spdlog::info("OpenGLVolumeCache destroyed");
 }
 
@@ -112,8 +133,6 @@ auto OpenGLVolumeCache::get_instance() -> OpenGLVolumeCache * {
 
   return &instance;
 }
-
-auto OpenGLVolumeCache::get_context() -> EGLContext { return m_egl_context; }
 
 auto OpenGLVolumeCache::get(StructuredGrid *data) -> GLuint {
   std::lock_guard<std::mutex> lock(m_mutex);
@@ -149,6 +168,10 @@ bool OpenGLVolumeCache::has(StructuredGrid *data) noexcept {
   return m_textures.has(data);
 }
 
+#ifndef _WINDOWS
+auto OpenGLVolumeCache::get_context() -> EGLContext { return m_egl_context; }
+
 EGLDisplay OpenGLVolumeCache::get_display() { return m_egl_display; }
+#endif
 
 } // namespace voxer

@@ -46,6 +46,7 @@ target_include_directories(
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/third_party/
     ${PROJECT_SOURCE_DIR}/third_party/glad/include/
+    ${PROJECT_SOURCE_DIR}/third_party/glad_wgl/include/
 )
 target_link_libraries(
     voxer_core
@@ -68,7 +69,6 @@ if (VOXER_BUILD_ANNOTATION_MODULE)
 endif ()
 
 target_compile_features(voxer_core PRIVATE cxx_std_14)
-target_compile_definitions(voxer_core PRIVATE cimg_display=0)
 if (UNIX)
   target_compile_options(voxer_core PRIVATE -Wall -Wextra)
   set(SANITIZER "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined")

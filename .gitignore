@@ -5,3 +5,5 @@ yarn-error.log
 temp
 CMakeLists.txt.user
 .idea
+cmake-build-debug
+cmake-build-release
