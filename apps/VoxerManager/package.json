@@ -21,7 +21,7 @@
     "nanoid": "^2.1.11",
     "pino": "^6.8.0",
     "typescript": "^3.8.3",
-    "ws": "^7.2.2"
+    "ws": "^7.4.6"
   },
   "devDependencies": {
     "@types/cors": "^2.8.6",
