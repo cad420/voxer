@@ -2,7 +2,7 @@ include(FetchContent)
 FetchContent_Declare(
     CImg
     GIT_REPOSITORY https://github.com/dtschump/CImg.git
-    GIT_TAG 2f7a1ebf1b1dcc59d5d2f54c39e291def47b5064
+#    GIT_TAG 2f7a1ebf1b1dcc59d5d2f54c39e291def47b5064
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
 )

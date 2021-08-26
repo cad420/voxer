@@ -12,7 +12,7 @@
 #include <EGL/egl.h>
 #include <glad/glad.h>
 #else
-#include <gl/gl.h>
+//#include <gl/gl.h>
 #include <glad/wgl.h>
 #include <windows.h>
 

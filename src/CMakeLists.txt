@@ -2,7 +2,7 @@ find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/spdlog.cmake)
-#include(${PROJECT_SOURCE_DIR}/third_party/CImg.cmake)
+include(${PROJECT_SOURCE_DIR}/third_party/CImg.cmake)
 
 list(
     APPEND
@@ -96,7 +96,7 @@ endif ()
 
 if (VOXER_INSTALL)
   install(
-      TARGETS voxer_core fmt spdlog
+      TARGETS voxer_core fmt spdlog CImg
       DESTINATION lib
       EXPORT voxer-targets
   )
