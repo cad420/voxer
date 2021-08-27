@@ -6,8 +6,11 @@ uniform mat4 view;
 uniform mat4 projection;
 
 //纹理坐标，从vshader到fshader，会为每一个fragment通过插值生成纹理坐标，一般来说，裁减后的世界中 片段比顶点更多
+
 highp out vec3 texCoord;
+
 // 顶点的相机观察系坐标，即顶点的位置就是光线投射的方向（相机在原点），到fragment也会生成每个片段在观察系下的坐标
+
 highp out vec4 rayCastDir;
 highp out vec4 worldPos;
 
