@@ -22,6 +22,7 @@ option(VOXER_BUILD_PYBIND "whether to build python binding" OFF)
 option(VOXER_BUILD_VOLUME_TO_VIDEO "build volume to video application" OFF)
 option(VOXER_BUILD_TESTS "whether to build tests" OFF)
 option(VOXER_INSTALL "create target to install voxer library and headers" ON)
+option(VOXER_BUILD_DEMO_RENDERER "whether to build voxer renderer" OFF)
 
 # global settings
 include(cmake/utils.cmake)
@@ -46,3 +47,7 @@ endif ()
 if (VOXER_BUILD_TESTS)
   add_subdirectory(tests)
 endif ()
+
+if(VOXER_BUILD_DEMO_RENDERER)
+  add_subdirectory(apps/VoxelRenderer)
+endif()
