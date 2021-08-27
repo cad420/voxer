@@ -46,10 +46,10 @@ VolumeRenderer::VolumeRenderer(const char *renderer) {
                           lib_name);
     }
 #elif WINDOWS
-    auto lib_name = string("libvoxer_renderer_") + renderer + postfix + ".dll";
+    auto lib_name = string("voxer_renderer_") + renderer  + ".dll";
     void *lib = LoadLibrary(TEXT(lib_name.c_str()));
     if (lib == nullptr) {
-      throw runtime_error("windows open dll failed");
+      throw runtime_error("windows open dll failed: "+lib_name);
     }
     void *symbol =
         GetProcAddress(reinterpret_cast<HINSTANCE>(lib), "voxer_get_renderer");
