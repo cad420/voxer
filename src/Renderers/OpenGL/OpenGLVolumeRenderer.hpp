@@ -70,5 +70,5 @@ private:
 } // namespace voxer
 
 extern "C" {
-__declspec(dllexport) VoxerIRenderer *voxer_get_renderer();
+VoxerIRenderer *voxer_get_renderer();
 }

@@ -1,6 +1,7 @@
 #include <voxer/Data/StructuredGrid.hpp>
 #include <voxer/IO/MRCReader.hpp>
 #include <voxer/IO/RawReader.hpp>
+#include <voxer/IO/NIFTIReader.hpp>
 #include <voxer/IO/utils.hpp>
 #include <voxer/Mappers/StructuredGridHistogramMapper.hpp>
 
@@ -76,6 +77,11 @@ auto StructuredGrid::Load(const char *path) -> std::shared_ptr<StructuredGrid> {
 
   if (ext == ".mrc" || ext == ".st") {
     MRCReader reader(path);
+    return reader.load();
+  }
+  
+  if (ext == ".nii" ) {
+    NIFTIReader reader(path);
     return reader.load();
   }
 

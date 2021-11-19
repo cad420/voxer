@@ -6,6 +6,32 @@
 
 namespace voxer {
 
+
+// only use for nii data
+template<typename _Ty>
+inline auto crop_others_to_uint8(const _Ty *source, size_t size,
+                                   std::array<float, 2> &range)
+    -> std::vector<uint8_t> {
+  auto min = source[0];
+  auto max = source[0];
+  std::vector<uint8_t> data;
+  data.reserve(size);
+  for (size_t i = 0; i < size; i++) {
+    auto value = source[i];
+    data.push_back(static_cast<uint8_t>(value));
+    if (value > max) {
+      max = value;
+    } else if (value < min) {
+      min = value;
+    }
+  }
+  range[0] = min;
+  range[1] = max;
+  return data;
+}
+
+
+
 inline auto convert_int16_to_uint8(const int16_t *source, size_t size,
                                    float max, float min)
     -> std::vector<uint8_t> {
@@ -19,7 +45,6 @@ inline auto convert_int16_to_uint8(const int16_t *source, size_t size,
     auto value = round(range / max_range * max_value);
     data.push_back(value);
   }
-
   return data;
 }
 

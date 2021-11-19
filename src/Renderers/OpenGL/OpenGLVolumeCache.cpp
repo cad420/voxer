@@ -43,14 +43,13 @@ GLuint create_dataset_texture(voxer::StructuredGrid &dataset) {
 
   GLuint volume_texture = 0;
   glGenTextures(1, &volume_texture);
-//  glActiveTexture(GL_TEXTURE0 + 2);
+  glActiveTexture(GL_TEXTURE0 + 2);
   glBindTexture(GL_TEXTURE_3D, volume_texture);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, dimension[0], dimension[1],
                dimension[2], 0, GL_RED, GL_UNSIGNED_BYTE,
                dataset.buffer.data());
@@ -126,7 +125,7 @@ OpenGLVolumeCache::~OpenGLVolumeCache() noexcept {
 #ifndef _WINDOWS
   eglTerminate(m_egl_display);
 #endif
-//  spdlog::info("OpenGLVolumeCache destroyed");
+  spdlog::info("OpenGLVolumeCache destroyed");
 }
 
 auto OpenGLVolumeCache::get_instance() -> OpenGLVolumeCache * {
