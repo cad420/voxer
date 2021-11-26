@@ -2,7 +2,7 @@ find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
 include(${PROJECT_SOURCE_DIR}/third_party/fmt.cmake)
 include(${PROJECT_SOURCE_DIR}/third_party/spdlog.cmake)
-include(${PROJECT_SOURCE_DIR}/third_party/CImg.cmake)
+#include(${PROJECT_SOURCE_DIR}/third_party/CImg.cmake)
 
 list(
     APPEND
@@ -21,6 +21,7 @@ list(
     Renderers/SliceRenderer.cpp
     IO/MRC/MRCReader.cpp
     IO/Raw/RawReader.cpp
+    IO/NIFTI/NIFTIReader.cpp
 )
 
 if (VOXER_BUILD_ANNOTATION_MODULE)
@@ -52,14 +53,12 @@ target_link_libraries(
     voxer_core
     PRIVATE
     spdlog
-    CImg
     PUBLIC
     Threads::Threads
     fmt::fmt
     spdlog
     OpenMP::OpenMP_CXX
     ${CMAKE_DL_LIBS}
-    PRIVATE -static-libstdc++
 )
 
 if (VOXER_BUILD_ANNOTATION_MODULE)
@@ -96,7 +95,7 @@ endif ()
 
 if (VOXER_INSTALL)
   install(
-      TARGETS voxer_core fmt spdlog CImg
+      TARGETS voxer_core fmt spdlog
       DESTINATION lib
       EXPORT voxer-targets
   )
