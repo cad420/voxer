@@ -1,4 +1,8 @@
-find_package(OpenGL REQUIRED)
+if(WIN32)
+    find_package(OpenGL REQUIRED)
+else()
+    find_package(OpenGL REQUIRED COMPONENTS OpenGL EGL)
+endif()
 include(${PROJECT_SOURCE_DIR}/third_party/glm.cmake)
 
 embed_shaders(
@@ -45,6 +49,7 @@ target_include_directories(
         ${PROJECT_SOURCE_DIR}/third_party/glad_wgl/include/
 )
 if (UNIX)
+    target_link_libraries(voxer_renderer_opengl PRIVATE -static-libstdc++ OpenGL::EGL)
     target_compile_features(voxer_renderer_opengl PRIVATE cxx_std_14)
     target_compile_options(voxer_renderer_opengl PRIVATE -Wall -Wextra)
 else()

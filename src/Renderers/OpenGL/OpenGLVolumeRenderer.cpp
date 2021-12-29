@@ -502,8 +502,15 @@ using namespace voxer;
 
 extern "C"
 {
+#ifdef _WIN32
 __declspec(dllexport) VoxerIRenderer *voxer_get_renderer()
     {
         return reinterpret_cast<VoxerIRenderer *>(new OpenGLVolumeRenderer());
     }
+#else
+  VoxerIRenderer *voxer_get_renderer()
+  {
+    return reinterpret_cast<VoxerIRenderer *>(new OpenGLVolumeRenderer());
+  }
+#endif
 }

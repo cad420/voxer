@@ -70,5 +70,9 @@ private:
 } // namespace voxer
 
 extern "C" {
+#ifdef _WIN32
 __declspec(dllexport) VoxerIRenderer *voxer_get_renderer();
+#else
+  VoxerIRenderer *voxer_get_renderer();
+#endif
 }

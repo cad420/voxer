@@ -1,4 +1,4 @@
-find_package(ospray 2.0.0 REQUIRED)
+find_package(ospray 2.2.0 REQUIRED)
 
 list(
     APPEND

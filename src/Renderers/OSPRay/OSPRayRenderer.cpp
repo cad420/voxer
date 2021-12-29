@@ -2,9 +2,10 @@
 #include <cmath>
 #include <ospray/ospray.h>
 #include <ospray/ospray_util.h>
+#include <ospray/OSPEnums.h>
 #include <spdlog/spdlog.h>
 #include <string>
-
+#include <condition_variable>
 using namespace std;
 
 namespace {
@@ -48,7 +49,37 @@ void OSPRayRenderer::clear_scene() noexcept {
   m_isosurfaces.clear();
 }
 
+/**
+ * @note ospCommit for osp::Volume is not safe for multi-threads
+ */
+class Lock{
+public:
+  Lock(){
+    GetOSPRayRendererLock();
+  }
+  ~Lock(){
+    ReleaseOSPRayRendererLock();
+  }
+private:
+  static std::mutex mtx;
+  static std::condition_variable cv;
+  static bool occupied;
+  static void GetOSPRayRendererLock() {
+    std::unique_lock<std::mutex> lk(mtx);
+    cv.wait(lk, []() { return !occupied; });
+    occupied = true;
+  }
+  static void ReleaseOSPRayRendererLock() {
+    occupied = false;
+    cv.notify_one();
+  }
+};
+std::mutex Lock::mtx;
+std::condition_variable Lock::cv;
+bool Lock::occupied=false;
+
 void OSPRayRenderer::render() {
+  Lock lk;
   vector<OSPInstance> osp_instances;
 
   for (const auto &volume : m_volumes) {
@@ -58,13 +89,13 @@ void OSPRayRenderer::render() {
         ospNewSharedData(data.first.data(), OSP_FLOAT, data.first.size());
     auto osp_opacity_data = ospNewData(OSP_FLOAT, data.first.size());
     ospCopyData(tmp, osp_opacity_data);
-    ospRelease(tmp);
+    if(tmp) ospRelease(tmp);
     ospCommit(osp_opacity_data);
 
     tmp = ospNewSharedData(data.second.data(), OSP_VEC3F, data.second.size());
     auto osp_colors_data = ospNewData(OSP_VEC3F, data.second.size());
     ospCopyData(tmp, osp_colors_data);
-    ospRelease(tmp);
+    if(tmp) ospRelease(tmp);
     ospCommit(osp_colors_data);
 
     auto osp_tfcn = ospNewTransferFunction("piecewiseLinear");
@@ -74,8 +105,11 @@ void OSPRayRenderer::render() {
     ospCommit(osp_tfcn);
 
     auto osp_volume = m_cache->get(volume->dataset.get());
+    if(!osp_volume) throw std::runtime_error("osp_volume is nullptr");
+
     ospSetVec3f(osp_volume, "gridSpacing", volume->spacing[0],
                 volume->spacing[1], volume->spacing[2]);
+
     ospCommit(osp_volume);
 
     auto osp_volume_model = ospNewVolumetricModel(osp_volume);
@@ -93,11 +127,12 @@ void OSPRayRenderer::render() {
     ospCommit(osp_instance);
     osp_instances.emplace_back(osp_instance);
 
-    ospRelease(osp_opacity_data);
-    ospRelease(osp_colors_data);
-    ospRelease(osp_tfcn);
-    ospRelease(osp_volume_model);
-    ospRelease(group);
+    if(osp_opacity_data) ospRelease(osp_opacity_data);
+    if(osp_colors_data) ospRelease(osp_colors_data);
+    if(osp_tfcn) ospRelease(osp_tfcn);
+    if(osp_volume_model) ospRelease(osp_volume_model);
+    if(group) ospRelease(group);
+
   }
 
   for (const auto &isosurface : m_isosurfaces) {
@@ -105,7 +140,7 @@ void OSPRayRenderer::render() {
     auto tmp = ospNewSharedData(opacity.data(), OSP_FLOAT, opacity.size());
     auto osp_opacity_data = ospNewData(OSP_FLOAT, opacity.size());
     ospCopyData(tmp, osp_opacity_data);
-    ospRelease(tmp);
+    if(tmp) ospRelease(tmp);
     ospCommit(osp_opacity_data);
 
     auto osp_volume = m_cache->get(isosurface->dataset.get());
@@ -131,9 +166,9 @@ void OSPRayRenderer::render() {
 
     osp_instances.emplace_back(osp_instance);
 
-    ospRelease(osp_isosurface);
-    ospRelease(osp_isosurface_model);
-    ospRelease(osp_group);
+    if(osp_isosurface) ospRelease(osp_isosurface);
+    if(osp_isosurface_model) ospRelease(osp_isosurface_model);
+    if(osp_group) ospRelease(osp_group);
   }
 
   vector<OSPLight> osp_lights{};
@@ -188,7 +223,7 @@ void OSPRayRenderer::render() {
   ospSetFloat(osp_renderer, "minContribution", 0.01f);
   ospSetVec3f(osp_renderer, "backgroundColor", m_background[0], m_background[1],
               m_background[2]);
-  ospSetInt(osp_renderer, "pixelFilter", OSP_PIXELFILTER_BOX);
+  ospSetInt(osp_renderer, "pixelFilter", OSP_PIXELFILTER_BOX );
   ospSetBool(osp_renderer, "shadows", true);
   ospSetInt(osp_renderer, "aoSamples", 0);
   ospSetFloat(osp_renderer, "volumeSamplingRate", 0.5f);
@@ -213,15 +248,16 @@ void OSPRayRenderer::render() {
   m_image.data = move(data);
   ospUnmapFrameBuffer(reinterpret_cast<const void *>(fb), osp_framebuffer);
 
+
   for (auto &osp_instance : osp_instances) {
-    ospRelease(osp_instance);
+    if(osp_instance) ospRelease(osp_instance);
   }
-  ospRelease(osp_light);
-  ospRelease(osp_instance_data);
-  ospRelease(osp_renderer);
-  ospRelease(osp_camera);
-  ospRelease(osp_framebuffer);
-  ospRelease(osp_world);
+  if(osp_light) ospRelease(osp_light);
+  if(osp_instance_data) ospRelease(osp_instance_data);
+  if(osp_renderer) ospRelease(osp_renderer);
+  if(osp_camera) ospRelease(osp_camera);
+  if(osp_framebuffer) ospRelease(osp_framebuffer);
+  if(osp_world) ospRelease(osp_world);
 }
 
 auto OSPRayRenderer::get_colors() -> const Image & { return m_image; }
