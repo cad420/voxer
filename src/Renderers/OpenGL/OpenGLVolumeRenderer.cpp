@@ -252,8 +252,8 @@ void OpenGLVolumeRenderer::render()
 //    m_raycast_program->setInt("preIntTF", 1);
     m_raycast_program->setInt("Block1", 2);
     m_raycast_program->setInt("Block2", 3);
-    m_raycast_program->setFloat("ka", 0.5f);
-    m_raycast_program->setFloat("kd", 0.8f);
+    m_raycast_program->setFloat("ka", 0.05f);
+    m_raycast_program->setFloat("kd", 1.0f);
     m_raycast_program->setFloat("ks", 1.0f);
     m_raycast_program->setFloat("shininess", 100.0f);
     m_raycast_program->setVec3("lightDir", -1.0f, 0.0f, 0.0f);
@@ -393,7 +393,7 @@ void OpenGLVolumeRenderer::render()
         auto model = glm::identity<glm::mat4>();
         model = glm::scale(model, glm::vec3(dimensions[0] * volume->spacing[0], dimensions[1] * volume->spacing[1],
                                             dimensions[2] * volume->spacing[2]));
-//        model = glm::translate(model, glm::vec3(-0.5f, -0.5f, -0.5f));
+        model = glm::translate(model, glm::vec3(-0.5f, -0.5f, -0.5f));
         auto mvp_matrix = projection * view * model;
 
         glEnable(GL_DEPTH_TEST);

@@ -78,7 +78,8 @@ vec3 phongShading(vec3 samplePos, vec3 diffuseColor,int block_id) {
     vec3 ambient = ka*diffuseColor.rgb;
     vec3 specular = ks*pow(max(dot(N, (L+R)/2.0), 0.0), shininess)*vec3(1.0, 1.0, 1.0);
     vec3 diffuse = kd*max(dot(N, L), 0.0)*diffuseColor.rgb;
-    return ambient + specular + diffuse;
+    vec3 radiance = pow(ambient+specular+diffuse,vec3(1.f/2.2f));
+    return radiance;
 }
 
 float rand(vec3 pos) {
