@@ -8,3 +8,5 @@ yarn-error.log
 **/*.egg-info/
 **/dist/
 Dockerfile
+cmake-build-debug
+cmake-build-release

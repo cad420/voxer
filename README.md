@@ -16,8 +16,8 @@ You can
 ### Using the Docker Image
 
 You should use `nvidia-docker 2.0` to enable GPU rendering capability.
-For more information and system requirement about `nvidia-docker` please check [nvidia-docker](https://github.com/NVIDIA/nvidia-docker).
-
+For more information and system requirement about `nvidia-docker` please check [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) 
+[deployment-guide](https://docs.nvidia.com/ai-enterprise/deployment-guide/dg-docker.html).
 ```shell
 cd voxer
 docker build . -t voxer # build the image
