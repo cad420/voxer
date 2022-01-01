@@ -10,3 +10,4 @@ yarn-error.log
 Dockerfile
 cmake-build-debug
 cmake-build-release
+*.tar

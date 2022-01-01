@@ -31,5 +31,4 @@ FROM nvidia/opengl:1.2-glvnd-runtime-ubuntu20.04
 COPY --from=builder /opt/voxer /opt/voxer
 
 EXPOSE 3040
-
-CMD ["/opt/voxer/bin/VoxerWorker"]
+#sudo docker run --gpus all -i -t -v ./VoxerManager/public:/opt/voxer/public voxer:04
