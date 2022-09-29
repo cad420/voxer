@@ -23,7 +23,7 @@
     "@rollup/plugin-typescript": "^4.1.2",
     "@simonwep/pickr": "^1.7.1",
     "autoprefixer": "^9.8.4",
-    "d3": "^5.16.0",
+    "d3": "^7.6.1",
     "rollup": "^2.15.0",
     "rollup-plugin-styles": "^3.10.0",
     "tslib": "^2.0.0",
